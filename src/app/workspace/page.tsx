@@ -1,7 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
+import {
+  readFileContent,
+  exportAsWord,
+  exportAsPdf,
+  exportAsTxt,
+} from '@/lib/fileUtils';
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState('write');
@@ -13,6 +19,9 @@ export default function WorkspacePage() {
   const [characterInfo, setCharacterInfo] = useState('');
   const [plotOutline, setPlotOutline] = useState('');
   const [wordCount, setWordCount] = useState(2500);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -174,6 +183,54 @@ export default function WorkspacePage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const content = await readFileContent(file);
+      setGeneratedContent(content);
+      alert('文件导入成功！');
+    } catch (error) {
+      console.error('导入失败:', error);
+      alert('导入失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleExport = (format: 'word' | 'pdf' | 'txt') => {
+    if (!generatedContent.trim()) {
+      alert('没有内容可导出');
+      return;
+    }
+
+    const filename = `第${chapterNum}章.${format === 'word' ? 'docx' : format}`;
+
+    try {
+      switch (format) {
+        case 'word':
+          exportAsWord(generatedContent, filename);
+          break;
+        case 'pdf':
+          exportAsPdf(generatedContent, filename);
+          break;
+        case 'txt':
+          exportAsTxt(generatedContent, filename);
+          break;
+      }
+      setShowExportMenu(false);
+      alert('导出成功！');
+    } catch (error) {
+      console.error('导出失败:', error);
+      alert('导出失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    }
   };
 
   return (
@@ -344,20 +401,92 @@ export default function WorkspacePage() {
             <div className="flex items-center justify-between border-b border-gray-200 p-4">
               <h3 className="text-lg font-semibold text-gray-900">生成结果</h3>
               <div className="flex gap-2">
+                {/* 导入按钮 */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,.pdf,.txt"
+                  onChange={handleImport}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting || isLoading}
+                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isImporting ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      导入中...
+                    </>
+                  ) : (
+                    <>
+                      <span>📥</span>
+                      导入
+                    </>
+                  )}
+                </button>
+
+                {/* 复制按钮 */}
                 <button
                   onClick={handleCopy}
                   disabled={!generatedContent}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
+                  <span>📋</span>
                   复制
                 </button>
-                <button
-                  onClick={handleDownload}
-                  disabled={!generatedContent}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  下载
-                </button>
+
+                {/* 导出菜单 */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    disabled={!generatedContent}
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span>📤</span>
+                    导出
+                    <svg
+                      className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {showExportMenu && (
+                    <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+                      <button
+                        onClick={() => handleExport('word')}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="font-bold text-blue-600">W</span>
+                        Word 文档
+                      </button>
+                      <button
+                        onClick={() => handleExport('pdf')}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="font-bold text-red-600">P</span>
+                        PDF 文档
+                      </button>
+                      <button
+                        onClick={() => handleExport('txt')}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <span className="font-bold text-gray-600">T</span>
+                        TXT 文档
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="p-6">
