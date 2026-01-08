@@ -9,16 +9,10 @@ import {
   exportAsTxt,
 } from '@/lib/fileUtils';
 import BrandIcons from '@/lib/brandIcons';
-import {
-  FileText,
-  Copy,
-  Download,
-  Upload,
-  X,
-  TrendingUp,
-  Award,
-  Zap,
-} from 'lucide-react';
+import Button, { GradientButton } from '@/components/Button';
+import Card, { CardBody } from '@/components/Card';
+import Navigation from '@/components/Navigation';
+import { Loader2 } from 'lucide-react';
 
 interface ContentStats {
   wordCount: number;
@@ -350,58 +344,43 @@ export default function WorkspacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
-      <nav className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
-                <BrandIcons.Logo size={24} />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">番茄AI写作助手</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">剩余生成次数: 5/5</span>
-              <Link href="/pricing" className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:from-indigo-600 hover:to-purple-700 shadow-md">
-                升级VIP
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <Navigation />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* 功能标签页 */}
-        <div className="mb-8 flex gap-4 border-b border-gray-200">
+        <div className="mb-8 flex gap-2 rounded-xl bg-white p-2 shadow-md">
           <button
             onClick={() => setActiveTab('write')}
-            className={`pb-4 px-4 font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
               activeTab === 'write'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
+            <BrandIcons.Writing size={18} />
             章节撰写
           </button>
           <button
             onClick={() => setActiveTab('polish')}
-            className={`pb-4 px-4 font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
               activeTab === 'polish'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
+            <BrandIcons.Sparkles size={18} />
             精修润色
           </button>
           <button
             onClick={() => setActiveTab('continue')}
-            className={`pb-4 px-4 font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
               activeTab === 'continue'
-                ? 'border-b-2 border-indigo-600 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
+            <BrandIcons.Zap size={18} />
             智能续写
           </button>
         </div>
@@ -410,114 +389,159 @@ export default function WorkspacePage() {
           {/* 左侧：输入区 */}
           <div className="space-y-6">
             {/* 章节信息 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">章节信息</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">章节号</label>
-                  <input
-                    type="number"
-                    value={chapterNum}
-                    onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    placeholder="1"
-                  />
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
+                    <BrandIcons.Book size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">章节信息</h3>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">目标字数</label>
-                  <input
-                    type="number"
-                    value={wordCount}
-                    onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    placeholder="2500"
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">章节号</label>
+                    <input
+                      type="number"
+                      value={chapterNum}
+                      onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
+                      className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      placeholder="1"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700">目标字数</label>
+                    <input
+                      type="number"
+                      value={wordCount}
+                      onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
+                      className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      placeholder="2500"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardBody>
+            </Card>
 
             {/* 故事背景 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">故事背景</h3>
-              <textarea
-                value={storyContext}
-                onChange={(e) => setStoryContext(e.target.value)}
-                rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="输入故事世界观、背景设定等..."
-              />
-            </div>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 p-2">
+                    <BrandIcons.AI size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">故事背景</h3>
+                </div>
+                <textarea
+                  value={storyContext}
+                  onChange={(e) => setStoryContext(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="输入故事世界观、背景设定等..."
+                />
+              </CardBody>
+            </Card>
 
             {/* 角色信息 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">角色信息</h3>
-              <textarea
-                value={characterInfo}
-                onChange={(e) => setCharacterInfo(e.target.value)}
-                rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="输入主要角色的性格、能力、关系等..."
-              />
-            </div>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg bg-gradient-to-br from-pink-100 to-orange-100 p-2">
+                    <BrandIcons.Sparkles size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">角色信息</h3>
+                </div>
+                <textarea
+                  value={characterInfo}
+                  onChange={(e) => setCharacterInfo(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="输入主要角色的性格、能力、关系等..."
+                />
+              </CardBody>
+            </Card>
 
             {/* 大纲 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">本章大纲</h3>
-              <textarea
-                value={plotOutline}
-                onChange={(e) => setPlotOutline(e.target.value)}
-                rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="输入本章的主要情节发展..."
-              />
-            </div>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 p-2">
+                    <BrandIcons.Export size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">本章大纲</h3>
+                </div>
+                <textarea
+                  value={plotOutline}
+                  onChange={(e) => setPlotOutline(e.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="输入本章的主要情节发展..."
+                />
+              </CardBody>
+            </Card>
 
             {/* 创作提示 */}
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">创作提示</h3>
-              <textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={6}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                placeholder="输入本章的具体创作要求，如：主角发现金手指，系统激活，获得超强能力..."
-              />
-            </div>
+            <Card>
+              <CardBody>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 p-2">
+                    <BrandIcons.Zap size={20} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">创作提示</h3>
+                </div>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={6}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="输入本章的具体创作要求，如：主角发现金手指，系统激活，获得超强能力..."
+                />
+              </CardBody>
+            </Card>
 
             {/* 操作按钮 */}
             <div className="flex gap-4">
-              <button
+              <GradientButton
                 onClick={handleGenerate}
-                disabled={isLoading}
-                className="flex-1 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                isLoading={isLoading}
+                icon={<BrandIcons.Zap size={18} />}
+                fullWidth
               >
-                {isLoading ? '生成中...' : 'AI生成章节'}
-              </button>
+                AI生成章节
+              </GradientButton>
               {activeTab === 'write' && (
-                <button
+                <Button
                   onClick={handlePolish}
                   disabled={isLoading || !generatedContent}
-                  className="flex-1 rounded-lg border-2 border-blue-600 px-6 py-3 font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  icon={<BrandIcons.Sparkles size={18} />}
+                  fullWidth
                 >
                   {isLoading ? '润色中...' : '精修润色'}
-                </button>
+                </Button>
               )}
               {activeTab === 'continue' && (
-                <button
+                <Button
                   onClick={handleContinue}
                   disabled={isLoading || !generatedContent}
-                  className="flex-1 rounded-lg border-2 border-purple-600 px-6 py-3 font-semibold text-purple-600 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  icon={<BrandIcons.Efficiency size={18} />}
+                  fullWidth
                 >
                   {isLoading ? '续写中...' : '智能续写'}
-                </button>
+                </Button>
               )}
             </div>
           </div>
 
           {/* 右侧：输出区 */}
-          <div className="rounded-xl bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-200 p-4">
-              <h3 className="text-lg font-semibold text-gray-900">生成结果</h3>
+          <Card>
+            <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
+                  <BrandIcons.Writing size={20} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">生成结果</h3>
+              </div>
               <div className="flex gap-2">
                 {/* 导入按钮 */}
                 <input
@@ -527,42 +551,35 @@ export default function WorkspacePage() {
                   onChange={handleImport}
                   className="hidden"
                 />
-                <button
+                <Button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting || isLoading}
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="ghost"
+                  icon={isImporting ? <Loader2 size={16} className="animate-spin" /> : <BrandIcons.Export size={16} />}
+                  size="sm"
                 >
-                  {isImporting ? (
-                    <>
-                      <Zap className="animate-spin" size={16} />
-                      导入中...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={16} />
-                      导入
-                    </>
-                  )}
-                </button>
+                  {isImporting ? '导入中...' : '导入'}
+                </Button>
 
                 {/* 复制按钮 */}
-                <button
+                <Button
                   onClick={handleCopy}
                   disabled={!generatedContent}
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="ghost"
+                  icon={<BrandIcons.Export size={16} />}
+                  size="sm"
                 >
-                  <Copy size={16} />
                   复制
-                </button>
+                </Button>
 
                 {/* 导出菜单 */}
                 <div className="relative">
                   <button
                     onClick={() => setShowExportMenu(!showExportMenu)}
                     disabled={!generatedContent}
-                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <Download size={16} />
+                    <BrandIcons.Export size={16} />
                     导出
                     <svg
                       className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
@@ -580,26 +597,26 @@ export default function WorkspacePage() {
                   </button>
 
                   {showExportMenu && (
-                    <div ref={exportMenuRef} className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div ref={exportMenuRef} className="absolute right-0 mt-2 w-40 rounded-xl border border-gray-200 bg-white shadow-xl">
                       <button
                         onClick={() => handleExport('word')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <FileText size={16} className="text-blue-600" />
+                        <BrandIcons.Export size={16} className="text-blue-600" />
                         Word 文档
                       </button>
                       <button
                         onClick={() => handleExport('pdf')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <FileText size={16} className="text-red-600" />
+                        <BrandIcons.Export size={16} className="text-red-600" />
                         PDF 文档
                       </button>
                       <button
                         onClick={() => handleExport('txt')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
-                        <FileText size={16} className="text-gray-600" />
+                        <BrandIcons.Export size={16} className="text-gray-600" />
                         TXT 文档
                       </button>
                     </div>
@@ -610,11 +627,11 @@ export default function WorkspacePage() {
 
             {/* 统计数据展示 */}
             {contentStats && (
-              <div className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-4">
+              <div className="border-b border-gray-200/50 bg-gradient-to-r from-indigo-50 to-purple-50 p-6">
                 <div className="grid gap-4 md:grid-cols-4">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-white p-2 shadow-sm">
-                      <FileText className="text-indigo-600" size={20} />
+                    <div className="rounded-xl bg-white p-3 shadow-sm">
+                      <BrandIcons.Book size={24} className="text-indigo-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">字数统计</p>
@@ -622,8 +639,8 @@ export default function WorkspacePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-white p-2 shadow-sm">
-                      <Award className="text-purple-600" size={20} />
+                    <div className="rounded-xl bg-white p-3 shadow-sm">
+                      <BrandIcons.Quality size={24} className="text-purple-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">质量评分</p>
@@ -631,8 +648,8 @@ export default function WorkspacePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-white p-2 shadow-sm">
-                      <TrendingUp className="text-pink-600" size={20} />
+                    <div className="rounded-xl bg-white p-3 shadow-sm">
+                      <BrandIcons.Stats size={24} className="text-pink-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">预估完读率</p>
@@ -640,8 +657,8 @@ export default function WorkspacePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-white p-2 shadow-sm">
-                      <Zap className="text-orange-600" size={20} />
+                    <div className="rounded-xl bg-white p-3 shadow-sm">
+                      <BrandIcons.Shuangdian size={24} className="text-orange-600" />
                     </div>
                     <div>
                       <p className="text-xs text-gray-600">爽点数量</p>
@@ -652,11 +669,13 @@ export default function WorkspacePage() {
               </div>
             )}
 
-            <div className="p-6">
+            <CardBody className="min-h-[600px]">
               {isLoading ? (
-                <div className="flex min-h-[600px] items-center justify-center">
+                <div className="flex min-h-[500px] items-center justify-center">
                   <div className="text-center">
-                    <BrandIcons.Writing size={64} className="mx-auto mb-4 text-indigo-600 animate-pulse" />
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100">
+                      <BrandIcons.Writing size={40} className="text-indigo-600 animate-pulse" />
+                    </div>
                     <p className="text-gray-600">AI正在创作中，请稍候...</p>
                   </div>
                 </div>
@@ -667,15 +686,17 @@ export default function WorkspacePage() {
                   </pre>
                 </div>
               ) : (
-                <div className="flex min-h-[600px] items-center justify-center">
+                <div className="flex min-h-[500px] items-center justify-center">
                   <div className="text-center text-gray-400">
-                    <FileText size={64} className="mx-auto mb-4" />
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200">
+                      <BrandIcons.Book size={40} />
+                    </div>
                     <p>输入创作信息，点击"AI生成章节"开始创作</p>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
+            </CardBody>
+          </Card>
         </div>
       </div>
     </div>

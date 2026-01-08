@@ -2,16 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import {
-  CheckCircle,
-  Clock,
-  CreditCard,
-  Smartphone,
-  QrCode,
-  ArrowLeft,
-  AlertCircle,
-} from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
+import Button, { GradientButton } from '@/components/Button';
+import Card, { CardBody } from '@/components/Card';
 
 export default function PaymentPage() {
   const searchParams = useSearchParams();
@@ -139,63 +133,61 @@ export default function PaymentPage() {
       {/* 支付成功 */}
       {paymentStatus === 'success' && (
         <div className="flex min-h-screen items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-            <div className="mb-6 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="text-green-600" size={40} />
+          <Card className="w-full max-w-md card-shadow">
+            <CardBody>
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle className="text-green-600" size={40} />
+                </div>
+                <h2 className="text-2xl font-bold gradient-text">支付成功！</h2>
+                <p className="mt-2 text-gray-600">您的会员已激活</p>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">支付成功！</h2>
-              <p className="mt-2 text-gray-600">您的会员已激活</p>
-            </div>
 
-            <div className="space-y-4 rounded-lg bg-gray-50 p-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">订单号</span>
-                <span className="font-medium text-gray-900">{order.transactionId}</span>
+              <div className="space-y-4 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 p-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">订单号</span>
+                  <span className="font-medium text-gray-900">{order.transactionId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">套餐</span>
+                  <span className="font-medium text-gray-900">
+                    {order.level === 'BASIC' && '基础版'}
+                    {order.level === 'PREMIUM' && '高级版'}
+                    {order.level === 'ENTERPRISE' && '企业版'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">支付金额</span>
+                  <span className="text-lg font-bold gradient-text">¥{(order.amount / 100).toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">套餐</span>
-                <span className="font-medium text-gray-900">
-                  {order.level === 'BASIC' && '基础版'}
-                  {order.level === 'PREMIUM' && '高级版'}
-                  {order.level === 'ENTERPRISE' && '企业版'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">支付金额</span>
-                <span className="text-lg font-bold text-gray-900">¥{(order.amount / 100).toFixed(2)}</span>
-              </div>
-            </div>
 
-            <button
-              onClick={handleBackToWorkspace}
-              className="mt-6 w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all"
-            >
-              开始使用
-            </button>
-          </div>
+              <GradientButton onClick={handleBackToWorkspace} fullWidth>
+                开始使用
+              </GradientButton>
+            </CardBody>
+          </Card>
         </div>
       )}
 
       {/* 支付失败 */}
       {paymentStatus === 'failed' && (
         <div className="flex min-h-screen items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
-            <div className="mb-6 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
-                <AlertCircle className="text-red-600" size={40} />
+          <Card className="w-full max-w-md card-shadow">
+            <CardBody>
+              <div className="mb-6 text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+                  <AlertCircle className="text-red-600" size={40} />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">支付已超时</h2>
+                <p className="mt-2 text-gray-600">订单已失效，请重新下单</p>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">支付已超时</h2>
-              <p className="mt-2 text-gray-600">订单已失效，请重新下单</p>
-            </div>
 
-            <button
-              onClick={handleBackToPricing}
-              className="w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all"
-            >
-              重新下单
-            </button>
-          </div>
+              <GradientButton onClick={handleBackToPricing} fullWidth>
+                重新下单
+              </GradientButton>
+            </CardBody>
+          </Card>
         </div>
       )}
 
@@ -213,131 +205,168 @@ export default function PaymentPage() {
           <div className="grid gap-8 lg:grid-cols-2">
             {/* 左侧：订单信息 */}
             <div>
-              <div className="mb-6 rounded-2xl bg-white p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">订单详情</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">订单号</span>
-                    <span className="font-medium text-gray-900">{order.transactionId}</span>
+              <Card className="mb-6">
+                <CardBody>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
+                      <BrandIcons.Membership level={order?.level} size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">订单详情</h3>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">套餐</span>
-                    <span className="font-medium text-gray-900">
-                      {order.level === 'BASIC' && '基础版'}
-                      {order.level === 'PREMIUM' && '高级版'}
-                      {order.level === 'ENTERPRISE' && '企业版'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">周期</span>
-                    <span className="font-medium text-gray-900">
-                      {order.billingCycle === 'monthly' ? '月付' : '年付'}
-                    </span>
-                  </div>
-                  <div className="border-t border-gray-200 pt-4">
+                  <div className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-lg font-bold text-gray-900">支付金额</span>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        ¥{(order.amount / 100).toFixed(2)}
+                      <span className="text-gray-600">订单号</span>
+                      <span className="font-medium text-gray-900">{order.transactionId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">套餐</span>
+                      <span className="font-medium text-gray-900">
+                        {order.level === 'BASIC' && '基础版'}
+                        {order.level === 'PREMIUM' && '高级版'}
+                        {order.level === 'ENTERPRISE' && '企业版'}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">周期</span>
+                      <span className="font-medium text-gray-900">
+                        {order.billingCycle === 'monthly' ? '月付' : '年付'}
+                      </span>
+                    </div>
+                    <div className="border-t border-gray-200/50 pt-4">
+                      <div className="flex justify-between">
+                        <span className="text-lg font-bold text-gray-900">支付金额</span>
+                        <span className="text-2xl font-bold gradient-text">
+                          ¥{(order.amount / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardBody>
+              </Card>
 
               {/* 倒计时 */}
-              <div className="rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 p-6 text-white shadow-lg">
-                <div className="flex items-center gap-3">
-                  <Clock size={32} />
-                  <div>
-                    <p className="text-sm opacity-90">支付剩余时间</p>
-                    <p className="text-3xl font-bold">{formatCountdown(countdown)}</p>
+              <Card className="card-shadow">
+                <CardBody className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                  <div className="flex items-center gap-3">
+                    <Clock size={32} />
+                    <div>
+                      <p className="text-sm opacity-90">支付剩余时间</p>
+                      <p className="text-3xl font-bold">{formatCountdown(countdown)}</p>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardBody>
+              </Card>
 
               {/* 支付说明 */}
-              <div className="mt-6 rounded-2xl bg-white p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-bold text-gray-900">支付说明</h3>
-                <ul className="space-y-3 text-sm text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
-                    <span>请使用手机扫码支付，支付成功后自动跳转</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
-                    <span>支付有效期为5分钟，超时后需重新下单</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
-                    <span>如有问题请联系客服</span>
-                  </li>
-                </ul>
-              </div>
+              <Card className="mt-6">
+                <CardBody>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="rounded-xl bg-gradient-to-br from-green-100 to-green-200 p-2">
+                      <BrandIcons.Quality size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900">支付说明</h3>
+                  </div>
+                  <ul className="space-y-3 text-sm text-gray-600">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
+                      <span>请使用手机扫码支付，支付成功后自动跳转</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
+                      <span>支付有效期为5分钟，超时后需重新下单</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
+                      <span>如有问题请联系客服</span>
+                    </li>
+                  </ul>
+                </CardBody>
+              </Card>
             </div>
 
             {/* 右侧：支付方式 */}
             <div>
-              <div className="rounded-2xl bg-white p-6 shadow-lg">
-                <h3 className="mb-6 text-lg font-bold text-gray-900">选择支付方式</h3>
-
-                {/* 支付方式选择 */}
-                <div className="mb-6 space-y-3">
-                  <button
-                    onClick={() => setPaymentMethod('alipay')}
-                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                      paymentMethod === 'alipay'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <CreditCard size={24} className={paymentMethod === 'alipay' ? 'text-blue-600' : 'text-gray-600'} />
-                      <span className="font-medium">支付宝</span>
+              <Card>
+                <CardBody>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
+                      <BrandIcons.Export size={20} />
                     </div>
-                    {paymentMethod === 'alipay' && (
-                      <div className="h-6 w-6 rounded-full bg-blue-600">
-                        <CheckCircle className="m-1 text-white" size={16} />
-                      </div>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setPaymentMethod('wechat')}
-                    className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                      paymentMethod === 'wechat'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Smartphone size={24} className={paymentMethod === 'wechat' ? 'text-green-600' : 'text-gray-600'} />
-                      <span className="font-medium">微信支付</span>
-                    </div>
-                    {paymentMethod === 'wechat' && (
-                      <div className="h-6 w-6 rounded-full bg-green-600">
-                        <CheckCircle className="m-1 text-white" size={16} />
-                      </div>
-                    )}
-                  </button>
-                </div>
-
-                {/* 二维码 */}
-                <div className="mb-6 rounded-xl border-2 border-dashed border-gray-300 p-8 text-center">
-                  <div className="mb-4 flex justify-center">
-                    <QrCode size={200} className="text-gray-300" />
+                    <h3 className="text-lg font-bold text-gray-900">选择支付方式</h3>
                   </div>
-                  <p className="text-sm text-gray-600">请使用{paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付</p>
-                </div>
 
-                {/* 支付金额确认 */}
-                <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4 text-center">
-                  <p className="text-sm text-gray-600">支付金额</p>
-                  <p className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    ¥{(order.amount / 100).toFixed(2)}
-                  </p>
-                </div>
-              </div>
+                  {/* 支付方式选择 */}
+                  <div className="mb-6 space-y-3">
+                    <button
+                      onClick={() => setPaymentMethod('alipay')}
+                      className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
+                        paymentMethod === 'alipay'
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200/50 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`rounded-lg p-2 ${
+                          paymentMethod === 'alipay'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <BrandIcons.Export size={20} />
+                        </div>
+                        <span className="font-medium">支付宝</span>
+                      </div>
+                      {paymentMethod === 'alipay' && (
+                        <div className="h-6 w-6 rounded-full bg-blue-600">
+                          <CheckCircle className="m-1 text-white" size={16} />
+                        </div>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setPaymentMethod('wechat')}
+                      className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
+                        paymentMethod === 'wechat'
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200/50 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`rounded-lg p-2 ${
+                          paymentMethod === 'wechat'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <BrandIcons.Export size={20} />
+                        </div>
+                        <span className="font-medium">微信支付</span>
+                      </div>
+                      {paymentMethod === 'wechat' && (
+                        <div className="h-6 w-6 rounded-full bg-green-600">
+                          <CheckCircle className="m-1 text-white" size={16} />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* 二维码 */}
+                  <div className="mb-6 rounded-xl border-2 border-dashed border-gray-300 p-8 text-center">
+                    <div className="mb-4 flex justify-center">
+                      <div className="h-48 w-48 rounded-lg bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">二维码占位</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">请使用{paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付</p>
+                  </div>
+
+                  {/* 支付金额确认 */}
+                  <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4 text-center">
+                    <p className="text-sm text-gray-600">支付金额</p>
+                    <p className="text-3xl font-bold gradient-text">
+                      ¥{(order.amount / 100).toFixed(2)}
+                    </p>
+                  </div>
+                </CardBody>
+              </Card>
             </div>
           </div>
         </div>
