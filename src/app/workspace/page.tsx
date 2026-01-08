@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
   readFileContent,
@@ -22,6 +22,27 @@ export default function WorkspacePage() {
   const [isImporting, setIsImporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭导出菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -150,14 +171,14 @@ export default function WorkspacePage() {
         throw new Error('无法读取响应流');
       }
 
-      let fullContent = '';
+      let newContent = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-        setGeneratedContent(generatedContent + fullContent);
+        newContent += chunk;
+        setGeneratedContent(generatedContent + '\n\n' + newContent);
       }
 
     } catch (error) {
@@ -205,7 +226,7 @@ export default function WorkspacePage() {
     }
   };
 
-  const handleExport = (format: 'word' | 'pdf' | 'txt') => {
+  const handleExport = async (format: 'word' | 'pdf' | 'txt') => {
     if (!generatedContent.trim()) {
       alert('没有内容可导出');
       return;
@@ -216,7 +237,7 @@ export default function WorkspacePage() {
     try {
       switch (format) {
         case 'word':
-          exportAsWord(generatedContent, filename);
+          await exportAsWord(generatedContent, filename);
           break;
         case 'pdf':
           exportAsPdf(generatedContent, filename);
@@ -462,7 +483,7 @@ export default function WorkspacePage() {
                   </button>
 
                   {showExportMenu && (
-                    <div className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div ref={exportMenuRef} className="absolute right-0 mt-2 w-40 rounded-lg border border-gray-200 bg-white shadow-lg">
                       <button
                         onClick={() => handleExport('word')}
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
