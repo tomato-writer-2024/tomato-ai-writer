@@ -1,6 +1,6 @@
 import mammoth from 'mammoth';
-// @ts-ignore
-import pdf from 'pdf-parse';
+// @ts-ignore - Use dynamic import for pdf-parse to avoid default export issues
+const pdfParse = () => import('pdf-parse');
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { jsPDF } from 'jspdf';
 
@@ -33,6 +33,8 @@ export async function readPdfFile(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const pdf = await pdfParse();
+    // @ts-ignore
     const data = await pdf(buffer);
 
     // 检查读取结果是否为空

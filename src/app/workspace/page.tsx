@@ -11,8 +11,10 @@ import {
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
+import { Input, Textarea, Select } from '@/components/Input';
+import { Badge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download, Copy, Upload } from 'lucide-react';
 
 interface ContentStats {
   wordCount: number;
@@ -398,26 +400,27 @@ export default function WorkspacePage() {
                   <h3 className="text-lg font-semibold text-gray-900">章节信息</h3>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">章节号</label>
-                    <input
-                      type="number"
-                      value={chapterNum}
-                      onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                      placeholder="1"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-gray-700">目标字数</label>
-                    <input
-                      type="number"
-                      value={wordCount}
-                      onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
-                      className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                      placeholder="2500"
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    label="章节号"
+                    value={chapterNum.toString()}
+                    onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
+                    placeholder="1"
+                    fullWidth
+                  />
+                  <Select
+                    label="目标字数"
+                    value={wordCount.toString()}
+                    onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
+                    options={[
+                      { value: '2000', label: '2000字' },
+                      { value: '2500', label: '2500字' },
+                      { value: '3000', label: '3000字' },
+                      { value: '4000', label: '4000字' },
+                      { value: '5000', label: '5000字' },
+                    ]}
+                    fullWidth
+                  />
                 </div>
               </CardBody>
             </Card>
@@ -431,12 +434,12 @@ export default function WorkspacePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">故事背景</h3>
                 </div>
-                <textarea
+                <Textarea
                   value={storyContext}
                   onChange={(e) => setStoryContext(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="输入故事世界观、背景设定等..."
+                  fullWidth
                 />
               </CardBody>
             </Card>
@@ -450,12 +453,12 @@ export default function WorkspacePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">角色信息</h3>
                 </div>
-                <textarea
+                <Textarea
                   value={characterInfo}
                   onChange={(e) => setCharacterInfo(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="输入主要角色的性格、能力、关系等..."
+                  fullWidth
                 />
               </CardBody>
             </Card>
@@ -469,12 +472,12 @@ export default function WorkspacePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">本章大纲</h3>
                 </div>
-                <textarea
+                <Textarea
                   value={plotOutline}
                   onChange={(e) => setPlotOutline(e.target.value)}
                   rows={4}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="输入本章的主要情节发展..."
+                  fullWidth
                 />
               </CardBody>
             </Card>
@@ -488,12 +491,12 @@ export default function WorkspacePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">创作提示</h3>
                 </div>
-                <textarea
+                <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   rows={6}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="输入本章的具体创作要求，如：主角发现金手指，系统激活，获得超强能力..."
+                  fullWidth
                 />
               </CardBody>
             </Card>
@@ -555,8 +558,9 @@ export default function WorkspacePage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isImporting || isLoading}
                   variant="ghost"
-                  icon={isImporting ? <Loader2 size={16} className="animate-spin" /> : <BrandIcons.Export size={16} />}
+                  icon={isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                   size="sm"
+                  title="导入文件"
                 >
                   {isImporting ? '导入中...' : '导入'}
                 </Button>
@@ -566,8 +570,9 @@ export default function WorkspacePage() {
                   onClick={handleCopy}
                   disabled={!generatedContent}
                   variant="ghost"
-                  icon={<BrandIcons.Export size={16} />}
+                  icon={<Copy size={16} />}
                   size="sm"
+                  title="复制内容"
                 >
                   复制
                 </Button>
@@ -579,7 +584,7 @@ export default function WorkspacePage() {
                     disabled={!generatedContent}
                     className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <BrandIcons.Export size={16} />
+                    <Download size={16} />
                     导出
                     <svg
                       className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
@@ -597,27 +602,42 @@ export default function WorkspacePage() {
                   </button>
 
                   {showExportMenu && (
-                    <div ref={exportMenuRef} className="absolute right-0 mt-2 w-40 rounded-xl border border-gray-200 bg-white shadow-xl">
+                    <div ref={exportMenuRef} className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl animate-fadeIn">
                       <button
                         onClick={() => handleExport('word')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-colors first:rounded-t-xl"
                       >
-                        <BrandIcons.Export size={16} className="text-blue-600" />
-                        Word 文档
+                        <div className="rounded-lg bg-blue-100 p-1.5">
+                          <Download size={16} className="text-blue-600" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Word 文档</span>
+                          <span className="text-xs text-gray-500">.docx 格式</span>
+                        </div>
                       </button>
                       <button
                         onClick={() => handleExport('pdf')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-colors"
                       >
-                        <BrandIcons.Export size={16} className="text-red-600" />
-                        PDF 文档
+                        <div className="rounded-lg bg-red-100 p-1.5">
+                          <Download size={16} className="text-red-600" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">PDF 文档</span>
+                          <span className="text-xs text-gray-500">.pdf 格式</span>
+                        </div>
                       </button>
                       <button
                         onClick={() => handleExport('txt')}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 transition-colors last:rounded-b-xl"
                       >
-                        <BrandIcons.Export size={16} className="text-gray-600" />
-                        TXT 文档
+                        <div className="rounded-lg bg-gray-100 p-1.5">
+                          <Download size={16} className="text-gray-600" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">TXT 文档</span>
+                          <span className="text-xs text-gray-500">纯文本格式</span>
+                        </div>
                       </button>
                     </div>
                   )}

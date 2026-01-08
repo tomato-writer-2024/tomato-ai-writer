@@ -9,7 +9,7 @@ interface CardProps {
   border?: boolean;
 }
 
-export default function Card({
+export function Card({
   children,
   className = '',
   hover = true,
@@ -148,3 +148,5 @@ export function FeatureCard({ icon, title, description, className = '' }: Featur
     </Card>
   );
 }
+
+export default Card;

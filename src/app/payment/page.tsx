@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, Clock, AlertCircle, ArrowLeft } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 
-export default function PaymentPage() {
+function PaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
@@ -372,5 +372,13 @@ export default function PaymentPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">加载中...</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
