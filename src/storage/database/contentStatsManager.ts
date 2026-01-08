@@ -41,12 +41,12 @@ export class ContentStatsManager {
 			conditions.push(eq(contentStats.chapterId, filters.chapterId));
 		}
 
-		let query = db.select().from(contentStats);
+		let query = db.select().from(contentStats) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
 
-		return query.orderBy(desc(contentStats.createdAt)).limit(limit).offset(skip);
+		return query.orderBy(desc(contentStats.createdAt)).limit(limit).offset(skip) as unknown as ContentStats[];
 	}
 
 	/**

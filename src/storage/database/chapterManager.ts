@@ -47,12 +47,12 @@ export class ChapterManager {
 		// 添加软删除过滤
 		conditions.push(eq(chapters.isDeleted, false));
 
-		let query = db.select().from(chapters);
+		let query = db.select().from(chapters) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
 
-		return query.orderBy(chapters.chapterNum).limit(limit).offset(skip);
+		return query.orderBy(chapters.chapterNum).limit(limit).offset(skip) as unknown as Chapter[];
 	}
 
 	/**

@@ -41,12 +41,12 @@ export class UsageLogManager {
 			conditions.push(eq(usageLogs.workId, filters.workId));
 		}
 
-		let query = db.select().from(usageLogs);
+		let query = db.select().from(usageLogs) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
 
-		return query.orderBy(desc(usageLogs.createdAt)).limit(limit).offset(skip);
+		return query.orderBy(desc(usageLogs.createdAt)).limit(limit).offset(skip) as unknown as UsageLog[];
 	}
 
 	/**

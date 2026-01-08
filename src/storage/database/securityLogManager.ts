@@ -41,12 +41,12 @@ export class SecurityLogManager {
 			conditions.push(eq(securityLogs.status, filters.status));
 		}
 
-		let query = db.select().from(securityLogs);
+		let query = db.select().from(securityLogs) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
 
-		return query.orderBy(desc(securityLogs.createdAt)).limit(limit).offset(skip);
+		return query.orderBy(desc(securityLogs.createdAt)).limit(limit).offset(skip) as unknown as SecurityLog[];
 	}
 
 	/**

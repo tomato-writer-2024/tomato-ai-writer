@@ -58,7 +58,7 @@ export class NovelManager {
 		// 添加软删除过滤
 		conditions.push(eq(novels.isDeleted, false));
 
-		let query = db.select().from(novels);
+		let query = db.select().from(novels) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
@@ -71,7 +71,7 @@ export class NovelManager {
 			query = query.orderBy(orderColumn);
 		}
 
-		return query.limit(limit).offset(skip);
+		return query.limit(limit).offset(skip) as unknown as Novel[];
 	}
 
 	/**

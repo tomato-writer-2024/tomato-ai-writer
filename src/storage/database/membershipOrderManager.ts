@@ -41,12 +41,12 @@ export class MembershipOrderManager {
 			conditions.push(eq(membershipOrders.level, filters.level));
 		}
 
-		let query = db.select().from(membershipOrders);
+		let query = db.select().from(membershipOrders) as any;
 		if (conditions.length > 0) {
 			query = query.where(and(...conditions));
 		}
 
-		return query.orderBy(desc(membershipOrders.createdAt)).limit(limit).offset(skip);
+		return query.orderBy(desc(membershipOrders.createdAt)).limit(limit).offset(skip) as unknown as MembershipOrder[];
 	}
 
 	/**

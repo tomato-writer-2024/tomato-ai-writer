@@ -48,7 +48,7 @@ export async function uploadFile(options: UploadOptions): Promise<string> {
  */
 export async function streamUploadFile(options: {
 	fileName: string;
-	stream: ReadableStream;
+	stream: ReadableStream<Uint8Array>;
 	contentType?: string;
 	bucket?: string;
 }): Promise<string> {
@@ -56,7 +56,7 @@ export async function streamUploadFile(options: {
 
 	const actualKey = await storage.streamUploadFile({
 		fileName,
-		stream,
+		stream: stream as any,
 		contentType,
 		bucket,
 	});
