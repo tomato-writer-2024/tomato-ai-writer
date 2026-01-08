@@ -9,11 +9,30 @@ import {
   exportAsTxt,
 } from '@/lib/fileUtils';
 import BrandIcons from '@/lib/brandIcons';
+import {
+  FileText,
+  Copy,
+  Download,
+  Upload,
+  X,
+  TrendingUp,
+  Award,
+  Zap,
+} from 'lucide-react';
+
+interface ContentStats {
+  wordCount: number;
+  qualityScore: number;
+  completionRate: number;
+  shuangdianCount: number;
+  estimatedReadTime: number;
+}
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState('write');
   const [prompt, setPrompt] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
+  const [contentStats, setContentStats] = useState<ContentStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chapterNum, setChapterNum] = useState(1);
   const [storyContext, setStoryContext] = useState('');
@@ -44,6 +63,67 @@ export default function WorkspacePage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showExportMenu]);
+
+  // 计算内容统计
+  const calculateContentStats = (content: string): ContentStats => {
+    const wordCount = content.length;
+
+    // 计算爽点数量
+    const shuangdianKeywords = [
+      '打脸', '碾压', '震惊', '恐怖', '变态',
+      '牛逼', '炸裂', '秒杀', '无敌', '巅峰',
+      '突破', '进阶', '蜕变', '觉醒', '爆发',
+      '美女', '心动', '脸红', '迷恋', '痴迷',
+      '财富', '宝物', '神药', '秘籍', '传承',
+      '智商', '算计', '布局', '谋略', '智慧',
+      '反差', '逆袭', '翻身', '超越',
+    ];
+    let shuangdianCount = 0;
+    shuangdianKeywords.forEach((keyword) => {
+      shuangdianCount += (content.match(new RegExp(keyword, 'g')) || []).length;
+    });
+
+    // 计算完读率（简化版算法）
+    const density = shuangdianCount / (wordCount / 500);
+    const densityScore = Math.min(30, density * 15);
+
+    const paragraphs = content.split('\n').filter((p) => p.trim().length > 0);
+    const avgParaLength = wordCount / (paragraphs.length || 1);
+    const lengthScore = avgParaLength >= 50 && avgParaLength <= 150 ? 20 : 10;
+
+    const emotionWords = ['爽', '炸裂', '牛逼', '震撼', '感动', '期待', '紧张', '激动', '兴奋'];
+    let emotionCount = 0;
+    emotionWords.forEach((word) => {
+      emotionCount += (content.match(new RegExp(word, 'g')) || []).length;
+    });
+    const emotionScore = Math.min(15, emotionCount * 2);
+
+    const lastParagraph = paragraphs[paragraphs.length - 1] || '';
+    const hasHook = lastParagraph.includes('吗') || lastParagraph.includes('？') || lastParagraph.includes('...');
+    const hookScore = hasHook ? 15 : 5;
+
+    const totalScore = densityScore + lengthScore + emotionScore + hookScore;
+    const completionRate = 60 + (totalScore / 100) * 40;
+
+    // 计算质量评分
+    const qualityScore = Math.min(100, Math.max(0,
+      (wordCount >= 1000 ? 20 : (wordCount / 1000) * 20) +
+      (completionRate * 0.4) +
+      Math.min(20, density * 10) +
+      15
+    ));
+
+    // 估算阅读时间（500字/分钟）
+    const estimatedReadTime = (wordCount / 500) * 60;
+
+    return {
+      wordCount,
+      qualityScore: Math.round(qualityScore),
+      completionRate: Math.round(completionRate),
+      shuangdianCount,
+      estimatedReadTime: Math.round(estimatedReadTime),
+    };
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -90,6 +170,9 @@ export default function WorkspacePage() {
         setGeneratedContent(fullContent);
       }
 
+      // 计算内容统计
+      setContentStats(calculateContentStats(fullContent));
+
     } catch (error) {
       console.error('生成失败:', error);
       alert('生成失败，请稍后重试');
@@ -133,6 +216,9 @@ export default function WorkspacePage() {
         fullContent += chunk;
         setGeneratedContent(fullContent);
       }
+
+      // 计算内容统计
+      setContentStats(calculateContentStats(fullContent));
 
     } catch (error) {
       console.error('润色失败:', error);
@@ -181,7 +267,11 @@ export default function WorkspacePage() {
         const chunk = decoder.decode(value, { stream: true });
         newContent += chunk;
         // 只更新新累积的内容，避免重复
-        setGeneratedContent(originalContent + '\n\n' + newContent);
+        const fullContent = originalContent + '\n\n' + newContent;
+        setGeneratedContent(fullContent);
+
+        // 计算内容统计
+        setContentStats(calculateContentStats(fullContent));
       }
 
     } catch (error) {
@@ -217,6 +307,8 @@ export default function WorkspacePage() {
     try {
       const content = await readFileContent(file);
       setGeneratedContent(content);
+      // 计算内容统计
+      setContentStats(calculateContentStats(content));
       alert('文件导入成功！');
     } catch (error) {
       console.error('导入失败:', error);
@@ -442,12 +534,12 @@ export default function WorkspacePage() {
                 >
                   {isImporting ? (
                     <>
-                      <span className="animate-spin">⏳</span>
+                      <Zap className="animate-spin" size={16} />
                       导入中...
                     </>
                   ) : (
                     <>
-                      <span>📥</span>
+                      <Upload size={16} />
                       导入
                     </>
                   )}
@@ -459,7 +551,7 @@ export default function WorkspacePage() {
                   disabled={!generatedContent}
                   className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>📋</span>
+                  <Copy size={16} />
                   复制
                 </button>
 
@@ -470,7 +562,7 @@ export default function WorkspacePage() {
                     disabled={!generatedContent}
                     className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>📤</span>
+                    <Download size={16} />
                     导出
                     <svg
                       className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
@@ -493,21 +585,21 @@ export default function WorkspacePage() {
                         onClick={() => handleExport('word')}
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <span className="font-bold text-blue-600">W</span>
+                        <FileText size={16} className="text-blue-600" />
                         Word 文档
                       </button>
                       <button
                         onClick={() => handleExport('pdf')}
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <span className="font-bold text-red-600">P</span>
+                        <FileText size={16} className="text-red-600" />
                         PDF 文档
                       </button>
                       <button
                         onClick={() => handleExport('txt')}
                         className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                        <span className="font-bold text-gray-600">T</span>
+                        <FileText size={16} className="text-gray-600" />
                         TXT 文档
                       </button>
                     </div>
@@ -515,11 +607,56 @@ export default function WorkspacePage() {
                 </div>
               </div>
             </div>
+
+            {/* 统计数据展示 */}
+            {contentStats && (
+              <div className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-4">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white p-2 shadow-sm">
+                      <FileText className="text-indigo-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">字数统计</p>
+                      <p className="text-lg font-bold text-gray-900">{contentStats.wordCount}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white p-2 shadow-sm">
+                      <Award className="text-purple-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">质量评分</p>
+                      <p className="text-lg font-bold text-gray-900">{contentStats.qualityScore}分</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white p-2 shadow-sm">
+                      <TrendingUp className="text-pink-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">预估完读率</p>
+                      <p className="text-lg font-bold text-gray-900">{contentStats.completionRate}%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-white p-2 shadow-sm">
+                      <Zap className="text-orange-600" size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">爽点数量</p>
+                      <p className="text-lg font-bold text-gray-900">{contentStats.shuangdianCount}个</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="p-6">
               {isLoading ? (
                 <div className="flex min-h-[600px] items-center justify-center">
                   <div className="text-center">
-                    <div className="mb-4 text-4xl">✨</div>
+                    <BrandIcons.Writing size={64} className="mx-auto mb-4 text-indigo-600 animate-pulse" />
                     <p className="text-gray-600">AI正在创作中，请稍候...</p>
                   </div>
                 </div>
@@ -532,7 +669,7 @@ export default function WorkspacePage() {
               ) : (
                 <div className="flex min-h-[600px] items-center justify-center">
                   <div className="text-center text-gray-400">
-                    <div className="mb-4 text-6xl">📝</div>
+                    <FileText size={64} className="mx-auto mb-4" />
                     <p>输入创作信息，点击"AI生成章节"开始创作</p>
                   </div>
                 </div>
