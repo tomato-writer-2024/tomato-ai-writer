@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userManager, authManager } from '@/storage/database';
+import { userManager } from '@/storage/database';
 import {
   hashPassword,
   generateAccessToken,
   generateRefreshToken,
+  verifyToken,
   getClientIp,
   checkUserQuota,
 } from '@/lib/auth';

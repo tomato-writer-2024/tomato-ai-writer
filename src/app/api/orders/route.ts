@@ -1,166 +1,132 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { orderManager, userManager } from '@/storage/database';
-import { MembershipLevel, OrderStatus } from '@/storage/database';
-import { verifyToken, checkUserQuota } from '@/lib/auth';
+import { extractUserFromRequest } from '@/lib/auth';
+import { membershipOrderManager } from '@/storage/database';
+import { MEMBERSHIP_PRICING } from '@/lib/types/user';
 
 /**
- * 创建会员订单API
+ * 会员定价配置（单位：元）
  */
-export async function POST(request: NextRequest) {
-  try {
-    // 验证token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未授权' },
-        { status: 401 }
-      );
-    }
+const MEMBERSHIP_PRICES = {
+	FREE: { monthly: 0, yearly: 0 },
+	BASIC: { monthly: 29, yearly: 261 },
+	PREMIUM: { monthly: 99, yearly: 891 },
+	ENTERPRISE: { monthly: 299, yearly: 2691 },
+};
 
-    const payload = verifyToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { success: false, error: '令牌无效' },
-        { status: 401 }
-      );
-    }
+/**
+ * 获取用户的订单列表
+ */
+export async function GET(request: NextRequest) {
+	try {
+		// 验证用户身份
+		const { user, error } = await extractUserFromRequest(request);
+		if (error) {
+			return NextResponse.json({ error }, { status: 401 });
+		}
 
-    // 获取用户信息
-    const user = await userManager.getUserById(payload.userId);
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: '用户不存在' },
-        { status: 404 }
-      );
-    }
+		// 获取查询参数
+		const { searchParams } = new URL(request.url);
+		const skip = parseInt(searchParams.get('skip') || '0');
+		const limit = parseInt(searchParams.get('limit') || '20');
 
-    // 获取请求体
-    const { membershipLevel, billingCycle } = await request.json();
+		// 获取订单列表
+		const orders = await membershipOrderManager.getOrdersByUserId(user.id, {
+			skip,
+			limit,
+		});
 
-    // 验证参数
-    if (!membershipLevel || !billingCycle) {
-      return NextResponse.json(
-        { success: false, error: '参数不完整' },
-        { status: 400 }
-      );
-    }
+		// 获取消费统计
+		const stats = await membershipOrderManager.getUserSpendingStats(user.id);
 
-    // 验证会员等级
-    const validLevels = [MembershipLevel.FREE, MembershipLevel.BASIC, MembershipLevel.PREMIUM, MembershipLevel.ENTERPRISE];
-    if (!validLevels.includes(membershipLevel)) {
-      return NextResponse.json(
-        { success: false, error: '无效的会员等级' },
-        { status: 400 }
-      );
-    }
-
-    // 验证计费周期
-    if (billingCycle !== 'monthly' && billingCycle !== 'yearly') {
-      return NextResponse.json(
-        { success: false, error: '无效的计费周期' },
-        { status: 400 }
-      );
-    }
-
-    // 从统一的定价配置中获取价格
-    const { MEMBERSHIP_PRICING } = await import('@/lib/types/user');
-    const pricing = MEMBERSHIP_PRICING[membershipLevel as keyof typeof MEMBERSHIP_PRICING];
-    const price = billingCycle === 'monthly' ? pricing.monthly : pricing.yearly;
-
-    // 计算会员到期时间
-    const now = new Date();
-    const membershipExpireAt = new Date(now);
-    if (billingCycle === 'monthly') {
-      membershipExpireAt.setMonth(membershipExpireAt.getMonth() + 1);
-    } else {
-      membershipExpireAt.setFullYear(membershipExpireAt.getFullYear() + 1);
-    }
-
-    // 创建订单
-    const order = await orderManager.createOrder({
-      userId: user.id,
-      level: membershipLevel,
-      months: billingCycle === 'monthly' ? 1 : 12,
-      amount: price * 100, // 转换为分
-      paymentMethod: 'alipay', // 默认支付宝
-      paymentStatus: OrderStatus.PENDING,
-    });
-
-    // 返回订单信息（实际项目中应该返回支付URL或支付参数）
-    return NextResponse.json({
-      success: true,
-      data: {
-        orderId: order.id,
-        orderNumber: order.transactionId || order.id,
-        price: order.amount / 100, // 转换为元
-        membershipLevel: order.level,
-        billingCycle,
-        membershipExpireAt,
-        // 模拟支付URL，实际项目中应该对接支付宝/微信支付
-        paymentUrl: `/api/payment/${order.id}`,
-      },
-    });
-  } catch (error) {
-    console.error('Create order error:', error);
-    return NextResponse.json(
-      { success: false, error: '创建订单失败，请稍后重试' },
-      { status: 500 }
-    );
-  }
+		return NextResponse.json({
+			success: true,
+			data: orders,
+			stats,
+		});
+	} catch (error) {
+		console.error('获取订单列表失败:', error);
+		return NextResponse.json(
+			{ error: '获取订单列表失败' },
+			{ status: 500 }
+		);
+	}
 }
 
 /**
- * 获取用户订单列表API
+ * 创建会员订单
  */
-export async function GET(request: NextRequest) {
-  try {
-    // 验证token
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未授权' },
-        { status: 401 }
-      );
-    }
+export async function POST(request: NextRequest) {
+	try {
+		// 验证用户身份
+		const { user, error } = await extractUserFromRequest(request);
+		if (error) {
+			return NextResponse.json({ error }, { status: 401 });
+		}
 
-    const payload = verifyToken(token);
-    if (!payload) {
-      return NextResponse.json(
-        { success: false, error: '令牌无效' },
-        { status: 401 }
-      );
-    }
+		const body = await request.json();
+		const { level, billingCycle, paymentMethod } = body;
 
-    // 获取查询参数
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') as OrderStatus | null;
-    const skip = parseInt(searchParams.get('skip') || '0', 10);
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+		// 验证会员等级
+		const validLevels = ['BASIC', 'PREMIUM', 'ENTERPRISE'];
+		if (!level || !validLevels.includes(level)) {
+			return NextResponse.json(
+				{ error: '无效的会员等级' },
+				{ status: 400 }
+			);
+		}
 
-    // 获取订单列表
-    const orders = await orderManager.getOrdersByUserId(payload.userId, {
-      skip,
-      limit,
-      status: status || undefined,
-    });
+		// 验证计费周期
+		const validCycles = ['monthly', 'yearly'];
+		if (!billingCycle || !validCycles.includes(billingCycle)) {
+			return NextResponse.json(
+				{ error: '无效的计费周期' },
+				{ status: 400 }
+			);
+		}
 
-    // 统计订单数量
-    const total = await orderManager.countUserOrders(payload.userId, status || undefined);
+		// 验证支付方式
+		const validMethods = ['alipay', 'wechat'];
+		if (!paymentMethod || !validMethods.includes(paymentMethod)) {
+			return NextResponse.json(
+				{ error: '无效的支付方式' },
+				{ status: 400 }
+			);
+		}
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        orders,
-        total,
-        skip,
-        limit,
-      },
-    });
-  } catch (error) {
-    console.error('Get orders error:', error);
-    return NextResponse.json(
-      { success: false, error: '获取订单失败，请稍后重试' },
-      { status: 500 }
-    );
-  }
+		// 计算金额和月数
+		const pricing = MEMBERSHIP_PRICES[level as keyof typeof MEMBERSHIP_PRICES] as { monthly: number; yearly: number };
+		const months = billingCycle === 'yearly' ? 12 : 1;
+		const amount = pricing[billingCycle as keyof typeof pricing];
+
+		// 创建订单
+		const order = await membershipOrderManager.createOrder({
+			userId: user.id,
+			level,
+			months,
+			amount,
+			paymentMethod,
+			paymentStatus: 'PENDING',
+		});
+
+		// 返回订单信息和支付链接
+		return NextResponse.json({
+			success: true,
+			data: {
+				orderId: order.id,
+				amount,
+				level,
+				billingCycle,
+				paymentMethod,
+				// TODO: 在实际生产环境中，这里应该返回真实的支付链接
+				// 目前返回模拟的支付页面URL
+				paymentUrl: `/payment/${order.id}`,
+			},
+		});
+	} catch (error) {
+		console.error('创建订单失败:', error);
+		return NextResponse.json(
+			{ error: '创建订单失败' },
+			{ status: 500 }
+		);
+	}
 }

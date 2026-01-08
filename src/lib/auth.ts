@@ -150,7 +150,7 @@ export async function checkUserQuota(userId: string): Promise<{
       user.membershipExpireAt &&
       new Date(user.membershipExpireAt) < new Date()) {
     // 降级为免费用户
-    await userManager.updateMembership(userId, MembershipLevel.FREE, null);
+    await userManager.upgradeMembership(userId, MembershipLevel.FREE, null);
     return { canUse: false, reason: '会员已过期，请续费' };
   }
 
