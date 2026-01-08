@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { UserPlus, Mail, Lock, User, Sparkles, BookOpen, Zap } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Sparkles, Zap } from 'lucide-react';
+import BrandIcons from '@/lib/brandIcons';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md px-4">
         <Link href="/" className="mb-8 flex items-center justify-center gap-3">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
-            <BookOpen className="text-white" size={28} />
+            <BrandIcons.Logo size={28} />
           </div>
           <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             番茄AI写作助手

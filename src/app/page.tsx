@@ -7,10 +7,9 @@ import {
   Zap,
   TrendingUp,
   Check,
-  X,
-  BookOpen,
   Crown
 } from 'lucide-react';
+import BrandIcons from '@/lib/brandIcons';
 
 export const metadata: Metadata = {
   title: "番茄小说AI辅助写作工具 - 智能创作助手",
@@ -26,7 +25,7 @@ export default function Home() {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
-                <BookOpen className="text-white" size={24} />
+                <BrandIcons.Logo size={24} />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 番茄AI写作助手
@@ -86,7 +85,7 @@ export default function Home() {
         <div className="mt-24 grid gap-8 md:grid-cols-3">
           <div className="group rounded-xl bg-white p-8 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform">
-              <PenTool className="text-white" size={32} />
+              <BrandIcons.Writing size={32} />
             </div>
             <h3 className="mb-3 text-xl font-bold text-gray-900">智能章节撰写</h3>
             <p className="text-gray-600 leading-relaxed">
@@ -95,7 +94,7 @@ export default function Home() {
           </div>
           <div className="group rounded-xl bg-white p-8 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg group-hover:scale-110 transition-transform">
-              <Sparkles className="text-white" size={32} />
+              <BrandIcons.Shuangdian size={32} />
             </div>
             <h3 className="mb-3 text-xl font-bold text-gray-900">精修润色工坊</h3>
             <p className="text-gray-600 leading-relaxed">
@@ -104,7 +103,7 @@ export default function Home() {
           </div>
           <div className="group rounded-xl bg-white p-8 shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-orange-600 shadow-lg group-hover:scale-110 transition-transform">
-              <Brain className="text-white" size={32} />
+              <BrandIcons.AI size={32} />
             </div>
             <h3 className="mb-3 text-xl font-bold text-gray-900">智能续写大脑</h3>
             <p className="text-gray-600 leading-relaxed">
@@ -147,7 +146,11 @@ export default function Home() {
         <div className="mt-24 text-center">
           <h2 className="mb-12 text-3xl font-bold text-gray-900">选择适合你的套餐</h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {/* 免费版 */}
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <div className="mb-4 flex items-center justify-center">
+                <BrandIcons.Membership level="FREE" size={48} />
+              </div>
               <h3 className="mb-2 text-lg font-bold text-gray-900">免费版</h3>
               <div className="mb-4 text-3xl font-bold text-gray-900">¥0<span className="text-base font-normal text-gray-600">/月</span></div>
               <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
@@ -175,9 +178,14 @@ export default function Home() {
                 开始使用
               </Link>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+
+            {/* 基础版 */}
+            <div className="rounded-xl border-2 border-indigo-500 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="mb-4 flex items-center justify-center">
+                <BrandIcons.Membership level="BASIC" size={48} />
+              </div>
               <h3 className="mb-2 text-lg font-bold text-gray-900">基础版</h3>
-              <div className="mb-4 text-3xl font-bold text-gray-900">¥29<span className="text-base font-normal text-gray-600">/月</span></div>
+              <div className="mb-4 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">¥29<span className="text-base font-normal text-gray-600">/月</span></div>
               <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
@@ -195,27 +203,36 @@ export default function Home() {
                   <Check className="text-green-500" size={14} />
                   单次生成3000字
                 </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  TXT、DOCX导出
+                </li>
               </ul>
               <Link
                 href="/pricing"
-                className="block w-full rounded-lg border-2 border-indigo-300 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition-all"
+                className="block w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 py-2.5 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md"
               >
                 立即订阅
               </Link>
             </div>
-            <div className="relative rounded-xl border-2 border-indigo-500 bg-white p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 transform scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1 text-xs font-semibold text-white shadow-lg">
-                  <Sparkles size={14} />
-                  最受欢迎
+
+            {/* 高级版 */}
+            <div className="rounded-xl border-2 border-pink-500 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
+                  <Sparkles size={12} />
+                  推荐
                 </span>
               </div>
+              <div className="mb-4 flex items-center justify-center">
+                <BrandIcons.Membership level="PREMIUM" size={48} />
+              </div>
               <h3 className="mb-2 text-lg font-bold text-gray-900">高级版</h3>
-              <div className="mb-4 text-3xl font-bold text-gray-900">¥99<span className="text-base font-normal text-gray-600">/月</span></div>
+              <div className="mb-4 text-3xl font-bold bg-gradient-to-r from-pink-600 to-orange-600 bg-clip-text text-transparent">¥99<span className="text-base font-normal text-gray-600">/月</span></div>
               <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
-                  无限AI生成
+                  <strong>无限AI生成</strong>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
@@ -233,21 +250,30 @@ export default function Home() {
                   <Check className="text-green-500" size={14} />
                   单次生成5000字
                 </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  全格式导出
+                </li>
               </ul>
               <Link
                 href="/pricing"
-                className="block w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 py-2.5 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                className="block w-full rounded-lg bg-gradient-to-r from-pink-500 to-orange-500 py-2.5 text-sm font-semibold text-white hover:from-pink-600 hover:to-orange-600 transition-all shadow-md"
               >
                 立即订阅
               </Link>
             </div>
+
+            {/* 企业版 */}
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <div className="mb-4 flex items-center justify-center">
+                <BrandIcons.Membership level="ENTERPRISE" size={48} />
+              </div>
               <h3 className="mb-2 text-lg font-bold text-gray-900">企业版</h3>
-              <div className="mb-4 text-3xl font-bold text-gray-900">¥299<span className="text-base font-normal text-gray-600">/月</span></div>
+              <div className="mb-4 text-3xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">¥299<span className="text-base font-normal text-gray-600">/月</span></div>
               <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
-                  无限AI生成
+                  <strong>无限AI生成</strong>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
@@ -256,6 +282,10 @@ export default function Home() {
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
                   单次生成10000字
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  专属客服支持
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="text-green-500" size={14} />
@@ -268,9 +298,9 @@ export default function Home() {
               </ul>
               <Link
                 href="/pricing"
-                className="block w-full rounded-lg border-2 border-gray-300 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                className="block w-full rounded-lg border-2 border-cyan-500 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 transition-all"
               >
-                立即订阅
+                联系我们
               </Link>
             </div>
           </div>

@@ -5,14 +5,14 @@ import { useState } from 'react';
 import {
   Check,
   X,
+  ChevronRight,
   Crown,
   Sparkles,
-  BookOpen,
   Zap,
-  ChevronRight,
   Star,
   TrendingUp
 } from 'lucide-react';
+import BrandIcons from '@/lib/brandIcons';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -21,7 +21,7 @@ export default function PricingPage() {
     {
       name: '免费版',
       level: 'FREE',
-      icon: <Zap size={24} />,
+      icon: <BrandIcons.Membership level="FREE" size={24} />,
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: [
@@ -39,7 +39,7 @@ export default function PricingPage() {
     {
       name: '基础版',
       level: 'BASIC',
-      icon: <Star size={24} />,
+      icon: <BrandIcons.Membership level="BASIC" size={24} />,
       monthlyPrice: 29,
       yearlyPrice: 22,
       features: [
@@ -59,7 +59,7 @@ export default function PricingPage() {
     {
       name: '高级版',
       level: 'PREMIUM',
-      icon: <Crown size={24} />,
+      icon: <BrandIcons.Membership level="PREMIUM" size={24} />,
       monthlyPrice: 99,
       yearlyPrice: 89,
       features: [
@@ -81,7 +81,7 @@ export default function PricingPage() {
     {
       name: '企业版',
       level: 'ENTERPRISE',
-      icon: <TrendingUp size={24} />,
+      icon: <BrandIcons.Membership level="ENTERPRISE" size={24} />,
       monthlyPrice: 299,
       yearlyPrice: 269,
       features: [
@@ -111,7 +111,7 @@ export default function PricingPage() {
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
-                <BookOpen className="text-white" size={24} />
+                <BrandIcons.Logo size={24} />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                 番茄AI写作助手

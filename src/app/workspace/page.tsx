@@ -8,6 +8,7 @@ import {
   exportAsPdf,
   exportAsTxt,
 } from '@/lib/fileUtils';
+import BrandIcons from '@/lib/brandIcons';
 
 export default function WorkspacePage() {
   const [activeTab, setActiveTab] = useState('write');
@@ -263,12 +264,14 @@ export default function WorkspacePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">📚</span>
-              <span className="text-xl font-bold text-gray-900">番茄AI写作助手</span>
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
+                <BrandIcons.Logo size={24} />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">番茄AI写作助手</span>
             </Link>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">剩余生成次数: 5/5</span>
-              <Link href="/pricing" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              <Link href="/pricing" className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:from-indigo-600 hover:to-purple-700 shadow-md">
                 升级VIP
               </Link>
             </div>
@@ -283,7 +286,7 @@ export default function WorkspacePage() {
             onClick={() => setActiveTab('write')}
             className={`pb-4 px-4 font-medium transition-colors ${
               activeTab === 'write'
-                ? 'border-b-2 border-blue-600 text-blue-600'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -293,7 +296,7 @@ export default function WorkspacePage() {
             onClick={() => setActiveTab('polish')}
             className={`pb-4 px-4 font-medium transition-colors ${
               activeTab === 'polish'
-                ? 'border-b-2 border-blue-600 text-blue-600'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -303,7 +306,7 @@ export default function WorkspacePage() {
             onClick={() => setActiveTab('continue')}
             className={`pb-4 px-4 font-medium transition-colors ${
               activeTab === 'continue'
-                ? 'border-b-2 border-blue-600 text-blue-600'
+                ? 'border-b-2 border-indigo-600 text-indigo-600'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
@@ -324,7 +327,7 @@ export default function WorkspacePage() {
                     type="number"
                     value={chapterNum}
                     onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     placeholder="1"
                   />
                 </div>
@@ -334,7 +337,7 @@ export default function WorkspacePage() {
                     type="number"
                     value={wordCount}
                     onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     placeholder="2500"
                   />
                 </div>
@@ -348,7 +351,7 @@ export default function WorkspacePage() {
                 value={storyContext}
                 onChange={(e) => setStoryContext(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="输入故事世界观、背景设定等..."
               />
             </div>
@@ -360,7 +363,7 @@ export default function WorkspacePage() {
                 value={characterInfo}
                 onChange={(e) => setCharacterInfo(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="输入主要角色的性格、能力、关系等..."
               />
             </div>
@@ -372,7 +375,7 @@ export default function WorkspacePage() {
                 value={plotOutline}
                 onChange={(e) => setPlotOutline(e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="输入本章的主要情节发展..."
               />
             </div>
@@ -384,7 +387,7 @@ export default function WorkspacePage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={6}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 placeholder="输入本章的具体创作要求，如：主角发现金手指，系统激活，获得超强能力..."
               />
             </div>
@@ -394,7 +397,7 @@ export default function WorkspacePage() {
               <button
                 onClick={handleGenerate}
                 disabled={isLoading}
-                className="flex-1 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 {isLoading ? '生成中...' : 'AI生成章节'}
               </button>
