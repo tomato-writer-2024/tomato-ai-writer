@@ -201,6 +201,86 @@ export interface CreateWorkInput {
 }
 
 /**
+ * 原创性检测结果接口
+ */
+export interface OriginalityCheckResult {
+  score: number;
+  duplicateSentences: number;
+  templatePhrases: number;
+  diversityScore: number;
+  details: {
+    duplicateContent: string[];
+    templatePhrasesUsed: string[];
+    uniqueWordRatio: number;
+    sentenceVariety: number;
+  };
+}
+
+/**
+ * 内容评分接口
+ */
+export interface ContentScore {
+  overall: number;  // 综合评分
+  shuangdianScore: number;  // 爽点评分
+  fanqieScore: number;  // 番茄平台适配评分
+  oldReaderScore: number;  // 老书虫偏好评分
+  completionRateScore: number;  // 完读率潜力评分
+  details: {
+    shuangdian: {
+      density: number;  // 爽点密度（每千字）
+      count: number;  // 爽点总数
+      types: string[];  // 爽点类型列表
+    };
+    fanqie: {
+      score: number;
+      details: {
+        opening: boolean;
+        pacing: boolean;
+        language: boolean;
+        emotion: boolean;
+      };
+      suggestions: string[];
+    };
+    oldReader: {
+      score: number;
+      details: {
+        logic: boolean;
+        depth: boolean;
+        innovation: boolean;
+        pacing: boolean;
+      };
+      suggestions: string[];
+    };
+  };
+}
+
+/**
+ * 优化建议接口
+ */
+export interface OptimizationSuggestion {
+  score: ContentScore;
+  suggestions: {
+    category: string;
+    priority: 'high' | 'medium' | 'low';
+    suggestion: string;
+    reason: string;
+    action: string;
+  }[];
+}
+
+/**
+ * JWT载荷接口
+ */
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+  membershipLevel: MembershipLevel;
+  iat?: number;
+  exp?: number;
+}
+
+/**
  * 使用日志接口
  */
 export interface UsageLog {
@@ -237,18 +317,6 @@ export interface SecurityLog {
 }
 
 /**
- * JWT Payload接口
- */
-export interface JwtPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-  membershipLevel: MembershipLevel;
-  iat: number;
-  exp: number;
-}
-
-/**
  * 会员升级请求接口
  */
 export interface UpgradeMembershipRequest {
@@ -266,8 +334,8 @@ export interface OriginalityCheckResult {
   templatePhrases: number;
   diversityScore: number;
   details: {
-    duplicateContent?: string[];
-    templatePhrasesUsed?: string[];
+    duplicateContent: string[];
+    templatePhrasesUsed: string[];
     uniqueWordRatio: number;
     sentenceVariety: number;
   };

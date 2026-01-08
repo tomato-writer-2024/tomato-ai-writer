@@ -2,6 +2,17 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import {
+  Check,
+  X,
+  Crown,
+  Sparkles,
+  BookOpen,
+  Zap,
+  ChevronRight,
+  Star,
+  TrendingUp
+} from 'lucide-react';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -9,6 +20,7 @@ export default function PricingPage() {
   const plans = [
     {
       name: '免费版',
+      icon: <Zap size={24} />,
       monthlyPrice: 0,
       yearlyPrice: 0,
       features: [
@@ -23,7 +35,8 @@ export default function PricingPage() {
       popular: false,
     },
     {
-      name: 'VIP版',
+      name: '高级版',
+      icon: <Crown size={24} />,
       monthlyPrice: 99,
       yearlyPrice: 89,
       features: [
@@ -38,17 +51,19 @@ export default function PricingPage() {
       popular: true,
     },
     {
-      name: 'SVIP版',
+      name: '企业版',
+      icon: <TrendingUp size={24} />,
       monthlyPrice: 299,
       yearlyPrice: 269,
       features: [
         '无限AI生成',
-        '所有VIP功能',
+        '所有高级功能',
         '专属客服支持',
         '剧情逻辑优化',
         '平台算法优化',
         '数据分析报告',
         '作品诊断服务',
+        '子账号管理（最多10个）',
       ],
       cta: '立即订阅',
       popular: false,
@@ -56,23 +71,29 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* 导航栏 */}
       <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl">📚</span>
-              <span className="text-xl font-bold text-gray-900">番茄AI写作助手</span>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
+                <BookOpen className="text-white" size={24} />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                番茄AI写作助手
+              </span>
             </Link>
             <div className="flex items-center gap-4">
-              <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-blue-600">
+              <Link href="/login" className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
+                <Zap size={18} />
                 登录
               </Link>
               <Link
                 href="/register"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
               >
+                <Sparkles size={18} />
                 免费注册
               </Link>
             </div>
@@ -83,34 +104,42 @@ export default function PricingPage() {
       <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         {/* 标题区域 */}
         <div className="text-center">
-          <h1 className="mb-4 text-4xl font-bold text-gray-900 sm:text-5xl">选择适合你的套餐</h1>
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-100 to-purple-100 px-4 py-2 rounded-full mb-6">
+            <Crown className="text-indigo-600" size={20} />
+            <span className="text-sm font-medium text-indigo-700">选择适合你的创作套餐</span>
+          </div>
+          <h1 className="mb-4 text-4xl font-bold text-gray-900 sm:text-5xl">
+            解锁全部功能，提升创作效率
+          </h1>
           <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            解锁全部功能，提升创作效率，让AI成为你的创作伙伴
+            让AI成为你的创作伙伴，打造爆款爽文，实现签约梦想
           </p>
         </div>
 
         {/* 计费周期切换 */}
-        <div className="mt-8 flex justify-center">
-          <div className="rounded-full bg-white p-1 shadow-sm">
+        <div className="mt-12 flex justify-center">
+          <div className="rounded-full bg-white p-1 shadow-md">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`rounded-full px-8 py-2 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-full px-8 py-3 text-sm font-medium transition-all ${
                 billingCycle === 'monthly'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
+              <Zap size={18} />
               月付
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`rounded-full px-8 py-2 text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 rounded-full px-8 py-3 text-sm font-medium transition-all ${
                 billingCycle === 'yearly'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-700 hover:text-gray-900'
+                  ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              年付 <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">省10%</span>
+              <Star size={18} />
+              年付 <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700 font-semibold">省10%</span>
             </button>
           </div>
         </div>
@@ -120,21 +149,34 @@ export default function PricingPage() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl p-8 shadow-lg transition-all ${
+              className={`relative rounded-2xl p-8 shadow-lg transition-all duration-300 ${
                 plan.popular
-                  ? 'scale-105 border-2 border-blue-600 bg-white'
-                  : 'border border-gray-200 bg-white'
+                  ? 'scale-105 border-2 border-indigo-500 bg-white shadow-2xl'
+                  : 'border border-gray-200 bg-white hover:shadow-2xl'
               }`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-blue-600 px-4 py-1 text-sm font-semibold text-white">
+                  <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1.5 text-sm font-semibold text-white shadow-lg">
+                    <Sparkles size={16} />
                     最受欢迎
                   </span>
                 </div>
               )}
 
-              <h3 className="mb-2 text-xl font-bold text-gray-900">{plan.name}</h3>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2 rounded-lg ${
+                  plan.popular
+                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                    : 'bg-gray-100'
+                }`}>
+                  <div className={plan.popular ? 'text-white' : 'text-gray-600'}>
+                    {plan.icon}
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+              </div>
+
               <div className="mb-6">
                 <span className="text-4xl font-bold text-gray-900">
                   ¥{billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
@@ -145,21 +187,28 @@ export default function PricingPage() {
               <ul className="mb-8 space-y-4">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
-                    <span className="mt-0.5 text-green-600">✓</span>
-                    <span className="text-gray-600">{feature}</span>
+                    <span className={`mt-0.5 flex-shrink-0 ${
+                      feature.startsWith('无') ? 'text-gray-400' : 'text-green-500'
+                    }`}>
+                      {feature.startsWith('无') ? <X size={18} /> : <Check size={18} />}
+                    </span>
+                    <span className={`text-sm ${feature.startsWith('无') ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
 
               <Link
                 href="/workspace"
-                className={`block w-full rounded-lg py-3 text-center font-semibold transition-colors ${
+                className={`block w-full flex items-center justify-center gap-2 rounded-lg py-3 text-center font-semibold transition-all ${
                   plan.popular
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-md hover:shadow-lg transform hover:scale-105'
+                    : 'border-2 border-gray-200 text-gray-700 hover:border-indigo-500 hover:bg-indigo-50'
                 }`}
               >
                 {plan.cta}
+                <ChevronRight size={18} />
               </Link>
             </div>
           ))}
@@ -168,110 +217,58 @@ export default function PricingPage() {
         {/* 功能对比 */}
         <div className="mt-24">
           <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">功能对比</h2>
-          <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-2xl bg-white shadow-lg border border-gray-200">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">功能</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">免费版</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">VIP版</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">SVIP版</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">功能</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">免费版</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">高级版</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold">企业版</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">AI生成次数/天</td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">AI生成次数/天</td>
                   <td className="px-6 py-4 text-center text-sm text-gray-600">5次</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">50次</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">无限</td>
+                  <td className="px-6 py-4 text-center text-sm text-indigo-600 font-semibold">50次</td>
+                  <td className="px-6 py-4 text-center text-sm text-indigo-600 font-semibold">无限</td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">章节撰写</td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">章节撰写</td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">精修润色</td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">精修润色</td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">智能续写</td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">智能续写</td>
+                  <td className="px-6 py-4 text-center"><X className="text-gray-400 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">质量评估报告</td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">质量评估</td>
+                  <td className="px-6 py-4 text-center"><X className="text-gray-400 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">剧情逻辑优化</td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">平台算法优化</td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center"><span className="text-green-600">✓</span></td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 text-sm text-gray-700">专属客服支持</td>
-                  <td className="px-6 py-4 text-center"><span className="text-gray-400">✗</span></td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">优先</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">专属</td>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">专属客服</td>
+                  <td className="px-6 py-4 text-center"><X className="text-gray-400 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
+                  <td className="px-6 py-4 text-center"><Check className="text-green-500 mx-auto" size={20} /></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-
-        {/* 常见问题 */}
-        <div className="mt-24">
-          <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">常见问题</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-2 font-semibold text-gray-900">免费版能用多久？</h3>
-              <p className="text-gray-600">
-                免费版永久免费，适合体验产品功能。如需更多功能，可以升级到VIP或SVIP版本。
-              </p>
-            </div>
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-2 font-semibold text-gray-900">如何支付？</h3>
-              <p className="text-gray-600">
-                支持微信支付、支付宝等多种支付方式，安全便捷。
-              </p>
-            </div>
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-2 font-semibold text-gray-900">可以退款吗？</h3>
-              <p className="text-gray-600">
-                支持7天无理由退款。如有疑问，请联系客服。
-              </p>
-            </div>
-            <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="mb-2 font-semibold text-gray-900">可以随时取消订阅吗？</h3>
-              <p className="text-gray-600">
-                可以，您可以在账户设置中随时取消订阅，取消后将在当前周期结束后停止服务。
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
-
-      {/* 页脚 */}
-      <footer className="mt-24 border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="text-center text-gray-600">
-            <p>&copy; 2025 番茄AI写作助手. 保留所有权利.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

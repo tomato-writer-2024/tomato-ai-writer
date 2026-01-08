@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { UserPlus, Mail, Lock, User, Sparkles, BookOpen, Zap } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,80 +55,111 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="w-full max-w-md">
-        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="text-3xl">📚</span>
-          <span className="text-2xl font-bold text-gray-900">番茄AI写作助手</span>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md px-4">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-3">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
+            <BookOpen className="text-white" size={28} />
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            番茄AI写作助手
+          </span>
         </Link>
 
-        <div className="rounded-2xl bg-white p-8 shadow-xl">
-          <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">创建账户</h2>
-          <p className="mb-8 text-center text-gray-600">免费注册，开始你的AI创作之旅</p>
+        <div className="rounded-2xl bg-white p-8 shadow-xl border border-gray-100">
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 mb-4">
+              <UserPlus className="text-indigo-600" size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">创建账户</h2>
+            <p className="mt-2 text-gray-600">免费注册，开始你的AI创作之旅</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 用户名
               </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="用户名"
-                required
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="用户名"
+                  required
+                />
+              </div>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 邮箱
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="your@email.com"
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 密码
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="至少6位密码"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="至少6位密码"
+                  required
+                />
+              </div>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 确认密码
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="再次输入密码"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="再次输入密码"
+                  required
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
             >
-              {isLoading ? '注册中...' : '注册'}
+              {isLoading ? (
+                <>
+                  <Zap className="animate-spin" size={20} />
+                  注册中...
+                </>
+              ) : (
+                <>
+                  <UserPlus size={20} />
+                  注册
+                </>
+              )}
             </button>
           </form>
 
@@ -143,15 +175,16 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              className="mt-6 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              className="mt-6 w-full flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
+              <Sparkles size={20} />
               微信注册
             </button>
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-600">
             已有账户？{' '}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
               立即登录
             </Link>
           </p>

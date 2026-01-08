@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { LogIn, Mail, Lock, Sparkles, BookOpen, Zap } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,52 +42,67 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="w-full max-w-md">
-        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="text-3xl">📚</span>
-          <span className="text-2xl font-bold text-gray-900">番茄AI写作助手</span>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="w-full max-w-md px-4">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-3">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md">
+            <BookOpen className="text-white" size={28} />
+          </div>
+          <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            番茄AI写作助手
+          </span>
         </Link>
 
-        <div className="rounded-2xl bg-white p-8 shadow-xl">
-          <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">欢迎回来</h2>
-          <p className="mb-8 text-center text-gray-600">登录你的账户，开始创作之旅</p>
+        <div className="rounded-2xl bg-white p-8 shadow-xl border border-gray-100">
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 mb-4">
+              <LogIn className="text-indigo-600" size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">欢迎回来</h2>
+            <p className="mt-2 text-gray-600">登录你的账户，开始创作之旅</p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 邮箱
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="your@email.com"
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="your@email.com"
+                  required
+                />
+              </div>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 密码
               </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="••••••••"
-                required
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-200 pl-10 pr-4 py-3 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                <span className="ml-2 text-sm text-gray-600">记住我</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                <span className="text-sm text-gray-600">记住我</span>
               </label>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+              <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                 忘记密码？
               </a>
             </div>
@@ -94,9 +110,19 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
             >
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? (
+                <>
+                  <Zap className="animate-spin" size={20} />
+                  登录中...
+                </>
+              ) : (
+                <>
+                  <LogIn size={20} />
+                  登录
+                </>
+              )}
             </button>
           </form>
 
@@ -112,15 +138,16 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="mt-6 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              className="mt-6 w-full flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
             >
+              <Sparkles size={20} />
               微信登录
             </button>
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-600">
             还没有账户？{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-700">
               立即注册
             </Link>
           </p>
