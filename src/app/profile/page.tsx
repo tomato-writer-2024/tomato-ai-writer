@@ -1,471 +1,576 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Clock } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
+import { Input } from '@/components/Input';
+import { MembershipBadge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs';
+import { User, Mail, Phone, MapPin, Calendar, Crown, TrendingUp, Award, Settings, Bell, Shield, Lock, Download } from 'lucide-react';
 
 interface UserProfile {
   id: string;
   username: string;
   email: string;
-  membershipLevel: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
-  membershipExpireAt: string | null;
-  totalGenerations: number;
+  phone: string;
+  location: string;
+  avatar?: string;
+  membership: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
+  joinDate: string;
   totalWords: number;
-  createdAt: string;
+  totalNovels: number;
+  averageRating: number;
 }
 
-interface Order {
-  id: string;
-  transactionId: string;
-  level: string;
-  amount: number;
-  paymentStatus: string;
-  createdAt: string;
+interface MembershipPlan {
+  level: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
+  name: string;
+  price: number;
+  features: string[];
+  popular?: boolean;
 }
+
+const mockUser: UserProfile = {
+  id: '1',
+  username: '番茄写手小王',
+  email: 'xiaowang@fanqie.com',
+  phone: '138****8888',
+  location: '北京市',
+  avatar: undefined,
+  membership: 'PREMIUM',
+  joinDate: '2023-06-15',
+  totalWords: 856000,
+  totalNovels: 6,
+  averageRating: 9.1,
+};
+
+const membershipPlans: MembershipPlan[] = [
+  {
+    level: 'FREE',
+    name: '免费版',
+    price: 0,
+    features: [
+      '每天5次AI生成',
+      '基础章节撰写',
+      '标准润色功能',
+      '单次生成2000字',
+      '100MB存储空间',
+    ],
+  },
+  {
+    level: 'BASIC',
+    name: '基础版',
+    price: 29,
+    features: [
+      '每天30次AI生成',
+      '智能章节续写',
+      '高级润色功能',
+      '单次生成3000字',
+      '1GB存储空间',
+      '爽点密度分析',
+      '完读率预测',
+    ],
+  },
+  {
+    level: 'PREMIUM',
+    name: '高级版',
+    price: 99,
+    features: [
+      '无限次AI生成',
+      '多风格创作',
+      '专业润色工坊',
+      '单次生成5000字',
+      '10GB存储空间',
+      '剧情逻辑分析',
+      '角色一致性保障',
+      '批量章节生成',
+      'VIP专属客服',
+    ],
+    popular: true,
+  },
+  {
+    level: 'ENTERPRISE',
+    name: '企业版',
+    price: 299,
+    features: [
+      '所有高级版功能',
+      '私有化部署',
+      'API接口调用',
+      '团队协作功能',
+      '100GB存储空间',
+      '品牌定制服务',
+      '数据分析报告',
+      '专属技术支持',
+      '定制化训练',
+    ],
+  },
+];
+
+const membershipNames = {
+  FREE: '免费用户',
+  BASIC: '基础会员',
+  PREMIUM: '高级会员',
+  ENTERPRISE: '企业用户',
+};
 
 export default function ProfilePage() {
+  const [user] = useState<UserProfile>(mockUser);
   const [activeTab, setActiveTab] = useState('overview');
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    username: user.username,
+    email: user.email,
+    phone: user.phone,
+    location: user.location,
+  });
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
-    try {
-      // 模拟获取用户信息
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-
-      // TODO: 实际调用API获取用户信息
-      // const response = await fetch('/api/user/profile', {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-
-      // 模拟数据
-      setUser({
-        id: '1',
-        username: '番茄作家',
-        email: 'writer@example.com',
-        membershipLevel: 'BASIC',
-        membershipExpireAt: '2025-02-08',
-        totalGenerations: 156,
-        totalWords: 234000,
-        createdAt: '2024-12-01',
-      });
-
-      // 模拟订单数据
-      setOrders([
-        {
-          id: '1',
-          transactionId: 'ORD20250108001',
-          level: 'BASIC',
-          amount: 2900,
-          paymentStatus: 'PAID',
-          createdAt: '2025-01-08',
-        },
-      ]);
-
-      // 加载订单列表
-      // const ordersResponse = await fetch('/api/orders', {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // if (ordersResponse.ok) {
-      //   const data = await ordersResponse.json();
-      //   setOrders(data.data.orders);
-      // }
-    } catch (error) {
-      console.error('加载用户数据失败:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSave = () => {
+    setIsEditing(false);
+    // TODO: 实际保存用户信息
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      alert('两次输入的密码不一致');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      alert('密码长度至少为6位');
-      return;
-    }
-
-    try {
-      // TODO: 实际调用API修改密码
-      // const response = await fetch('/api/user/password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      //   body: JSON.stringify({ newPassword })
-      // });
-
-      alert('密码修改成功！');
-      setShowPasswordModal(false);
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (error) {
-      console.error('修改密码失败:', error);
-      alert('修改密码失败，请稍后重试');
-    }
+  const handleUpgrade = (level: 'BASIC' | 'PREMIUM' | 'ENTERPRISE' | 'FREE') => {
+    // TODO: 实际升级会员
+    if (level === 'FREE') return; // FREE不需要升级
+    window.location.href = `/payment?plan=${level}`;
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
-
-  const getMembershipBadge = (level: string) => {
-    const badges = {
-      FREE: { label: '免费版', color: 'gray' },
-      BASIC: { label: '基础版', color: 'indigo' },
-      PREMIUM: { label: '高级版', color: 'pink' },
-      ENTERPRISE: { label: '企业版', color: 'cyan' },
-    };
-    return badges[level as keyof typeof badges] || badges.FREE;
-  };
-
-  const getOrderStatusBadge = (status: string) => {
-    const badges = {
-      PENDING: { label: '待支付', color: 'yellow', icon: Clock },
-      PAID: { label: '已支付', color: 'green', icon: CheckCircle },
-      FAILED: { label: '支付失败', color: 'red', icon: Clock },
-    };
-    return badges[status as keyof typeof badges] || { label: '未知', color: 'gray', icon: Clock };
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-        <div className="text-center">
-          <BrandIcons.Zap className="mx-auto animate-spin text-indigo-600" size={40} />
-          <p className="mt-4 text-gray-600">加载中...</p>
-        </div>
+  const getStatCard = (title: string, value: string, icon: React.ReactNode, color: string) => (
+    <div className="flex items-center gap-4 rounded-xl bg-white p-6 shadow-md transition-all hover:shadow-lg">
+      <div className={`rounded-xl bg-gradient-to-br ${color} p-3 shadow-md`}>
+        {icon}
       </div>
-    );
-  }
+      <div>
+        <p className="text-sm text-gray-600">{title}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Navigation />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* 左侧：用户信息卡片 */}
-          <div className="lg:col-span-1">
-            <Card className="card-shadow">
-              <CardBody>
-                {/* 头像和基本信息 */}
-                <div className="flex flex-col items-center pb-6 border-b border-gray-200/50">
-                  <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
-                    <BrandIcons.Membership level={user?.membershipLevel} size={48} />
+        {/* 页面标题 */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
+          <p className="mt-2 text-gray-600">管理你的账户信息和会员服务</p>
+        </div>
+
+        {/* 用户信息卡片 */}
+        <Card className="mb-8">
+          <CardBody>
+            <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
+              {/* 头像 */}
+              <div className="relative">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <User size={64} className="text-white" />
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2">
+                  <BrandIcons.Membership level={user.membership} size={40} />
+                </div>
+              </div>
+
+              {/* 用户信息 */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="mb-4 flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                      <MembershipBadge level={user.membership} />
+                      <span className="text-sm text-gray-500">
+                        加入于 {user.joinDate}
+                      </span>
+                    </div>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">{user?.username}</h2>
-                  <p className="mt-1 text-sm text-gray-600">{user?.email}</p>
-                  <div className="mt-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 px-4 py-1.5 text-xs font-semibold text-indigo-700">
-                      <BrandIcons.Crown size={12} />
-                      {getMembershipBadge(user?.membershipLevel || 'FREE').label}
-                    </span>
-                  </div>
-                  {user?.membershipLevel !== 'FREE' && user?.membershipExpireAt && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      到期时间: {user.membershipExpireAt}
-                    </p>
+                  {!isEditing && (
+                    <Button
+                      variant="outline"
+                      icon={<Settings size={18} />}
+                      onClick={() => setIsEditing(true)}
+                    >
+                      编辑资料
+                    </Button>
                   )}
                 </div>
 
-                {/* 快捷操作 */}
-                <div className="mt-6 space-y-2">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
-                      activeTab === 'overview'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <BrandIcons.Home size={20} />
-                    <span className="font-medium">概览</span>
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('orders')}
-                    className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all ${
-                      activeTab === 'orders'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <BrandIcons.Stats size={20} />
-                    <span className="font-medium">订单历史</span>
-                  </button>
-                  <Link
-                    href="/pricing"
-                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-all"
-                  >
-                    <BrandIcons.Crown size={20} />
-                    <span className="font-medium">升级会员</span>
-                  </Link>
-                  <button
-                    onClick={() => setShowPasswordModal(true)}
-                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-gray-700 hover:bg-gray-50 transition-all"
-                  >
-                    <BrandIcons.Settings size={20} />
-                    <span className="font-medium">修改密码</span>
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-all"
-                  >
-                    <BrandIcons.Efficiency size={20} />
-                    <span className="font-medium">退出登录</span>
-                  </button>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-
-          {/* 右侧：详细内容 */}
-          <div className="lg:col-span-2">
-            {activeTab === 'overview' && (
-              <div className="space-y-6">
-                {/* 统计数据 */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card hover>
-                    <CardBody>
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-200 p-3">
-                          <BrandIcons.Zap size={24} className="text-indigo-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">总生成次数</p>
-                          <p className="text-2xl font-bold gradient-text">{user?.totalGenerations}</p>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                  <Card hover>
-                    <CardBody>
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 p-3">
-                          <BrandIcons.Book size={24} className="text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">总生成字数</p>
-                          <p className="text-2xl font-bold gradient-text">
-                            {user?.totalWords ? (user.totalWords / 10000).toFixed(1) : 0}万字
-                          </p>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                  <Card hover>
-                    <CardBody>
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-gradient-to-br from-pink-100 to-pink-200 p-3">
-                          <BrandIcons.Settings size={24} className="text-pink-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">注册时间</p>
-                          <p className="text-2xl font-bold gradient-text">
-                            {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('zh-CN') : '-'}
-                          </p>
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                </div>
-
-                {/* 会员权益说明 */}
-                <Card>
-                  <CardBody>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 p-2">
-                        <BrandIcons.Crown size={20} />
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900">当前会员权益</h3>
+                {isEditing ? (
+                  <div className="space-y-4 rounded-lg bg-gray-50 p-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <Input
+                        label="用户名"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        icon={<User size={20} className="text-gray-400" />}
+                        fullWidth
+                      />
+                      <Input
+                        label="邮箱"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        icon={<Mail size={20} className="text-gray-400" />}
+                        fullWidth
+                      />
+                      <Input
+                        label="手机号"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        icon={<Phone size={20} className="text-gray-400" />}
+                        fullWidth
+                      />
+                      <Input
+                        label="所在地"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        icon={<MapPin size={20} className="text-gray-400" />}
+                        fullWidth
+                      />
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-green-100 p-1.5">
-                          <CheckCircle size={18} className="text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">AI生成次数</p>
-                          <p className="text-sm text-gray-600">
-                            {user?.membershipLevel === 'FREE' && '每天5次'}
-                            {user?.membershipLevel === 'BASIC' && '每天30次'}
-                            {(user?.membershipLevel === 'PREMIUM' || user?.membershipLevel === 'ENTERPRISE') && '无限次'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-green-100 p-1.5">
-                          <CheckCircle size={18} className="text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">单次生成字数</p>
-                          <p className="text-sm text-gray-600">
-                            {user?.membershipLevel === 'FREE' && '2000字'}
-                            {user?.membershipLevel === 'BASIC' && '3000字'}
-                            {user?.membershipLevel === 'PREMIUM' && '5000字'}
-                            {user?.membershipLevel === 'ENTERPRISE' && '10000字'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-green-100 p-1.5">
-                          <CheckCircle size={18} className="text-green-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">导出格式</p>
-                          <p className="text-sm text-gray-600">
-                            {user?.membershipLevel === 'FREE' && 'TXT'}
-                            {user?.membershipLevel === 'BASIC' && 'TXT、DOCX'}
-                            {(user?.membershipLevel === 'PREMIUM' || user?.membershipLevel === 'ENTERPRISE') && 'TXT、DOCX、PDF'}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex justify-end gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsEditing(false)}
+                      >
+                        取消
+                      </Button>
+                      <GradientButton
+                        onClick={handleSave}
+                      >
+                        保存修改
+                      </GradientButton>
                     </div>
-                  </CardBody>
-                </Card>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Mail size={18} className="text-gray-500" />
+                      <span className="text-gray-700">{user.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone size={18} className="text-gray-500" />
+                      <span className="text-gray-700">{user.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin size={18} className="text-gray-500" />
+                      <span className="text-gray-700">{user.location}</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          </CardBody>
+        </Card>
 
-            {activeTab === 'orders' && (
+        {/* 统计卡片 */}
+        <div className="mb-8 grid gap-6 md:grid-cols-4">
+          {getStatCard(
+            '总字数',
+            Math.round(user.totalWords / 10000) + '万',
+            <BrandIcons.Writing size={24} className="text-white" />,
+            'from-indigo-500 to-indigo-600'
+          )}
+          {getStatCard(
+            '作品数量',
+            user.totalNovels.toString(),
+            <BrandIcons.Book size={24} className="text-white" />,
+            'from-purple-500 to-purple-600'
+          )}
+          {getStatCard(
+            '平均评分',
+            user.averageRating.toFixed(1),
+            <Award size={24} className="text-yellow-400 fill-yellow-400 text-white" />,
+            'from-pink-500 to-pink-600'
+          )}
+          {getStatCard(
+            '会员等级',
+            membershipNames[user.membership],
+            <Crown size={24} className="text-white" />,
+            'from-orange-500 to-orange-600'
+          )}
+        </div>
+
+        {/* 功能标签页 */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          <TabsList>
+            <TabsTrigger value="overview">概览</TabsTrigger>
+            <TabsTrigger value="membership">会员服务</TabsTrigger>
+            <TabsTrigger value="settings">账户设置</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardBody>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 p-2">
-                      <BrandIcons.Stats size={20} />
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
+                      <TrendingUp size={20} className="text-indigo-600" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">订单历史</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">写作趋势</h3>
                   </div>
-                  {orders.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200">
-                        <BrandIcons.Stats size={32} className="text-gray-400" />
+                  <div className="space-y-4">
+                    <div>
+                      <div className="mb-2 flex justify-between text-sm">
+                        <span className="text-gray-600">本周写作</span>
+                        <span className="font-semibold text-gray-900">12,500字</span>
                       </div>
-                      <p className="text-gray-500">暂无订单记录</p>
-                      <Link
-                        href="/pricing"
-                        className="mt-4 inline-flex items-center gap-2"
-                      >
-                        <GradientButton icon={<BrandIcons.Crown size={16} />}>
-                          购买会员
-                        </GradientButton>
-                      </Link>
+                      <div className="h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600"
+                          style={{ width: '65%' }}
+                        />
+                      </div>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => {
-                        const status = getOrderStatusBadge(order.paymentStatus);
-                        const StatusIcon = status.icon;
-                        return (
-                          <div
-                            key={order.id}
-                            className="flex items-center justify-between rounded-xl border border-gray-200/50 p-4 hover:border-indigo-300 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 p-3">
-                                <BrandIcons.Membership level={order.level as any} size={20} />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900">{getMembershipBadge(order.level).label}</p>
-                                <p className="text-sm text-gray-600">{order.transactionId}</p>
-                                <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleString('zh-CN')}</p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-lg font-bold gradient-text">¥{(order.amount / 100).toFixed(2)}</p>
-                              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                                status.color === 'green' ? 'bg-green-100 text-green-700' :
-                                status.color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                <StatusIcon size={10} />
-                                {status.label}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div>
+                      <div className="mb-2 flex justify-between text-sm">
+                        <span className="text-gray-600">本月写作</span>
+                        <span className="font-semibold text-gray-900">45,600字</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-600"
+                          style={{ width: '78%' }}
+                        />
+                      </div>
                     </div>
-                  )}
+                    <div>
+                      <div className="mb-2 flex justify-between text-sm">
+                        <span className="text-gray-600">年度写作</span>
+                        <span className="font-semibold text-gray-900">856,000字</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-600"
+                          style={{ width: '85%' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </CardBody>
               </Card>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* 修改密码模态框 */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <Card className="mx-4 w-full max-w-md card-shadow">
-            <CardBody>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
-                  <BrandIcons.Settings size={20} />
+              <Card>
+                <CardBody>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 p-2">
+                      <BrandIcons.Quality size={20} className="text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">质量分析</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                      <span className="text-sm text-gray-600">平均完读率</span>
+                      <span className="text-lg font-bold text-green-600">82%</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                      <span className="text-sm text-gray-600">最高评分</span>
+                      <span className="text-lg font-bold text-indigo-600">9.5</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                      <span className="text-sm text-gray-600">签约作品</span>
+                      <span className="text-lg font-bold text-purple-600">4部</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                      <span className="text-sm text-gray-600">爆款作品</span>
+                      <span className="text-lg font-bold text-pink-600">2部</span>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="membership" className="mt-6">
+            <div className="mb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">会员套餐</h3>
+                  <p className="text-gray-600">选择适合你的会员计划</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">修改密码</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">当前套餐:</span>
+                  <MembershipBadge level={user.membership} />
+                </div>
               </div>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">新密码</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    placeholder="至少6位密码"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-gray-700">确认密码</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                    placeholder="再次输入密码"
-                    required
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    onClick={() => setShowPasswordModal(false)}
-                    variant="outline"
-                    fullWidth
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                {membershipPlans.map((plan) => (
+                  <Card
+                    key={plan.level}
+                    hover
+                    className={`relative h-full ${
+                      plan.popular
+                        ? 'border-2 border-indigo-500 shadow-xl'
+                        : ''
+                    }`}
                   >
-                    取消
-                  </Button>
-                  <GradientButton type="submit" fullWidth>
-                    确认修改
-                  </GradientButton>
-                </div>
-              </form>
-            </CardBody>
-          </Card>
-        </div>
-      )}
+                    {plan.popular && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <span className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1 text-xs font-semibold text-white shadow-md">
+                          最受欢迎
+                        </span>
+                      </div>
+                    )}
+                    <CardBody className="flex h-full flex-col">
+                      <div className="mb-6 text-center">
+                        <div className="mb-3 flex justify-center">
+                          <BrandIcons.Membership level={plan.level} size={64} />
+                        </div>
+                        <h4 className="text-xl font-bold text-gray-900">{plan.name}</h4>
+                        <div className="mt-2 flex items-baseline justify-center gap-1">
+                          <span className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            ¥{plan.price}
+                          </span>
+                          <span className="text-sm text-gray-600">/月</span>
+                        </div>
+                      </div>
+
+                      <ul className="mb-6 flex-1 space-y-3">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                            <BrandIcons.Quality size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {plan.level === user.membership ? (
+                        <Button variant="outline" fullWidth disabled>
+                          当前套餐
+                        </Button>
+                      ) : (
+                        <Button
+                          variant={plan.popular ? 'primary' : 'outline'}
+                          fullWidth
+                          onClick={() => handleUpgrade(plan.level)}
+                        >
+                          {plan.level === 'FREE' ? '免费使用' : '立即升级'}
+                        </Button>
+                      )}
+                    </CardBody>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardBody>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 p-2">
+                      <Lock size={20} className="text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">安全设置</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Lock size={18} />}
+                    >
+                      修改密码
+                    </Button>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Shield size={18} />}
+                    >
+                      两步验证
+                    </Button>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Phone size={18} />}
+                    >
+                      绑定手机
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card>
+                <CardBody>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 p-2">
+                      <Bell size={20} className="text-purple-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">通知设置</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
+                      <span className="text-sm font-medium text-gray-900">邮件通知</span>
+                      <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-indigo-600 transition-colors">
+                        <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
+                      <span className="text-sm font-medium text-gray-900">短信通知</span>
+                      <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-colors">
+                        <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
+                      <span className="text-sm font-medium text-gray-900">系统消息</span>
+                      <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-indigo-600 transition-colors">
+                        <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardBody>
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-lg bg-gradient-to-br from-orange-100 to-red-100 p-2">
+                      <Download size={20} className="text-orange-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">数据导出</h3>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Download size={18} />}
+                    >
+                      导出作品数据
+                    </Button>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Download size={18} />}
+                    >
+                      导出账户信息
+                    </Button>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      icon={<Download size={18} />}
+                    >
+                      导出订单记录
+                    </Button>
+                  </div>
+                </CardBody>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

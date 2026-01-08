@@ -72,7 +72,7 @@ export function Badge({
 
 // Status Badge with Icons
 interface StatusBadgeProps {
-  status: 'DRAFT' | 'PUBLISHED' | 'COMPLETED' | 'PENDING' | 'PAID' | 'FAILED' | 'SUCCESS';
+  status: 'DRAFT' | 'PUBLISHED' | 'COMPLETED' | 'PENDING' | 'PAID' | 'FAILED' | 'SUCCESS' | '连载中' | '已完结' | '暂停';
   label?: string;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -112,6 +112,21 @@ const statusConfig = {
     label: '成功',
     variant: 'success' as const,
     icon: <CheckCircle size={14} />,
+  },
+  '连载中': {
+    label: '连载中',
+    variant: 'success' as const,
+    icon: <CheckCircle size={14} />,
+  },
+  '已完结': {
+    label: '已完结',
+    variant: 'info' as const,
+    icon: <CheckCircle size={14} />,
+  },
+  '暂停': {
+    label: '暂停',
+    variant: 'warning' as const,
+    icon: <Clock size={14} />,
   },
 };
 
@@ -210,7 +225,7 @@ export function GenreBadge({ genre, size = 'md' }: GenreBadgeProps) {
 
 // Type Badge
 interface TypeBadgeProps {
-  type: 'generate' | 'polish' | 'continue';
+  type: 'generate' | 'polish' | 'continue' | '爽文' | '甜宠' | '悬疑' | '玄幻' | '都市';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -232,6 +247,36 @@ const typeConfig = {
     bg: 'bg-pink-100',
     text: 'text-pink-700',
     border: 'border-pink-200',
+  },
+  '爽文': {
+    label: '爽文',
+    bg: 'bg-red-100',
+    text: 'text-red-700',
+    border: 'border-red-200',
+  },
+  '甜宠': {
+    label: '甜宠',
+    bg: 'bg-pink-100',
+    text: 'text-pink-700',
+    border: 'border-pink-200',
+  },
+  '悬疑': {
+    label: '悬疑',
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    border: 'border-gray-200',
+  },
+  '玄幻': {
+    label: '玄幻',
+    bg: 'bg-purple-100',
+    text: 'text-purple-700',
+    border: 'border-purple-200',
+  },
+  '都市': {
+    label: '都市',
+    bg: 'bg-indigo-100',
+    text: 'text-indigo-700',
+    border: 'border-indigo-200',
   },
 };
 
