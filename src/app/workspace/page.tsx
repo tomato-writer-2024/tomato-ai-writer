@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   readFileContent,
   exportAsWord,
-  exportAsPdf,
   exportAsTxt,
 } from '@/lib/fileUtils';
 import BrandIcons from '@/lib/brandIcons';
@@ -317,21 +316,18 @@ export default function WorkspacePage() {
     }
   };
 
-  const handleExport = async (format: 'word' | 'pdf' | 'txt') => {
+  const handleExport = async (format: 'word' | 'txt') => {
     if (!generatedContent.trim()) {
       alert('没有内容可导出');
       return;
     }
 
-    const filename = `第${chapterNum}章.${format === 'word' ? 'docx' : format}`;
+    const filename = `第${chapterNum}章.${format === 'word' ? 'docx' : 'txt'}`;
 
     try {
       switch (format) {
         case 'word':
           await exportAsWord(generatedContent, filename);
-          break;
-        case 'pdf':
-          exportAsPdf(generatedContent, filename);
           break;
         case 'txt':
           exportAsTxt(generatedContent, filename);
@@ -613,18 +609,6 @@ export default function WorkspacePage() {
                         <div className="flex flex-col items-start">
                           <span className="font-medium">Word 文档</span>
                           <span className="text-xs text-gray-500">.docx 格式</span>
-                        </div>
-                      </button>
-                      <button
-                        onClick={() => handleExport('pdf')}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 transition-colors"
-                      >
-                        <div className="rounded-lg bg-red-100 p-1.5">
-                          <Download size={16} className="text-red-600" />
-                        </div>
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">PDF 文档</span>
-                          <span className="text-xs text-gray-500">.pdf 格式</span>
                         </div>
                       </button>
                       <button
