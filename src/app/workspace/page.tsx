@@ -148,6 +148,7 @@ export default function WorkspacePage() {
     }
 
     setIsLoading(true);
+    const originalContent = generatedContent; // 保存原始内容
     try {
       const response = await fetch('/api/continue', {
         method: 'POST',
@@ -178,7 +179,8 @@ export default function WorkspacePage() {
 
         const chunk = decoder.decode(value, { stream: true });
         newContent += chunk;
-        setGeneratedContent(generatedContent + '\n\n' + newContent);
+        // 只更新新累积的内容，避免重复
+        setGeneratedContent(originalContent + '\n\n' + newContent);
       }
 
     } catch (error) {
