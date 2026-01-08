@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   readFileContent,
@@ -13,7 +14,7 @@ import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';
 import { Badge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
-import { Loader2, Download, Copy, Upload } from 'lucide-react';
+import { Loader2, Download, Copy, Upload, Clock } from 'lucide-react';
 
 interface ContentStats {
   wordCount: number;
@@ -23,13 +24,29 @@ interface ContentStats {
   estimatedReadTime: number;
 }
 
+interface Novel {
+  id: string;
+  title: string;
+}
+
+interface Chapter {
+  id?: string;
+  title: string;
+}
+
 export default function WorkspacePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const novelIdParam = searchParams.get('novelId');
+  const chapterIdParam = searchParams.get('chapterId');
+
   const [activeTab, setActiveTab] = useState('write');
   const [prompt, setPrompt] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
   const [contentStats, setContentStats] = useState<ContentStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chapterNum, setChapterNum] = useState(1);
+  const [chapterTitle, setChapterTitle] = useState('');
   const [storyContext, setStoryContext] = useState('');
   const [characterInfo, setCharacterInfo] = useState('');
   const [plotOutline, setPlotOutline] = useState('');
@@ -38,6 +55,13 @@ export default function WorkspacePage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  // 作品和章节相关状态
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [selectedNovelId, setSelectedNovelId] = useState('');
+  const [isSavingChapter, setIsSavingChapter] = useState(false);
+  const [currentChapterId, setCurrentChapterId] = useState<string | null>(null);
+  const [isLoadingChapter, setIsLoadingChapter] = useState(false);
 
   // 点击外部关闭导出菜单
   useEffect(() => {
@@ -58,6 +82,69 @@ export default function WorkspacePage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showExportMenu]);
+
+  // 加载作品列表
+  useEffect(() => {
+    loadNovels();
+  }, []);
+
+  // 从URL参数加载章节
+  useEffect(() => {
+    if (chapterIdParam && novelIdParam) {
+      loadChapter(chapterIdParam);
+    }
+  }, [chapterIdParam, novelIdParam]);
+
+  // 当作品列表加载完成后，设置选中的作品
+  useEffect(() => {
+    if (novelIdParam && novels.length > 0) {
+      setSelectedNovelId(novelIdParam);
+    }
+  }, [novelIdParam, novels]);
+
+  const loadNovels = async () => {
+    try {
+      const response = await fetch('/api/novels', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setNovels(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('加载作品列表失败:', error);
+    }
+  };
+
+  const loadChapter = async (chapterId: string) => {
+    setIsLoadingChapter(true);
+    try {
+      const response = await fetch(`/api/chapters/${chapterId}`);
+      if (!response.ok) {
+        throw new Error('加载章节失败');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        const chapter = result.data;
+        setCurrentChapterId(chapter.id);
+        setChapterNum(chapter.chapterNum);
+        setChapterTitle(chapter.title);
+        setGeneratedContent(chapter.content);
+        setContentStats(calculateContentStats(chapter.content));
+      }
+    } catch (error) {
+      console.error('加载章节失败:', error);
+      alert('加载章节失败');
+    } finally {
+      setIsLoadingChapter(false);
+    }
+  };
 
   // 计算内容统计
   const calculateContentStats = (content: string): ContentStats => {
@@ -341,6 +428,65 @@ export default function WorkspacePage() {
     }
   };
 
+  const handleSaveChapter = async () => {
+    if (!selectedNovelId) {
+      alert('请先选择作品');
+      return;
+    }
+
+    if (!chapterTitle.trim()) {
+      alert('请输入章节标题');
+      return;
+    }
+
+    if (!generatedContent.trim()) {
+      alert('请先生成或输入内容');
+      return;
+    }
+
+    setIsSavingChapter(true);
+    try {
+      const body = {
+        novelId: selectedNovelId,
+        chapterNum,
+        title: chapterTitle.trim(),
+        content: generatedContent,
+        wordCount: generatedContent.length,
+        qualityScore: contentStats?.qualityScore || 0,
+        completionRate: contentStats?.completionRate || 0,
+        shuangdianCount: contentStats?.shuangdianCount || 0,
+      };
+
+      const url = currentChapterId
+        ? `/api/chapters/${currentChapterId}`
+        : '/api/chapters';
+
+      const response = await fetch(url, {
+        method: currentChapterId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '保存失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setCurrentChapterId(result.data.id);
+        alert(currentChapterId ? '章节更新成功！' : '章节保存成功！');
+      } else {
+        throw new Error(result.error || '保存失败');
+      }
+    } catch (error) {
+      console.error('保存章节失败:', error);
+      alert(error instanceof Error ? error.message : '保存失败，请稍后重试');
+    } finally {
+      setIsSavingChapter(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Navigation />
@@ -395,15 +541,39 @@ export default function WorkspacePage() {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">章节信息</h3>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Input
-                    type="number"
-                    label="章节号"
-                    value={chapterNum.toString()}
-                    onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
-                    placeholder="1"
+                <div className="space-y-4">
+                  {/* 作品选择 */}
+                  <Select
+                    label="选择作品"
+                    value={selectedNovelId}
+                    onChange={(e) => setSelectedNovelId(e.target.value)}
+                    options={[
+                      { value: '', label: '请选择作品' },
+                      ...novels.map((novel) => ({
+                        value: novel.id,
+                        label: novel.title,
+                      })),
+                    ]}
                     fullWidth
                   />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Input
+                      type="text"
+                      label="章节标题"
+                      value={chapterTitle}
+                      onChange={(e) => setChapterTitle(e.target.value)}
+                      placeholder="例如：系统觉醒"
+                      fullWidth
+                    />
+                    <Input
+                      type="number"
+                      label="章节号"
+                      value={chapterNum.toString()}
+                      onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
+                      placeholder="1"
+                      fullWidth
+                    />
+                  </div>
                   <Select
                     label="目标字数"
                     value={wordCount.toString()}
@@ -417,6 +587,12 @@ export default function WorkspacePage() {
                     ]}
                     fullWidth
                   />
+                  {currentChapterId && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex h-2 w-2 rounded-full bg-green-500" />
+                      <span>已保存到数据库</span>
+                    </div>
+                  )}
                 </div>
               </CardBody>
             </Card>
@@ -498,37 +674,49 @@ export default function WorkspacePage() {
             </Card>
 
             {/* 操作按钮 */}
-            <div className="flex gap-4">
-              <GradientButton
-                onClick={handleGenerate}
-                isLoading={isLoading}
-                icon={<BrandIcons.Zap size={18} />}
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-4">
+                <GradientButton
+                  onClick={handleGenerate}
+                  isLoading={isLoading}
+                  icon={<BrandIcons.Zap size={18} />}
+                  fullWidth
+                >
+                  AI生成章节
+                </GradientButton>
+                {activeTab === 'write' && (
+                  <Button
+                    onClick={handlePolish}
+                    disabled={isLoading || !generatedContent}
+                    variant="outline"
+                    icon={<BrandIcons.Sparkles size={18} />}
+                    fullWidth
+                  >
+                    {isLoading ? '润色中...' : '精修润色'}
+                  </Button>
+                )}
+                {activeTab === 'continue' && (
+                  <Button
+                    onClick={handleContinue}
+                    disabled={isLoading || !generatedContent}
+                    variant="outline"
+                    icon={<BrandIcons.Efficiency size={18} />}
+                    fullWidth
+                  >
+                    {isLoading ? '续写中...' : '智能续写'}
+                  </Button>
+                )}
+              </div>
+              <Button
+                onClick={handleSaveChapter}
+                isLoading={isSavingChapter}
+                disabled={!generatedContent || !selectedNovelId || !chapterTitle}
+                variant="primary"
+                icon={<BrandIcons.Efficiency size={18} />}
                 fullWidth
               >
-                AI生成章节
-              </GradientButton>
-              {activeTab === 'write' && (
-                <Button
-                  onClick={handlePolish}
-                  disabled={isLoading || !generatedContent}
-                  variant="outline"
-                  icon={<BrandIcons.Sparkles size={18} />}
-                  fullWidth
-                >
-                  {isLoading ? '润色中...' : '精修润色'}
-                </Button>
-              )}
-              {activeTab === 'continue' && (
-                <Button
-                  onClick={handleContinue}
-                  disabled={isLoading || !generatedContent}
-                  variant="outline"
-                  icon={<BrandIcons.Efficiency size={18} />}
-                  fullWidth
-                >
-                  {isLoading ? '续写中...' : '智能续写'}
-                </Button>
-              )}
+                {isSavingChapter ? '保存中...' : currentChapterId ? '更新章节' : '保存章节'}
+              </Button>
             </div>
           </div>
 
@@ -632,7 +820,7 @@ export default function WorkspacePage() {
             {/* 统计数据展示 */}
             {contentStats && (
               <div className="border-b border-gray-200/50 bg-gradient-to-r from-indigo-50 to-purple-50 p-6">
-                <div className="grid gap-4 md:grid-cols-4">
+                <div className="mb-4 grid gap-4 md:grid-cols-5">
                   <div className="flex items-center gap-3">
                     <div className="rounded-xl bg-white p-3 shadow-sm">
                       <BrandIcons.Book size={24} className="text-indigo-600" />
@@ -667,6 +855,77 @@ export default function WorkspacePage() {
                     <div>
                       <p className="text-xs text-gray-600">爽点数量</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.shuangdianCount}个</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-white p-3 shadow-sm">
+                      <Clock size={24} className="text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600">阅读时间</p>
+                      <p className="text-lg font-bold text-gray-900">{contentStats.estimatedReadTime}秒</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 进度条可视化 */}
+                <div className="space-y-3">
+                  {/* 质量评分进度条 */}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="font-medium text-gray-700">质量评分</span>
+                      <span className={`font-bold ${contentStats.qualityScore >= 90 ? 'text-green-600' : contentStats.qualityScore >= 70 ? 'text-blue-600' : 'text-orange-600'}`}>
+                        {contentStats.qualityScore}/100
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          contentStats.qualityScore >= 90 ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                          contentStats.qualityScore >= 70 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
+                          contentStats.qualityScore >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                          'bg-gradient-to-r from-red-400 to-red-600'
+                        }`}
+                        style={{ width: `${contentStats.qualityScore}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 完读率进度条 */}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="font-medium text-gray-700">预估完读率</span>
+                      <span className={`font-bold ${contentStats.completionRate >= 85 ? 'text-green-600' : contentStats.completionRate >= 70 ? 'text-blue-600' : 'text-orange-600'}`}>
+                        {contentStats.completionRate}%
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          contentStats.completionRate >= 85 ? 'bg-gradient-to-r from-pink-400 to-pink-600' :
+                          contentStats.completionRate >= 70 ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
+                          'bg-gradient-to-r from-orange-400 to-orange-600'
+                        }`}
+                        style={{ width: `${contentStats.completionRate}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 爽点密度 */}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between text-sm">
+                      <span className="font-medium text-gray-700">爽点密度</span>
+                      <span className="font-bold text-orange-600">
+                        每500字 {(contentStats.shuangdianCount / (contentStats.wordCount / 500)).toFixed(1)}个
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (contentStats.shuangdianCount / (contentStats.wordCount / 500)) * 40)}%`
+                        }}
+                      />
                     </div>
                   </div>
                 </div>

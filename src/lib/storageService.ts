@@ -48,7 +48,7 @@ export async function uploadFile(options: UploadOptions): Promise<string> {
  */
 export async function streamUploadFile(options: {
 	fileName: string;
-	stream: NodeJS.ReadableStream;
+	stream: ReadableStream;
 	contentType?: string;
 	bucket?: string;
 }): Promise<string> {

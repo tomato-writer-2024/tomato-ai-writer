@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import Navigation from '@/components/Navigation';
+import { Badge } from '@/components/Badge';
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');

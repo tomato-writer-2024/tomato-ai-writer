@@ -19,27 +19,37 @@ import { Badge, TypeBadge } from '@/components/Badge';
 import { PageLoader, StatsCardSkeleton } from '@/components/Loader';
 import Navigation from '@/components/Navigation';
 
+interface WritingTrendItem {
+  date: string;
+  wordCount: number;
+  chapterCount: number;
+  qualityScore: number;
+}
+
 interface Stats {
-  overview: {
-    totalGenerations: number;
+  writingTrend: WritingTrendItem[];
+  overall: {
     totalWords: number;
-    avgQualityScore: number;
-    avgCompletionRate: number;
-    totalWorks: number;
+    totalChapters: number;
+    averageQualityScore: number;
+    averageCompletionRate: number;
+    totalShuangdian: number;
+    totalReadTime: number;
   };
-  recentActivity: Array<{
-    id: string;
-    type: 'generate' | 'polish' | 'continue';
-    title: string;
-    wordCount: number;
-    qualityScore: number;
-    completionRate: number;
-    createdAt: string;
-  }>;
-  trend: {
-    daily: Array<{ date: string; generations: number; words: number }>;
+  novels: {
+    totalNovels: number;
+    totalWords: number;
+    publishedNovels: number;
+    totalChapters: number;
+    averageRating: number;
   };
-  qualityTrend: Array<{ date: string; score: number }>;
+  membership: {
+    level: string;
+    expireAt: string | null;
+    dailyUsageCount: number;
+    monthlyUsageCount: number;
+    storageUsed: number;
+  };
 }
 
 export default function StatsPage() {
@@ -52,84 +62,26 @@ export default function StatsPage() {
   }, [selectedPeriod]);
 
   const loadStats = async () => {
+    setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
+      const days = selectedPeriod === 'week' ? 7 : 30;
+      const response = await fetch(`/api/stats?days=${days}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('获取统计数据失败');
       }
 
-      // TODO: 实际调用API获取统计数据
-      // const response = await fetch('/api/stats', {
-      //   headers: { 'Authorization': `Bearer ${token}` },
-      // });
-      // if (!response.ok) {
-      //   throw new Error('获取统计数据失败');
-      // }
-      // const data = await response.json();
-      // setStats(data.data);
-
-      // 模拟数据
-      setStats({
-        overview: {
-          totalGenerations: 156,
-          totalWords: 234000,
-          avgQualityScore: 87,
-          avgCompletionRate: 85,
-          totalWorks: 3,
-        },
-        recentActivity: [
-          {
-            id: '1',
-            type: 'generate',
-            title: '都市超级神医 第156章',
-            wordCount: 2500,
-            qualityScore: 92,
-            completionRate: 88,
-            createdAt: '2025-01-08T10:30:00',
-          },
-          {
-            id: '2',
-            type: 'polish',
-            title: '末世之无敌系统 第89章',
-            wordCount: 2200,
-            qualityScore: 85,
-            completionRate: 82,
-            createdAt: '2025-01-07T15:20:00',
-          },
-          {
-            id: '3',
-            type: 'continue',
-            title: '都市超级神医 第155章',
-            wordCount: 1800,
-            qualityScore: 90,
-            completionRate: 85,
-            createdAt: '2025-01-07T09:10:00',
-          },
-        ],
-        trend: {
-          daily: [
-            { date: '2025-01-02', generations: 15, words: 25000 },
-            { date: '2025-01-03', generations: 20, words: 32000 },
-            { date: '2025-01-04', generations: 18, words: 28000 },
-            { date: '2025-01-05', generations: 22, words: 35000 },
-            { date: '2025-01-06', generations: 25, words: 40000 },
-            { date: '2025-01-07', generations: 28, words: 42000 },
-            { date: '2025-01-08', generations: 28, words: 72000 },
-          ],
-        },
-        qualityTrend: [
-          { date: '2025-01-02', score: 82 },
-          { date: '2025-01-03', score: 84 },
-          { date: '2025-01-04', score: 83 },
-          { date: '2025-01-05', score: 86 },
-          { date: '2025-01-06', score: 85 },
-          { date: '2025-01-07', score: 88 },
-          { date: '2025-01-08', score: 87 },
-        ],
-      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        setStats(result.data);
+      }
     } catch (error) {
       console.error('加载统计数据失败:', error);
+      alert('加载统计数据失败，请刷新重试');
     } finally {
       setIsLoading(false);
     }
@@ -197,49 +149,49 @@ export default function StatsPage() {
         {/* 概览卡片 */}
         <div className="mb-8 grid gap-4 md:grid-cols-5">
           <StatsCard
-            title="总生成次数"
-            value={stats?.overview.totalGenerations || 0}
-            icon={<Activity className="text-indigo-600" size={24} />}
-            trend={{ value: '12%', isPositive: true }}
+            title="总字数"
+            value={`${((stats?.overall.totalWords || 0) / 10000).toFixed(1)}万`}
+            icon={<FileText className="text-purple-600" size={24} />}
+            trend={{ value: '+12%', isPositive: true }}
           />
           <StatsCard
-            title="总字数"
-            value={`${(stats?.overview.totalWords || 0 / 10000).toFixed(1)}万`}
-            icon={<FileText className="text-purple-600" size={24} />}
-            trend={{ value: '8%', isPositive: true }}
+            title="章节数量"
+            value={stats?.overall.totalChapters || 0}
+            icon={<FileText className="text-indigo-600" size={24} />}
+            trend={{ value: '+8', isPositive: true }}
           />
           <StatsCard
             title="平均质量分"
-            value={stats?.overview.avgQualityScore || 0}
+            value={stats?.overall.averageQualityScore || 0}
             icon={<Award className="text-pink-600" size={24} />}
-            trend={{ value: '5%', isPositive: true }}
+            trend={{ value: '+5%', isPositive: true }}
           />
           <StatsCard
             title="平均完读率"
-            value={`${stats?.overview.avgCompletionRate || 0}%`}
+            value={`${stats?.overall.averageCompletionRate || 0}%`}
             icon={<TrendingUp className="text-orange-600" size={24} />}
-            trend={{ value: '3%', isPositive: true }}
+            trend={{ value: '+3%', isPositive: true }}
           />
           <StatsCard
-            title="作品数量"
-            value={stats?.overview.totalWorks || 0}
+            title="爽点总数"
+            value={stats?.overall.totalShuangdian || 0}
             icon={<BarChart3 className="text-cyan-600" size={24} />}
-            trend={{ value: '1', isPositive: true }}
+            trend={{ value: '+25', isPositive: true }}
           />
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* 生成趋势 */}
+          {/* 写作趋势 */}
           <Card>
             <CardBody>
               <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
                 <BarChart3 className="text-indigo-600" size={20} />
-                生成趋势
+                写作趋势
               </h3>
               <div className="space-y-3">
-                {stats?.trend.daily.map((day) => {
-                  const maxWords = Math.max(...stats.trend.daily.map((d) => d.words));
-                  const height = (day.words / maxWords) * 100;
+                {stats?.writingTrend.map((day) => {
+                  const maxWords = Math.max(...stats.writingTrend.map((d) => d.wordCount));
+                  const height = maxWords > 0 ? (day.wordCount / maxWords) * 100 : 0;
                   return (
                     <div key={day.date} className="flex items-center gap-4">
                       <div className="w-16 text-sm text-gray-600">
@@ -252,8 +204,8 @@ export default function StatsPage() {
                         />
                       </div>
                       <div className="w-20 text-right">
-                        <p className="text-sm font-medium text-gray-900">{day.words.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">{day.generations}次</p>
+                        <p className="text-sm font-medium text-gray-900">{day.wordCount.toLocaleString()}</p>
+                        <p className="text-xs text-gray-500">{day.chapterCount}章</p>
                       </div>
                     </div>
                   );
@@ -270,7 +222,7 @@ export default function StatsPage() {
                 质量趋势
               </h3>
               <div className="space-y-3">
-                {stats?.qualityTrend.map((day) => (
+                {stats?.writingTrend.map((day) => (
                   <div key={day.date} className="flex items-center gap-4">
                     <div className="w-16 text-sm text-gray-600">
                       {new Date(day.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
@@ -278,17 +230,17 @@ export default function StatsPage() {
                     <div className="flex-1 rounded-lg bg-gray-100 p-2">
                       <div
                         className={`h-6 rounded-lg transition-all ${
-                          day.score >= 90
+                          day.qualityScore >= 90
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                            : day.score >= 80
+                            : day.qualityScore >= 80
                             ? 'bg-gradient-to-r from-indigo-500 to-purple-600'
                             : 'bg-gradient-to-r from-orange-500 to-red-600'
                         }`}
-                        style={{ width: `${day.score}%` }}
+                        style={{ width: `${day.qualityScore}%` }}
                       />
                     </div>
                     <div className="w-16 text-right text-sm font-medium text-gray-900">
-                      {day.score}分
+                      {day.qualityScore}分
                     </div>
                   </div>
                 ))}
@@ -296,54 +248,74 @@ export default function StatsPage() {
             </CardBody>
           </Card>
 
-          {/* 最近活动 */}
-          <Card className="lg:col-span-2">
+          {/* 小说统计 */}
+          <Card>
             <CardBody>
               <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
-                <Activity className="text-pink-600" size={20} />
-                最近活动
+                <BarChart3 className="text-blue-600" size={20} />
+                作品统计
               </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">类型</th>
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">标题</th>
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">字数</th>
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">质量分</th>
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">完读率</th>
-                      <th className="pb-3 text-left text-sm font-medium text-gray-600">时间</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats?.recentActivity.map((activity) => (
-                      <tr key={activity.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3">
-                          <TypeBadge type={activity.type} />
-                        </td>
-                        <td className="py-3 text-sm font-medium text-gray-900">{activity.title}</td>
-                        <td className="py-3 text-sm text-gray-600">{activity.wordCount.toLocaleString()}</td>
-                        <td className="py-3">
-                          <Badge
-                            variant={activity.qualityScore >= 90 ? 'success' : activity.qualityScore >= 80 ? 'info' : 'warning'}
-                          >
-                            {activity.qualityScore}分
-                          </Badge>
-                        </td>
-                        <td className="py-3">
-                          <Badge
-                            variant={activity.completionRate >= 90 ? 'success' : activity.completionRate >= 80 ? 'info' : 'warning'}
-                          >
-                            {activity.completionRate}%
-                          </Badge>
-                        </td>
-                        <td className="py-3 text-sm text-gray-600">
-                          {new Date(activity.createdAt).toLocaleString('zh-CN')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+                  <p className="text-sm text-gray-600">总作品数</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.novels.totalNovels || 0}</p>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+                  <p className="text-sm text-gray-600">已发布</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.novels.publishedNovels || 0}</p>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 p-4">
+                  <p className="text-sm text-gray-600">总字数</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {((stats?.novels.totalWords || 0) / 10000).toFixed(1)}万
+                  </p>
+                </div>
+                <div className="rounded-lg bg-gradient-to-br from-pink-50 to-orange-50 p-4">
+                  <p className="text-sm text-gray-600">平均评分</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.novels.averageRating || '0.0'}</p>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* 会员信息 */}
+          <Card>
+            <CardBody>
+              <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-900">
+                <Award className="text-amber-600" size={20} />
+                会员信息
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">会员等级</span>
+                  <Badge variant="success">{stats?.membership.level || 'FREE'}</Badge>
+                </div>
+                {stats?.membership.expireAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">到期时间</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {new Date(stats.membership.expireAt).toLocaleDateString('zh-CN')}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">今日使用次数</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {stats?.membership.dailyUsageCount || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">本月使用次数</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {stats?.membership.monthlyUsageCount || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">存储空间</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {((stats?.membership.storageUsed || 0) / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                </div>
               </div>
             </CardBody>
           </Card>
