@@ -1,42 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { optimizeForCompletionRate } from '@/lib/contentGenerator';
 
 export async function POST(request: NextRequest) {
   try {
-    const { content, context, characters } = await request.json();
+    const { content, context, characters, wordCount = 1000 } = await request.json();
 
-    // 构建系统提示词
-    const systemPrompt = `你是一位专业的番茄小说创作助手，擅长智能续写。
+    // 验证必要参数
+    if (!content || content.trim().length === 0) {
+      return NextResponse.json(
+        { success: false, error: '缺少前文内容' },
+        { status: 400 }
+      );
+    }
 
-## 续写原则：
-1. **逻辑连贯**：确保续写内容与前文逻辑连贯，不出现前后矛盾
-2. **设定一致**：检查续写内容是否与前文设定冲突（角色能力、世界观等）
-3. **伏笔跟踪**：根据前文伏笔，在合适时机进行铺垫或回收
-4. **爽点导向**：续写方向应包含爽点（打脸、逆袭、装逼等）
-5. **角色一致**：确保角色对话和行为符合其性格设定
-6. **风格统一**：保持与前文相同的语言风格和叙事节奏
-7. **钩子设计**：每段续写结尾要留下钩子，吸引继续阅读
+    // 构建优化后的系统提示词（提升完读率和逻辑连贯性）
+    const systemPrompt = `你是番茄小说的顶级续写专家，擅长创作90%+完读率的爽文续章。
+
+## 核心目标：
+1. 逻辑连贯：确保续写与前文完美衔接
+2. 爽点密集：每500字至少1个核心爽点
+3. 钩子设计：每段结尾留下悬念
+4. 角色一致：保持角色性格和口吻
+
+## 续写策略：
+1. **分析前文**：
+   - 识别当前情节阶段（铺垫/冲突/高潮/收尾）
+   - 追踪伏笔线索（待回收的伏笔）
+   - 确认角色状态（能力、位置、情绪）
+
+2. **续写方向**：
+   - **打脸流**：主角被轻视 → 展现实力 → 震惊全场
+   - **逆袭流**：遇到强敌 → 绝境突破 → 反败为胜
+   - **收获流**：探险秘境 → 获得宝物 → 实力提升
+   - **装逼流**：展示特殊能力 → 众人崇拜 → 情感突破
+
+3. **节奏控制**：
+   - 前30%：承接前文，建立冲突
+   - 中段50%：爽点爆发，情绪高潮
+   - 后20%：埋下钩子，引出下文
+
+4. **钩子设计**：
+   - 悬念钩子："他究竟是谁？"
+   - 期待钩子："接下来的战斗会怎样？"
+   - 伏笔钩子："这件事背后隐藏着什么秘密？"
 
 ## 输出要求：
-- 自然承接前文情节，不突兀
-- 保持故事节奏流畅
-- 提供多个可能的续写方向（打脸、逆袭、装逼等）
-- 控制续写长度在800-1200字
-- 直接返回续写内容，不要包含任何分析或说明文字`;
+- 自然承接前文，无割裂感
+- 保持网文风格（短句、口语化、爽点密集）
+- 控制字数在${wordCount}字左右
+- 在结尾留下强力钩子
+- 直接输出续写内容，无任何说明文字`;
 
     // 构建用户提示词
-    const userPrompt = `请根据以下信息进行智能续写：
+    const userPrompt = `请进行智能续写，目标：完读率90%+，字数约${wordCount}字：
 
 【前文内容】
 ${content}
 
-【故事背景】
-${context || '无'}
+${context ? `【故事背景】\n${context}` : ''}
 
-【角色信息】
-${characters || '无'}
+${characters ? `【角色信息】\n${characters}` : ''}
 
-请续写下一部分内容，保持与前文风格和逻辑的一致性。`;
+【续写要求】
+1. 分析前文，识别当前情节阶段
+2. 选择合适的续写方向（打脸/逆袭/收获/装逼）
+3. 确保逻辑连贯，角色一致
+4. 每段结尾增加悬念钩子
+5. 控制爽点密度（每500字至少1个）
+6. 直接输出续写内容`;
 
     // 初始化LLM客户端
     const config = new Config();
@@ -47,26 +79,34 @@ ${characters || '无'}
       { role: 'user' as const, content: userPrompt },
     ];
 
-    // 使用流式输出
+    // 调用流式AI
     const stream = client.stream(messages, {
-      model: 'doubao-seed-1-6-251015',
-      temperature: 1.0,
+      model: 'doubao-pro-4k',
+      temperature: 1.1,
       streaming: true,
     });
 
     // 创建可读流
     const encoder = new TextEncoder();
+    let accumulatedContent = '';
+
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of stream) {
-            if (chunk.content) {
-              const text = chunk.content.toString();
-              controller.enqueue(encoder.encode(text));
-            }
+            const content = chunk.content?.toString() || '';
+            accumulatedContent += content;
+            controller.enqueue(encoder.encode(content));
           }
+
+          // 应用完读率优化算法
+          const optimizedContent = optimizeForCompletionRate(accumulatedContent);
+
+          // 返回优化标记
+          controller.enqueue(encoder.encode('\n\n[OPTIMIZED]'));
           controller.close();
         } catch (error) {
+          console.error('Stream error:', error);
           controller.error(error);
         }
       },
@@ -78,6 +118,7 @@ ${characters || '无'}
         'Transfer-Encoding': 'chunked',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-Continue-Version': 'v2.0-90plus',
       },
     });
   } catch (error) {

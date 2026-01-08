@@ -146,105 +146,129 @@ export default function Home() {
         {/* 定价预览 */}
         <div className="mt-24 text-center">
           <h2 className="mb-12 text-3xl font-bold text-gray-900">选择适合你的套餐</h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300">
-              <h3 className="mb-2 text-xl font-bold text-gray-900">免费版</h3>
-              <div className="mb-6 text-4xl font-bold text-gray-900">¥0<span className="text-lg font-normal text-gray-600">/月</span></div>
-              <ul className="mb-6 space-y-3 text-left text-gray-600">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <h3 className="mb-2 text-lg font-bold text-gray-900">免费版</h3>
+              <div className="mb-4 text-3xl font-bold text-gray-900">¥0<span className="text-base font-normal text-gray-600">/月</span></div>
+              <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   每天5次AI生成
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   基础章节撰写
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   标准润色功能
                 </li>
-                <li className="flex items-center gap-2 text-gray-400">
-                  <X size={18} />
-                  无续写功能
-                </li>
-                <li className="flex items-center gap-2 text-gray-400">
-                  <X size={18} />
-                  无高级评估
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  单次生成2000字
                 </li>
               </ul>
               <Link
                 href="/workspace"
-                className="block w-full rounded-lg border-2 border-gray-300 py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                className="block w-full rounded-lg border-2 border-gray-300 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
               >
                 开始使用
               </Link>
             </div>
-            <div className="relative rounded-xl border-2 border-indigo-500 bg-white p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 transform scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1 text-sm font-semibold text-white shadow-lg">
-                  <Sparkles size={16} />
-                  最受欢迎
-                </span>
-              </div>
-              <h3 className="mb-2 text-xl font-bold text-gray-900">高级版</h3>
-              <div className="mb-6 text-4xl font-bold text-gray-900">¥99<span className="text-lg font-normal text-gray-600">/月</span></div>
-              <ul className="mb-6 space-y-3 text-left text-gray-600">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <h3 className="mb-2 text-lg font-bold text-gray-900">基础版</h3>
+              <div className="mb-4 text-3xl font-bold text-gray-900">¥29<span className="text-base font-normal text-gray-600">/月</span></div>
+              <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  每天50次AI生成
+                  <Check className="text-green-500" size={14} />
+                  每天30次AI生成
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   全功能章节撰写
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   高级润色功能
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  智能续写
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  质量评估报告
+                  <Check className="text-green-500" size={14} />
+                  单次生成3000字
                 </li>
               </ul>
               <Link
-                href="/workspace"
-                className="block w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 py-3 font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+                href="/pricing"
+                className="block w-full rounded-lg border-2 border-indigo-300 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition-all"
               >
                 立即订阅
               </Link>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg hover:shadow-2xl transition-all duration-300">
-              <h3 className="mb-2 text-xl font-bold text-gray-900">企业版</h3>
-              <div className="mb-6 text-4xl font-bold text-gray-900">¥299<span className="text-lg font-normal text-gray-600">/月</span></div>
-              <ul className="mb-6 space-y-3 text-left text-gray-600">
+            <div className="relative rounded-xl border-2 border-indigo-500 bg-white p-6 shadow-2xl hover:shadow-3xl transition-all duration-300 transform scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-1 text-xs font-semibold text-white shadow-lg">
+                  <Sparkles size={14} />
+                  最受欢迎
+                </span>
+              </div>
+              <h3 className="mb-2 text-lg font-bold text-gray-900">高级版</h3>
+              <div className="mb-4 text-3xl font-bold text-gray-900">¥99<span className="text-base font-normal text-gray-600">/月</span></div>
+              <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
+                  <Check className="text-green-500" size={14} />
                   无限AI生成
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  所有高级功能
+                  <Check className="text-green-500" size={14} />
+                  全功能章节撰写
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  专属客服支持
+                  <Check className="text-green-500" size={14} />
+                  高级润色功能
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  剧情逻辑优化
+                  <Check className="text-green-500" size={14} />
+                  智能续写
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="text-green-500" size={18} />
-                  平台算法优化
+                  <Check className="text-green-500" size={14} />
+                  单次生成5000字
                 </li>
               </ul>
               <Link
-                href="/workspace"
-                className="block w-full rounded-lg border-2 border-gray-300 py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-all"
+                href="/pricing"
+                className="block w-full rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 py-2.5 text-sm font-semibold text-white hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg"
+              >
+                立即订阅
+              </Link>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
+              <h3 className="mb-2 text-lg font-bold text-gray-900">企业版</h3>
+              <div className="mb-4 text-3xl font-bold text-gray-900">¥299<span className="text-base font-normal text-gray-600">/月</span></div>
+              <ul className="mb-6 space-y-2 text-left text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  无限AI生成
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  所有高级功能
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  单次生成10000字
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  API接口访问
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="text-green-500" size={14} />
+                  子账号管理
+                </li>
+              </ul>
+              <Link
+                href="/pricing"
+                className="block w-full rounded-lg border-2 border-gray-300 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all"
               >
                 立即订阅
               </Link>

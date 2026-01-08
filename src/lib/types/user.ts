@@ -47,6 +47,12 @@ export interface MembershipQuota {
 
 /**
  * 会员权益配置表
+ *
+ * 统一标准：
+ * - FREE（免费版）: ¥0
+ * - BASIC（基础版）: ¥29/月（¥261/年，省10%）
+ * - PREMIUM（高级版）: ¥99/月（¥891/年，省10%）
+ * - ENTERPRISE（企业版）: ¥299/月（¥2691/年，省10%）
  */
 export const MEMBERSHIP_QUOTAS: Record<MembershipLevel, MembershipQuota> = {
   [MembershipLevel.FREE]: {
@@ -62,7 +68,7 @@ export const MEMBERSHIP_QUOTAS: Record<MembershipLevel, MembershipQuota> = {
     supportLevel: 'BASIC'
   },
   [MembershipLevel.BASIC]: {
-    daily: 20,
+    daily: 30,
     monthly: 500,
     maxWords: 3000,
     storageLimit: 500 * 1024 * 1024,  // 500MB
@@ -97,6 +103,16 @@ export const MEMBERSHIP_QUOTAS: Record<MembershipLevel, MembershipQuota> = {
     maxSubAccounts: 10,
     supportLevel: 'DEDICATED'
   }
+};
+
+/**
+ * 会员定价配置（元）
+ */
+export const MEMBERSHIP_PRICING: Record<MembershipLevel, { monthly: number; yearly: number }> = {
+  [MembershipLevel.FREE]: { monthly: 0, yearly: 0 },
+  [MembershipLevel.BASIC]: { monthly: 29, yearly: 261 },  // 年付省10%
+  [MembershipLevel.PREMIUM]: { monthly: 99, yearly: 891 },  // 年付省10%
+  [MembershipLevel.ENTERPRISE]: { monthly: 299, yearly: 2691 },  // 年付省10%
 };
 
 /**

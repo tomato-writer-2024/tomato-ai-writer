@@ -62,15 +62,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 计算价格
-    const prices: Record<string, { monthly: number; yearly: number }> = {
-      [MembershipLevel.FREE]: { monthly: 0, yearly: 0 },
-      [MembershipLevel.BASIC]: { monthly: 29, yearly: 261 }, // 年付省10%
-      [MembershipLevel.PREMIUM]: { monthly: 99, yearly: 891 },
-      [MembershipLevel.ENTERPRISE]: { monthly: 299, yearly: 2691 },
-    };
-
-    const price = (prices as any)[membershipLevel]?.[billingCycle] || 0;
+    // 从统一的定价配置中获取价格
+    const { MEMBERSHIP_PRICING } = await import('@/lib/types/user');
+    const pricing = MEMBERSHIP_PRICING[membershipLevel as keyof typeof MEMBERSHIP_PRICING];
+    const price = billingCycle === 'monthly' ? pricing.monthly : pricing.yearly;
 
     // 计算会员到期时间
     const now = new Date();
