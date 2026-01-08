@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
@@ -9,7 +9,7 @@ import { Input } from '@/components/Input';
 import { MembershipBadge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/Tabs';
-import { User, Mail, Phone, MapPin, Calendar, Crown, TrendingUp, Award, Settings, Bell, Shield, Lock, Download } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, Crown, TrendingUp, Award, Settings, Bell, Shield, Lock, Download, Upload, Camera, Loader2 } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -17,7 +17,7 @@ interface UserProfile {
   email: string;
   phone: string;
   location: string;
-  avatar?: string;
+  avatarUrl?: string;
   membership: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
   joinDate: string;
   totalWords: number;
@@ -32,20 +32,6 @@ interface MembershipPlan {
   features: string[];
   popular?: boolean;
 }
-
-const mockUser: UserProfile = {
-  id: '1',
-  username: '番茄写手小王',
-  email: 'xiaowang@fanqie.com',
-  phone: '138****8888',
-  location: '北京市',
-  avatar: undefined,
-  membership: 'PREMIUM',
-  joinDate: '2023-06-15',
-  totalWords: 856000,
-  totalNovels: 6,
-  averageRating: 9.1,
-};
 
 const membershipPlans: MembershipPlan[] = [
   {
@@ -113,23 +99,138 @@ const membershipNames = {
 };
 
 export default function ProfilePage() {
-  const [user] = useState<UserProfile>(mockUser);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
-    username: user.username,
-    email: user.email,
-    phone: user.phone,
-    location: user.location,
+    username: '',
+    email: '',
+    phone: '',
+    location: '',
   });
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // TODO: 实际保存用户信息
+  // 加载用户信息
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/user/profile');
+      if (!response.ok) {
+        throw new Error('加载用户信息失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setUser(result.data);
+        setFormData({
+          username: result.data.username,
+          email: result.data.email,
+          phone: result.data.phone || '',
+          location: result.data.location || '',
+        });
+      }
+    } catch (error) {
+      console.error('加载用户信息失败:', error);
+      // 使用localStorage中的用户信息作为fallback
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const localUser = JSON.parse(userStr);
+        setUser(localUser);
+        setFormData({
+          username: localUser.username,
+          email: localUser.email,
+          phone: localUser.phone || '',
+          location: localUser.location || '',
+        });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('保存用户信息失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('用户信息保存成功！');
+        setIsEditing(false);
+        loadUserProfile(); // 重新加载用户信息
+      }
+    } catch (error) {
+      console.error('保存用户信息失败:', error);
+      alert('保存失败，请稍后重试');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 验证文件类型
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('请选择图片文件（jpg, png, gif, webp）');
+      return;
+    }
+
+    // 验证文件大小（限制为2MB）
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+      alert('图片大小不能超过2MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('上传头像失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('头像上传成功！');
+        loadUserProfile(); // 重新加载用户信息
+      }
+    } catch (error) {
+      console.error('上传头像失败:', error);
+      alert('上传失败，请稍后重试');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
   };
 
   const handleUpgrade = (level: 'BASIC' | 'PREMIUM' | 'ENTERPRISE' | 'FREE') => {
-    // TODO: 实际升级会员
     if (level === 'FREE') return; // FREE不需要升级
     window.location.href = `/payment?plan=${level}`;
   };
@@ -163,10 +264,10 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
               {/* 头像 */}
               <div className="relative">
-                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
-                  {user.avatar ? (
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg overflow-hidden">
+                  {user?.avatarUrl ? (
                     <img
-                      src={user.avatar}
+                      src={user.avatarUrl}
                       alt={user.username}
                       className="h-full w-full rounded-full object-cover"
                     />
@@ -175,95 +276,136 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="absolute -bottom-2 -right-2">
-                  <BrandIcons.Membership level={user.membership} size={40} />
+                  <BrandIcons.Membership level={user?.membership || 'FREE'} size={40} />
                 </div>
+                {/* 头像上传按钮 */}
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-indigo-600 p-2 text-white shadow-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  title="上传头像"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Camera size={16} />
+                  )}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
 
               {/* 用户信息 */}
               <div className="flex-1 text-center md:text-left">
-                <div className="mb-4 flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
-                    <div className="mt-2 flex flex-wrap items-center justify-center gap-3 md:justify-start">
-                      <MembershipBadge level={user.membership} />
-                      <span className="text-sm text-gray-500">
-                        加入于 {user.joinDate}
-                      </span>
-                    </div>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="animate-spin text-indigo-600" size={32} />
                   </div>
-                  {!isEditing && (
-                    <Button
-                      variant="outline"
-                      icon={<Settings size={18} />}
-                      onClick={() => setIsEditing(true)}
-                    >
-                      编辑资料
-                    </Button>
-                  )}
-                </div>
+                ) : user ? (
+                  <>
+                    <div className="mb-4 flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
+                        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                          <MembershipBadge level={user.membership} />
+                          <span className="text-sm text-gray-500">
+                            加入于 {new Date(user.joinDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      {!isEditing && (
+                        <Button
+                          variant="outline"
+                          icon={<Settings size={18} />}
+                          onClick={() => setIsEditing(true)}
+                        >
+                          编辑资料
+                        </Button>
+                      )}
+                    </div>
 
-                {isEditing ? (
-                  <div className="space-y-4 rounded-lg bg-gray-50 p-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Input
-                        label="用户名"
-                        value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        icon={<User size={20} className="text-gray-400" />}
-                        fullWidth
-                      />
-                      <Input
-                        label="邮箱"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        icon={<Mail size={20} className="text-gray-400" />}
-                        fullWidth
-                      />
-                      <Input
-                        label="手机号"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        icon={<Phone size={20} className="text-gray-400" />}
-                        fullWidth
-                      />
-                      <Input
-                        label="所在地"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                        icon={<MapPin size={20} className="text-gray-400" />}
-                        fullWidth
-                      />
-                    </div>
-                    <div className="flex justify-end gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => setIsEditing(false)}
-                      >
-                        取消
-                      </Button>
-                      <GradientButton
-                        onClick={handleSave}
-                      >
-                        保存修改
-                      </GradientButton>
-                    </div>
-                  </div>
+                    {isEditing ? (
+                      <div className="space-y-4 rounded-lg bg-gray-50 p-4">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <Input
+                            label="用户名"
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            icon={<User size={20} className="text-gray-400" />}
+                            fullWidth
+                          />
+                          <Input
+                            label="邮箱"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            icon={<Mail size={20} className="text-gray-400" />}
+                            fullWidth
+                          />
+                          <Input
+                            label="手机号"
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            icon={<Phone size={20} className="text-gray-400" />}
+                            fullWidth
+                          />
+                          <Input
+                            label="所在地"
+                            value={formData.location}
+                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                            icon={<MapPin size={20} className="text-gray-400" />}
+                            fullWidth
+                          />
+                        </div>
+                        <div className="flex justify-end gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => setIsEditing(false)}
+                            disabled={isSaving}
+                          >
+                            取消
+                          </Button>
+                          <GradientButton
+                            onClick={handleSave}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? (
+                              <>
+                                <Loader2 className="mr-2 animate-spin" size={16} />
+                                保存中...
+                              </>
+                            ) : (
+                              '保存修改'
+                            )}
+                          </GradientButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Mail size={18} className="text-gray-500" />
+                          <span className="text-gray-700">{user.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone size={18} className="text-gray-500" />
+                          <span className="text-gray-700">{user.phone || '未设置'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin size={18} className="text-gray-500" />
+                          <span className="text-gray-700">{user.location || '未设置'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="flex flex-wrap gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Mail size={18} className="text-gray-500" />
-                      <span className="text-gray-700">{user.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone size={18} className="text-gray-500" />
-                      <span className="text-gray-700">{user.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-gray-500" />
-                      <span className="text-gray-700">{user.location}</span>
-                    </div>
+                  <div className="py-8 text-center text-gray-500">
+                    无法加载用户信息
                   </div>
                 )}
               </div>
@@ -272,32 +414,34 @@ export default function ProfilePage() {
         </Card>
 
         {/* 统计卡片 */}
-        <div className="mb-8 grid gap-6 md:grid-cols-4">
-          {getStatCard(
-            '总字数',
-            Math.round(user.totalWords / 10000) + '万',
-            <BrandIcons.Writing size={24} className="text-white" />,
-            'from-indigo-500 to-indigo-600'
-          )}
-          {getStatCard(
-            '作品数量',
-            user.totalNovels.toString(),
-            <BrandIcons.Book size={24} className="text-white" />,
-            'from-purple-500 to-purple-600'
-          )}
-          {getStatCard(
-            '平均评分',
-            user.averageRating.toFixed(1),
-            <Award size={24} className="text-yellow-400 fill-yellow-400 text-white" />,
-            'from-pink-500 to-pink-600'
-          )}
-          {getStatCard(
-            '会员等级',
-            membershipNames[user.membership],
-            <Crown size={24} className="text-white" />,
-            'from-orange-500 to-orange-600'
-          )}
-        </div>
+        {!isLoading && user && (
+          <div className="mb-8 grid gap-6 md:grid-cols-4">
+            {getStatCard(
+              '总字数',
+              Math.round(user.totalWords / 10000) + '万',
+              <BrandIcons.Writing size={24} className="text-white" />,
+              'from-indigo-500 to-indigo-600'
+            )}
+            {getStatCard(
+              '作品数量',
+              user.totalNovels.toString(),
+              <BrandIcons.Book size={24} className="text-white" />,
+              'from-purple-500 to-purple-600'
+            )}
+            {getStatCard(
+              '平均评分',
+              user.averageRating.toFixed(1),
+              <Award size={24} className="text-yellow-400 fill-yellow-400 text-white" />,
+              'from-pink-500 to-pink-600'
+            )}
+            {getStatCard(
+              '会员等级',
+              membershipNames[user.membership],
+              <Crown size={24} className="text-white" />,
+              'from-orange-500 to-orange-600'
+            )}
+          </div>
+        )}
 
         {/* 功能标签页 */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
@@ -396,10 +540,12 @@ export default function ProfilePage() {
                   <h3 className="text-2xl font-bold text-gray-900">会员套餐</h3>
                   <p className="text-gray-600">选择适合你的会员计划</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">当前套餐:</span>
-                  <MembershipBadge level={user.membership} />
-                </div>
+                {!isLoading && user && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">当前套餐:</span>
+                    <MembershipBadge level={user.membership} />
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -443,7 +589,7 @@ export default function ProfilePage() {
                         ))}
                       </ul>
 
-                      {plan.level === user.membership ? (
+                      {user && plan.level === user.membership ? (
                         <Button variant="outline" fullWidth disabled>
                           当前套餐
                         </Button>

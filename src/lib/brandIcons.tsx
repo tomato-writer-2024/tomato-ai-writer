@@ -484,6 +484,32 @@ export const SettingsIcon: React.FC<{ size?: number; className?: string }> = ({ 
   </svg>
 );
 
+// Calendar/日历图标
+export const CalendarIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
+    <defs>
+      <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#4F46E5" />
+        <stop offset="100%" stopColor="#7C3AED" />
+      </linearGradient>
+    </defs>
+    {/* 日历主体 */}
+    <rect x="8" y="12" width="48" height="44" rx="4" fill="url(#calendarGradient)" opacity="0.9" />
+    {/* 日历顶部 */}
+    <rect x="8" y="12" width="48" height="12" rx="4" fill="white" opacity="0.2" />
+    {/* 日历孔 */}
+    <circle cx="16" cy="18" r="2" fill="white" opacity="0.5" />
+    <circle cx="48" cy="18" r="2" fill="white" opacity="0.5" />
+    {/* 日期格子 */}
+    <rect x="16" y="32" width="8" height="8" rx="1" fill="white" opacity="0.3" />
+    <rect x="28" y="32" width="8" height="8" rx="1" fill="white" opacity="0.5" />
+    <rect x="40" y="32" width="8" height="8" rx="1" fill="white" opacity="0.3" />
+    <rect x="16" y="44" width="8" height="8" rx="1" fill="white" opacity="0.3" />
+    <rect x="28" y="44" width="8" height="8" rx="1" fill="#DB2777" opacity="0.7" />
+    <rect x="40" y="44" width="8" height="8" rx="1" fill="white" opacity="0.3" />
+  </svg>
+);
+
 // 品牌图标集合导出
 export const BrandIcons = {
   Logo: LogoIcon,
@@ -501,6 +527,7 @@ export const BrandIcons = {
   Crown: CrownIcon,
   Home: HomeIcon,
   Settings: SettingsIcon,
+  Calendar: CalendarIcon,
 } as const;
 
 export default BrandIcons;

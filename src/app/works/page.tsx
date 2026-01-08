@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody, FeatureCard } from '@/components/Card';
-import { Input, Select } from '@/components/Input';
+import { Input, Select, Textarea } from '@/components/Input';
 import { Badge, StatusBadge, MembershipBadge, GenreBadge, TypeBadge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
-import { Plus, MoreVertical, Edit, Trash2, Eye, Star, Clock, FileText, Calendar } from 'lucide-react';
+import Modal from '@/components/Modal';
+import { Plus, MoreVertical, Edit, Trash2, Eye, Star, Clock, FileText, Calendar, Loader2, X } from 'lucide-react';
 
 interface Novel {
   id: string;
@@ -24,104 +25,73 @@ interface Novel {
   membership: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE';
   cover?: string;
   description: string;
+  tags?: string[];
 }
 
-const mockNovels: Novel[] = [
-  {
-    id: '1',
-    title: '神豪从签到开始',
-    genre: '都市',
-    status: '连载中',
-    type: '爽文',
-    wordCount: 128500,
-    chapterCount: 52,
-    lastUpdate: '2024-01-15',
-    averageRating: 9.2,
-    completionRate: 85,
-    membership: 'PREMIUM',
-    description: '获得签到系统，开局奖励一千万，从此走上人生巅峰...',
-  },
-  {
-    id: '2',
-    title: '我成了反派大师兄',
-    genre: '玄幻',
-    status: '连载中',
-    type: '爽文',
-    wordCount: 89600,
-    chapterCount: 38,
-    lastUpdate: '2024-01-14',
-    averageRating: 8.8,
-    completionRate: 78,
-    membership: 'BASIC',
-    description: '穿越成为反派大师兄，我决定逆天改命，成为真正的强者...',
-  },
-  {
-    id: '3',
-    title: '偏执顾总的小娇妻',
-    genre: '言情',
-    status: '连载中',
-    type: '甜宠',
-    wordCount: 67200,
-    chapterCount: 28,
-    lastUpdate: '2024-01-13',
-    averageRating: 9.5,
-    completionRate: 92,
-    membership: 'PREMIUM',
-    description: '被继母卖给顾家抵债，没想到顾总竟然是暗恋自己多年的那个人...',
-  },
-  {
-    id: '4',
-    title: '末日生存：我有无限物资',
-    genre: '科幻',
-    status: '已完结',
-    type: '爽文',
-    wordCount: 345000,
-    chapterCount: 138,
-    lastUpdate: '2023-12-30',
-    averageRating: 9.0,
-    completionRate: 88,
-    membership: 'ENTERPRISE',
-    description: '重生回到末日爆发前，激活无限物资系统，这一世我要做最强幸存者...',
-  },
-  {
-    id: '5',
-    title: '绝世剑神',
-    genre: '玄幻',
-    status: '连载中',
-    type: '爽文',
-    wordCount: 234000,
-    chapterCount: 98,
-    lastUpdate: '2024-01-12',
-    averageRating: 8.5,
-    completionRate: 75,
-    membership: 'FREE',
-    description: '从废柴少年到绝世剑神，我用手中的剑劈开一切阻碍...',
-  },
-  {
-    id: '6',
-    title: '神秘档案',
-    genre: '悬疑',
-    status: '暂停',
-    type: '悬疑',
-    wordCount: 45000,
-    chapterCount: 18,
-    lastUpdate: '2024-01-10',
-    averageRating: 7.8,
-    completionRate: 65,
-    membership: 'BASIC',
-    description: '一件离奇失踪案，牵扯出一个尘封已久的秘密...',
-  },
-];
+interface CreateNovelForm {
+  title: string;
+  description: string;
+  genre: string;
+  type: string;
+  status: string;
+  tags: string;
+}
 
 export default function WorksPage() {
-  const [novels] = useState<Novel[]>(mockNovels);
+  const [novels, setNovels] = useState<Novel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterGenre, setFilterGenre] = useState('全部');
   const [filterStatus, setFilterStatus] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateNovelForm>({
+    title: '',
+    description: '',
+    genre: '都市',
+    type: '爽文',
+    status: '连载中',
+    tags: '',
+  });
+  const [deletingNovelId, setDeletingNovelId] = useState<string | null>(null);
+  const deleteModalRef = useRef<HTMLDivElement>(null);
 
   const genres = ['全部', '都市', '玄幻', '言情', '科幻', '悬疑', '历史', '军事'];
   const statuses = ['全部', '连载中', '已完结', '暂停'];
+  const genreOptions = ['都市', '玄幻', '言情', '科幻', '悬疑', '历史', '军事'];
+  const typeOptions = ['爽文', '甜宠', '悬疑', '玄幻', '都市'];
+  const statusOptions = ['连载中', '已完结', '暂停'];
+
+  // 加载作品列表
+  useEffect(() => {
+    loadNovels();
+  }, []);
+
+  const loadNovels = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/novels', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('加载作品列表失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setNovels(result.data || []);
+      }
+    } catch (error) {
+      console.error('加载作品列表失败:', error);
+      alert('加载作品列表失败，请刷新重试');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredNovels = novels.filter((novel) => {
     const matchesGenre = filterGenre === '全部' || novel.genre === filterGenre;
@@ -142,6 +112,92 @@ export default function WorksPage() {
     </div>
   );
 
+  // 创建作品
+  const handleCreateNovel = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!createForm.title.trim()) {
+      alert('请输入作品标题');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await fetch('/api/novels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: createForm.title.trim(),
+          description: createForm.description.trim(),
+          genre: createForm.genre,
+          type: createForm.type,
+          status: createForm.status as any,
+          tags: createForm.tags ? createForm.tags.split(',').map(t => t.trim()).filter(t => t) : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '创建作品失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('作品创建成功！');
+        setShowCreateModal(false);
+        setCreateForm({
+          title: '',
+          description: '',
+          genre: '都市',
+          type: '爽文',
+          status: '连载中',
+          tags: '',
+        });
+        loadNovels(); // 重新加载列表
+      } else {
+        throw new Error(result.error || '创建作品失败');
+      }
+    } catch (error) {
+      console.error('创建作品失败:', error);
+      alert(error instanceof Error ? error.message : '创建作品失败，请稍后重试');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  // 删除作品
+  const handleDeleteNovel = async (novelId: string) => {
+    if (!confirm('确定要删除这个作品吗？此操作不可恢复！')) {
+      return;
+    }
+
+    setIsCreating(true); // 复用loading状态
+    try {
+      const response = await fetch(`/api/novels/${novelId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '删除作品失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('作品删除成功！');
+        loadNovels(); // 重新加载列表
+      } else {
+        throw new Error(result.error || '删除作品失败');
+      }
+    } catch (error) {
+      console.error('删除作品失败:', error);
+      alert(error instanceof Error ? error.message : '删除作品失败，请稍后重试');
+    } finally {
+      setIsCreating(false);
+      setDeletingNovelId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Navigation />
@@ -153,7 +209,7 @@ export default function WorksPage() {
             <h1 className="text-3xl font-bold text-gray-900">作品管理</h1>
             <p className="mt-2 text-gray-600">管理你的所有小说作品</p>
           </div>
-          <GradientButton icon={<Plus size={20} />} iconPosition="right">
+          <GradientButton icon={<Plus size={20} />} iconPosition="right" onClick={() => setShowCreateModal(true)}>
             新建作品
           </GradientButton>
         </div>
@@ -259,7 +315,9 @@ export default function WorksPage() {
                   {/* 作品信息 */}
                   <div className="flex-1">
                     <div className="mb-3 flex items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-gray-900 line-clamp-1">{novel.title}</h3>
+                      <Link href={`/novel/${novel.id}`} className="text-lg font-bold text-gray-900 line-clamp-1 hover:text-indigo-600 transition-colors">
+                        {novel.title}
+                      </Link>
                       <button className="flex-shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
                         <MoreVertical size={18} />
                       </button>
@@ -322,6 +380,8 @@ export default function WorksPage() {
                       variant="outline"
                       size="sm"
                       icon={<Trash2 size={16} />}
+                      onClick={() => handleDeleteNovel(novel.id)}
+                      disabled={isCreating}
                     >
                       删除
                     </Button>
@@ -355,7 +415,9 @@ export default function WorksPage() {
                             <BrandIcons.Book size={20} className="text-indigo-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{novel.title}</p>
+                            <Link href={`/novel/${novel.id}`} className="font-medium text-gray-900 hover:text-indigo-600 transition-colors">
+                              {novel.title}
+                            </Link>
                             <p className="text-xs text-gray-500">{novel.genre}</p>
                           </div>
                         </div>
@@ -392,6 +454,8 @@ export default function WorksPage() {
                             variant="ghost"
                             size="sm"
                             icon={<Trash2 size={16} />}
+                            onClick={() => handleDeleteNovel(novel.id)}
+                            disabled={isCreating}
                           />
                         </div>
                       </td>
@@ -404,7 +468,7 @@ export default function WorksPage() {
         )}
 
         {/* 空状态 */}
-        {filteredNovels.length === 0 && (
+        {filteredNovels.length === 0 && !isLoading && (
           <Card>
             <CardBody>
               <div className="py-16 text-center">
@@ -417,14 +481,137 @@ export default function WorksPage() {
                     ? '没有找到匹配的作品'
                     : '开始创建你的第一个作品吧'}
                 </p>
-                <GradientButton icon={<Plus size={20} />} iconPosition="right">
+                <GradientButton icon={<Plus size={20} />} iconPosition="right" onClick={() => setShowCreateModal(true)}>
                   创建新作品
                 </GradientButton>
               </div>
             </CardBody>
           </Card>
         )}
+
+        {/* 加载状态 */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="animate-spin text-indigo-600" size={48} />
+          </div>
+        )}
       </div>
+
+      {/* 创建作品Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          if (!isCreating) {
+            setShowCreateModal(false);
+          }
+        }}
+        title="创建新作品"
+      >
+        <form onSubmit={handleCreateNovel} className="space-y-6">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              作品标题 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              placeholder="输入作品标题..."
+              value={createForm.title}
+              onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+              required
+              fullWidth
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              作品简介
+            </label>
+            <Textarea
+              placeholder="简要描述作品内容..."
+              value={createForm.description}
+              onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+              rows={4}
+              fullWidth
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                类型 <span className="text-red-500">*</span>
+              </label>
+              <Select
+                value={createForm.genre}
+                onChange={(e) => setCreateForm({ ...createForm, genre: e.target.value })}
+                options={genreOptions.map((g) => ({ value: g, label: g }))}
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                风格 <span className="text-red-500">*</span>
+              </label>
+              <Select
+                value={createForm.type}
+                onChange={(e) => setCreateForm({ ...createForm, type: e.target.value })}
+                options={typeOptions.map((t) => ({ value: t, label: t }))}
+                fullWidth
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                状态 <span className="text-red-500">*</span>
+              </label>
+              <Select
+                value={createForm.status}
+                onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
+                options={statusOptions.map((s) => ({ value: s, label: s }))}
+                fullWidth
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              标签（用逗号分隔）
+            </label>
+            <Input
+              type="text"
+              placeholder="例如：系统, 爽文, 穿越"
+              value={createForm.tags}
+              onChange={(e) => setCreateForm({ ...createForm, tags: e.target.value })}
+              fullWidth
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!isCreating) {
+                  setShowCreateModal(false);
+                }
+              }}
+              disabled={isCreating}
+            >
+              取消
+            </Button>
+            <Button type="submit" variant="primary" disabled={isCreating}>
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 animate-spin" size={16} />
+                  创建中...
+                </>
+              ) : (
+                '创建作品'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

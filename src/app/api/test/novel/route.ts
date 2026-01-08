@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { extractUserFromRequest } from '@/lib/auth';
 import { novelManager } from '@/storage/database';
 
