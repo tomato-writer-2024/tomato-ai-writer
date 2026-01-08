@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userManager } from '@/storage/database';
+import { userManager, authManager } from '@/storage/database';
 import {
   hashPassword,
   generateAccessToken,

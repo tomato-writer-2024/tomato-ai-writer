@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
 			genre: genre || '都市',
 			status: status || '连载中',
 			type: type || '爽文',
-			tags: tags || '',
+			coverUrl: null,
+			tags: tags || null,
 			isPublished: false,
 		});
 

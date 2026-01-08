@@ -8,6 +8,7 @@ export { contentStatsManager } from './contentStatsManager';
 export { membershipOrderManager } from './membershipOrderManager';
 export { usageLogManager } from './usageLogManager';
 export { securityLogManager } from './securityLogManager';
+export { authManager } from './authManager';
 
 // ============================================================================
 // Schema 类型导出

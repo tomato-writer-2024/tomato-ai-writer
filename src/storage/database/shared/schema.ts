@@ -23,7 +23,7 @@ export const apiKeys = pgTable("api_keys", {
 ]);
 
 export const membershipOrders = pgTable("membership_orders", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	level: varchar({ length: 20 }).notNull(),
 	months: integer().notNull(),
@@ -40,7 +40,7 @@ export const membershipOrders = pgTable("membership_orders", {
 ]);
 
 export const securityLogs = pgTable("security_logs", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }),
 	action: varchar({ length: 50 }).notNull(),
 	details: jsonb(),
@@ -54,7 +54,7 @@ export const securityLogs = pgTable("security_logs", {
 ]);
 
 export const subAccounts = pgTable("sub_accounts", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	parentId: varchar("parent_id", { length: 36 }).notNull(),
 	email: varchar({ length: 255 }).notNull(),
 	username: varchar({ length: 100 }),
@@ -68,7 +68,7 @@ export const subAccounts = pgTable("sub_accounts", {
 ]);
 
 export const usageLogs = pgTable("usage_logs", {
-	id: varchar({ length: 36 }).default(gen_random_uuid()).primaryKey().notNull(),
+	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	action: varchar({ length: 50 }).notNull(),
 	workId: varchar("work_id", { length: 36 }),

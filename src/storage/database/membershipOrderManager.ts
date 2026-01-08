@@ -94,7 +94,7 @@ export class MembershipOrderManager {
 		};
 
 		if (status === 'PAID' || status === 'COMPLETED') {
-			updateData.paidAt = new Date();
+			updateData.paidAt = new Date().toISOString();
 		}
 
 		if (transactionId) {

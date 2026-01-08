@@ -1,4 +1,4 @@
-import { eq, and, SQL, desc } from "drizzle-orm";
+import { eq, and, SQL, desc, sql } from "drizzle-orm";
 import { getDb } from "coze-coding-dev-sdk";
 import { securityLogs, insertSecurityLogSchema } from "./shared/schema";
 import type { SecurityLog, InsertSecurityLog } from "./shared/schema";
@@ -31,7 +31,7 @@ export class SecurityLogManager {
 		const conditions: SQL[] = [];
 
 		// 精确条件
-		if (filters.userId !== undefined) {
+		if (filters.userId !== undefined && filters.userId !== null) {
 			conditions.push(eq(securityLogs.userId, filters.userId));
 		}
 		if (filters.action !== undefined) {

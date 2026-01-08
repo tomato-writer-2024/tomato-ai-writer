@@ -37,16 +37,16 @@ export class NovelManager {
 		if (filters.userId !== undefined) {
 			conditions.push(eq(novels.userId, filters.userId));
 		}
-		if (filters.genre !== undefined) {
+		if (filters.genre !== undefined && filters.genre !== null) {
 			conditions.push(eq(novels.genre, filters.genre));
 		}
-		if (filters.status !== undefined) {
+		if (filters.status !== undefined && filters.status !== null) {
 			conditions.push(eq(novels.status, filters.status));
 		}
-		if (filters.type !== undefined) {
+		if (filters.type !== undefined && filters.type !== null) {
 			conditions.push(eq(novels.type, filters.type));
 		}
-		if (filters.isPublished !== undefined) {
+		if (filters.isPublished !== undefined && filters.isPublished !== null) {
 			conditions.push(eq(novels.isPublished, filters.isPublished));
 		}
 

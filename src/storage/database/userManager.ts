@@ -197,10 +197,10 @@ export class UserManager {
 	/**
 	 * 升级会员
 	 */
-	async upgradeMembership(userId: string, level: string, expireAt: Date): Promise<User | null> {
+	async upgradeMembership(userId: string, level: string, expireAt: Date | null): Promise<User | null> {
 		return this.updateUser(userId, {
 			membershipLevel: level as any,
-			membershipExpireAt: expireAt,
+			membershipExpireAt: expireAt ? expireAt.toISOString() : null,
 		});
 	}
 
