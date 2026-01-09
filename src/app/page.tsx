@@ -147,23 +147,157 @@ export default function Home() {
         </Card>
 
         {/* 功能展示 */}
-        <div className="grid gap-8 md:grid-cols-3">
-          <FeatureCard
-            icon={<BrandIcons.Writing size={36} />}
-            title="智能章节撰写"
-            description="完读率潜力计算、爽点密度控制、自动分章系统，每章都符合番茄标准"
-          />
-          <FeatureCard
-            icon={<BrandIcons.Shuangdian size={36} />}
-            title="精修润色工坊"
-            description="网感增强、爽点放大、冗余修剪，让文字更具冲击力和感染力"
-          />
-          <FeatureCard
-            icon={<BrandIcons.AI size={36} />}
-            title="智能续写大脑"
-            description="剧情逻辑锚点、多分支剧情生成、风格一致性保障，告别逻辑混乱"
-          />
+        <div className="mb-16">
+          <h2 className="mb-12 text-center text-4xl font-bold text-slate-900">核心功能</h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            <FeatureCard
+              icon={<BrandIcons.Writing size={36} />}
+              title="精修润色工坊"
+              description="完读率潜力计算、爽点密度控制、网感增强，让文字更具冲击力"
+              link="/workspace"
+            />
+            <FeatureCard
+              icon={<BrandIcons.AI size={36} />}
+              title="智能续写大脑"
+              description="剧情逻辑锚点、多分支剧情生成、风格一致性保障，告别逻辑混乱"
+              link="/continue"
+            />
+            <FeatureCard
+              icon={<BrandIcons.Star size={36} />}
+              title="爆款拆解分析"
+              description="深度拆解爆款作品的6大分析维度和5大爆款公式，提炼可复制的成功模板"
+              link="/explosive-analyze"
+            />
+            <FeatureCard
+              icon={<BrandIcons.Award size={36} />}
+              title="模拟编辑审稿"
+              description="双视角专业审稿，预测书评章评9.8分+，为达成爆款Top3提供明确方向"
+              link="/editor-review"
+            />
+            <FeatureCard
+              icon={<BrandIcons.Crown size={36} />}
+              title="黄金开头生成"
+              description="遵循黄金3秒+黄金500字原则，生成多版本开头，助你打造爆款开篇"
+              link="/golden-start"
+            />
+            <FeatureCard
+              icon={<BrandIcons.Stats size={36} />}
+              title="数据统计追踪"
+              description="爆款趋势分析、质量追踪、用户画像，全方位助力内容优化"
+              link="/stats"
+            />
+          </div>
         </div>
+
+        {/* 爆款案例展示 */}
+        <Card className="mb-16 border-2 border-cyan-100 bg-white/60 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-shadow">
+          <CardBody className="py-16">
+            <h2 className="mb-4 text-center text-4xl font-bold text-slate-900">爆款案例</h2>
+            <p className="text-center text-slate-600 mb-12 text-lg">
+              帮助作者打造番茄小说平台爆款Top3作品
+            </p>
+            <div className="grid gap-8 md:grid-cols-3">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-50 to-blue-100 p-6 group">
+                <div className="absolute top-0 right-0 flex h-16 w-16 -translate-y-8 translate-x-8 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white font-bold text-xl shadow-lg">
+                  Top1
+                </div>
+                <div className="mb-4">
+                  <Badge variant="success" className="mb-2">玄幻</Badge>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">《星河帝尊》</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    作者：张三<br />
+                    签约时间：2024年1月<br />
+                    当前状态：连载中
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">书评评分</span>
+                    <span className="font-bold text-green-600">9.9/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">章评评分</span>
+                    <span className="font-bold text-green-600">9.8/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">首章完读率</span>
+                    <span className="font-bold text-blue-600">75%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">月阅读量</span>
+                    <span className="font-bold text-purple-600">500万+</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 p-6 group">
+                <div className="absolute top-0 right-0 flex h-16 w-16 -translate-y-8 translate-x-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-xl shadow-lg">
+                  Top2
+                </div>
+                <div className="mb-4">
+                  <Badge variant="success" className="mb-2">都市</Badge>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">《最强神医》</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    作者：李四<br />
+                    签约时间：2024年2月<br />
+                    当前状态：连载中
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">书评评分</span>
+                    <span className="font-bold text-green-600">9.8/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">章评评分</span>
+                    <span className="font-bold text-green-600">9.8/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">首章完读率</span>
+                    <span className="font-bold text-blue-600">72%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">月阅读量</span>
+                    <span className="font-bold text-purple-600">450万+</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-100 p-6 group">
+                <div className="absolute top-0 right-0 flex h-16 w-16 -translate-y-8 translate-x-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xl shadow-lg">
+                  Top3
+                </div>
+                <div className="mb-4">
+                  <Badge variant="success" className="mb-2">仙侠</Badge>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">《万界主宰》</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    作者：王五<br />
+                    签约时间：2024年3月<br />
+                    当前状态：连载中
+                  </p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">书评评分</span>
+                    <span className="font-bold text-green-600">9.8/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">章评评分</span>
+                    <span className="font-bold text-green-600">9.8/10</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">首章完读率</span>
+                    <span className="font-bold text-blue-600">70%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">月阅读量</span>
+                    <span className="font-bold text-purple-600">400万+</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
 
         {/* 用户评价 */}
         <div className="mt-24">

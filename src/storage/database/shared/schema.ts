@@ -217,6 +217,32 @@ export const contentStats = pgTable("content_stats", {
 ]);
 
 // ============================================================================
+// 素材库表
+// ============================================================================
+
+export const materials = pgTable("materials", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	title: varchar("title", { length: 255 }).notNull(),
+	content: text("content").notNull(),
+	category: varchar("category", { length: 50 }).notNull(), // 人物、情节、场景、对话、金句、设定等
+	tags: varchar("tags", { length: 500 }),
+	novelId: varchar("novel_id", { length: 36 }), // 关联的小说ID（可选）
+	notes: text("notes"), // 备注
+	isFavorite: boolean("is_favorite").default(false).notNull(), // 是否收藏
+	usageCount: integer("usage_count").default(0).notNull(), // 使用次数
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isDeleted: boolean("is_deleted").default(false).notNull(),
+}, (table) => [
+	index("materials_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("materials_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("materials_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("materials_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+	index("materials_favorite_idx").using("btree", table.isFavorite.asc().nullsLast().op("bool_ops")),
+]);
+
+// ============================================================================
 // Zod Validation Schemas
 // ============================================================================
 
@@ -323,6 +349,31 @@ export const insertContentStatsSchema = createCoercedInsertSchema(contentStats).
 	metadata: true,
 });
 
+// Materials
+export const insertMaterialSchema = createCoercedInsertSchema(materials).pick({
+	userId: true,
+	title: true,
+	content: true,
+	category: true,
+	tags: true,
+	novelId: true,
+	notes: true,
+	isFavorite: true,
+});
+
+export const updateMaterialSchema = createCoercedInsertSchema(materials)
+	.pick({
+		title: true,
+		content: true,
+		category: true,
+		tags: true,
+		novelId: true,
+		notes: true,
+		isFavorite: true,
+		isDeleted: true,
+	})
+	.partial();
+
 // Membership Orders
 export const insertMembershipOrderSchema = createCoercedInsertSchema(membershipOrders).pick({
 	userId: true,
@@ -380,6 +431,10 @@ export type UpdateChapter = z.infer<typeof updateChapterSchema>;
 
 export type ContentStats = typeof contentStats.$inferSelect;
 export type InsertContentStats = z.infer<typeof insertContentStatsSchema>;
+
+export type Material = typeof materials.$inferSelect;
+export type InsertMaterial = z.infer<typeof insertMaterialSchema>;
+export type UpdateMaterial = z.infer<typeof updateMaterialSchema>;
 
 export type MembershipOrder = typeof membershipOrders.$inferSelect;
 export type InsertMembershipOrder = z.infer<typeof insertMembershipOrderSchema>;
