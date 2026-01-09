@@ -2,14 +2,14 @@ import React from 'react';
 
 // 品牌色系配置
 export const BRAND_COLORS = {
-  primary: '#4F46E5',      // Indigo-600
-  secondary: '#7C3AED',    // Purple-600
-  accent: '#DB2777',       // Pink-600
+  primary: '#0891B2',      // Cyan-600
+  secondary: '#2563EB',    // Blue-600
+  accent: '#6366F1',       // Indigo-500
   success: '#10B981',      // Emerald-500
   warning: '#F59E0B',      // Amber-500
-  gradient: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #DB2777 100%)',
-  gradientLight: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #EC4899 100%)',
-  gradientDark: 'linear-gradient(135deg, #4338CA 0%, #6D28D9 50%, #BE185D 100%)',
+  gradient: 'linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%)',
+  gradientLight: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #818CF8 100%)',
+  gradientDark: 'linear-gradient(135deg, #0E7490 0%, #1D4ED8 50%, #4F46E5 100%)',
 } as const;
 
 // 品牌Logo图标 - 主Logo
@@ -17,9 +17,9 @@ export const LogoIcon: React.FC<{ size?: number; className?: string }> = ({ size
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="50%" stopColor="#7C3AED" />
-        <stop offset="100%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="50%" stopColor="#2563EB" />
+        <stop offset="100%" stopColor="#6366F1" />
       </linearGradient>
     </defs>
     {/* 书本形状 */}
@@ -64,8 +64,8 @@ export const AIIcon: React.FC<{ size?: number; className?: string }> = ({ size =
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#7C3AED" />
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="100%" stopColor="#2563EB" />
       </linearGradient>
     </defs>
     {/* 脑部轮廓 */}
@@ -85,7 +85,7 @@ export const AIIcon: React.FC<{ size?: number; className?: string }> = ({ size =
     <line x1="32" y1="32" x2="20" y2="40" stroke="white" strokeWidth="1.5" opacity="0.5" />
     <line x1="32" y1="32" x2="44" y2="40" stroke="white" strokeWidth="1.5" opacity="0.5" />
     {/* 闪光点 */}
-    <circle cx="52" cy="16" r="2" fill="#DB2777" opacity="0.8" />
+    <circle cx="52" cy="16" r="2" fill="#6366F1" opacity="0.8" />
   </svg>
 );
 
@@ -94,8 +94,8 @@ export const WritingIcon: React.FC<{ size?: number; className?: string }> = ({ s
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="writingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7C3AED" />
-        <stop offset="100%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#2563EB" />
+        <stop offset="100%" stopColor="#6366F1" />
       </linearGradient>
     </defs>
     {/* 钢笔主体 */}
@@ -107,7 +107,7 @@ export const WritingIcon: React.FC<{ size?: number; className?: string }> = ({ s
     {/* 钢笔笔尖 */}
     <path
       d="M12 56 L20 44 L24 48 Z"
-      fill="#4F46E5"
+      fill="#0891B2"
       opacity="0.7"
     />
     {/* 笔尖高光 */}
@@ -121,7 +121,7 @@ export const WritingIcon: React.FC<{ size?: number; className?: string }> = ({ s
     {/* 文档线条 */}
     <path
       d="M12 20 L36 20 M12 28 L40 28 M12 36 L32 36 M12 44 L20 44"
-      stroke="#4F46E5"
+      stroke="#0891B2"
       strokeWidth="2"
       opacity="0.3"
       strokeLinecap="round"
@@ -134,7 +134,7 @@ export const ShuangdianIcon: React.FC<{ size?: number; className?: string }> = (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="shuangdianGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#6366F1" />
         <stop offset="100%" stopColor="#F59E0B" />
       </linearGradient>
     </defs>
@@ -151,8 +151,8 @@ export const ShuangdianIcon: React.FC<{ size?: number; className?: string }> = (
       opacity="0.3"
     />
     {/* 星星装饰 */}
-    <circle cx="44" cy="24" r="3" fill="#4F46E5" opacity="0.6" />
-    <circle cx="20" cy="28" r="2" fill="#7C3AED" opacity="0.5" />
+    <circle cx="44" cy="24" r="3" fill="#0891B2" opacity="0.6" />
+    <circle cx="20" cy="28" r="2" fill="#2563EB" opacity="0.5" />
   </svg>
 );
 
@@ -160,9 +160,9 @@ export const ShuangdianIcon: React.FC<{ size?: number; className?: string }> = (
 export const MembershipIcon: React.FC<{ level?: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE'; size?: number; className?: string }> = ({ level = 'BASIC', size = 32, className = '' }) => {
   const gradients = {
     FREE: ['#9CA3AF', '#6B7280'],        // 灰色
-    BASIC: ['#4F46E5', '#7C3AED'],       // Indigo -> Purple
-    PREMIUM: ['#DB2777', '#F59E0B'],     // Pink -> Amber
-    ENTERPRISE: ['#0EA5E9', '#10B981'],   // Sky -> Emerald
+    BASIC: ['#0891B2', '#2563EB'],       // Cyan -> Blue
+    PREMIUM: ['#6366F1', '#F59E0B'],     // Indigo -> Amber
+    ENTERPRISE: ['#0891B2', '#10B981'],   // Cyan -> Emerald
   };
 
   const [start, end] = gradients[level];
@@ -212,8 +212,8 @@ export const EfficiencyIcon: React.FC<{ size?: number; className?: string }> = (
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="efficiencyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#0EA5E9" />
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="100%" stopColor="#06B6D4" />
       </linearGradient>
     </defs>
     {/* 闪电形状 */}
@@ -225,7 +225,7 @@ export const EfficiencyIcon: React.FC<{ size?: number; className?: string }> = (
     {/* 闪光线条 */}
     <path
       d="M20 16 L16 20 M48 16 L52 20 M16 36 L12 40 M52 36 L56 40"
-      stroke="#4F46E5"
+      stroke="#0891B2"
       strokeWidth="2"
       opacity="0.5"
       strokeLinecap="round"
@@ -266,8 +266,8 @@ export const ExportIcon: React.FC<{ size?: number; className?: string }> = ({ si
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="exportGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7C3AED" />
-        <stop offset="100%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#2563EB" />
+        <stop offset="100%" stopColor="#6366F1" />
       </linearGradient>
     </defs>
     {/* 文档形状 */}
@@ -295,7 +295,7 @@ export const ZapIcon: React.FC<{ size?: number; className?: string }> = ({ size 
     <defs>
       <linearGradient id="zapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#DB2777" />
+        <stop offset="100%" stopColor="#6366F1" />
       </linearGradient>
     </defs>
     {/* 闪电 */}
@@ -315,8 +315,8 @@ export const BookIcon: React.FC<{ size?: number; className?: string }> = ({ size
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#7C3AED" />
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="100%" stopColor="#2563EB" />
       </linearGradient>
     </defs>
     {/* 书本左侧 */}
@@ -356,7 +356,7 @@ export const BookIcon: React.FC<{ size?: number; className?: string }> = ({ size
     {/* 书签 */}
     <path
       d="M44 8 L44 28 L48 24 L52 28 L52 8 Z"
-      fill="#DB2777"
+      fill="#6366F1"
       opacity="0.9"
     />
   </svg>
@@ -367,8 +367,8 @@ export const StatsIcon: React.FC<{ size?: number; className?: string }> = ({ siz
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="statsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="100%" stopColor="#6366F1" />
       </linearGradient>
     </defs>
     {/* 柱状图 */}
@@ -395,7 +395,7 @@ export const SparklesIcon: React.FC<{ size?: number; className?: string }> = ({ 
   <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
     <defs>
       <linearGradient id="sparklesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#DB2777" />
+        <stop offset="0%" stopColor="#6366F1" />
         <stop offset="100%" stopColor="#F59E0B" />
       </linearGradient>
     </defs>

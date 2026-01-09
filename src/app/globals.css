@@ -3,10 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --brand-primary: #4F46E5;
-  --brand-secondary: #7C3AED;
-  --brand-accent: #DB2777;
-  --brand-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #DB2777 100%);
+  --brand-primary: #0891B2;
+  --brand-secondary: #2563EB;
+  --brand-accent: #6366F1;
+  --brand-gradient: linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%);
 }
 
 @theme inline {
@@ -41,17 +41,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  background: linear-gradient(135deg, #0891B2, #2563EB);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #4338CA, #6D28D9);
+  background: linear-gradient(135deg, #0E7490, #1D4ED8);
 }
 
 /* 渐变文本 */
 .gradient-text {
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #DB2777 100%);
+  background: linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -59,7 +59,7 @@ body {
 
 /* 渐变背景 */
 .gradient-bg {
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #DB2777 100%);
+  background: linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%);
 }
 
 /* 渐变边框 */
@@ -73,7 +73,7 @@ body {
   content: '';
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, #4F46E5, #7C3AED, #DB2777);
+  background: linear-gradient(135deg, #0891B2, #2563EB, #6366F1);
   border-radius: 0.875rem;
   z-index: -1;
 }
@@ -91,13 +91,13 @@ body {
 
 /* 按钮动画 */
 .btn-primary {
-  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #DB2777 100%);
+  background: linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%);
   transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
 }
 
 /* 动画 */
@@ -134,6 +134,6 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #7C3AED;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
