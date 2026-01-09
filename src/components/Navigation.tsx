@@ -89,20 +89,14 @@ export default function Navigation() {
             ) : (
               <div className="flex items-center gap-3">
                 <Link
-                  href="/login"
-                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-100 hover:text-indigo-600"
-                >
-                  登录
-                </Link>
-                <Link
-                  href="/register"
+                  href="/pricing"
                   className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:shadow-lg"
                   style={{
                     background: BRAND_COLORS.gradient,
                   }}
                 >
                   <BrandIcons.Zap size={18} />
-                  免费注册
+                  会员套餐
                 </Link>
               </div>
             )}
@@ -153,14 +147,7 @@ export default function Navigation() {
             ) : (
               <div className="space-y-2">
                 <Link
-                  href="/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-100"
-                >
-                  登录
-                </Link>
-                <Link
-                  href="/register"
+                  href="/pricing"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-md"
                   style={{
@@ -168,7 +155,7 @@ export default function Navigation() {
                   }}
                 >
                   <BrandIcons.Zap size={18} />
-                  免费注册
+                  会员套餐
                 </Link>
               </div>
             )}

@@ -14,7 +14,7 @@ import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';
 import { Badge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
-import { Loader2, Download, Copy, Upload, Clock, Save, Sparkles, FileText, Book, Zap, Star, Target, Flame, Eye } from 'lucide-react';
+import { Loader2, Download, Copy, Upload, Save, Sparkles, FileText, Book, Zap, Star, Target, Flame, Eye, Plus, ChevronRight, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 interface ContentStats {
   wordCount: number;
@@ -29,78 +29,60 @@ interface Novel {
   title: string;
 }
 
-interface Chapter {
-  id?: string;
-  title: string;
-}
-
 export default function WorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const novelIdParam = searchParams.get('novelId');
-  const chapterIdParam = searchParams.get('chapterId');
 
-  const [activeTab, setActiveTab] = useState('write');
-  const [prompt, setPrompt] = useState('');
-  const [generatedContent, setGeneratedContent] = useState('');
-  const [contentStats, setContentStats] = useState<ContentStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [chapterNum, setChapterNum] = useState(1);
-  const [chapterTitle, setChapterTitle] = useState('');
+  const [originalContent, setOriginalContent] = useState('');
+  const [polishedContent, setPolishedContent] = useState('');
   const [storyContext, setStoryContext] = useState('');
-  const [characterInfo, setCharacterInfo] = useState('');
-  const [plotOutline, setPlotOutline] = useState('');
-  const [wordCount, setWordCount] = useState(2500);
+  const [chapterOutline, setChapterOutline] = useState('');
+  const [bookOutline, setBookOutline] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [contentStats, setContentStats] = useState<ContentStats | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showAnalysisMenu, setShowAnalysisMenu] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const analysisMenuRef = useRef<HTMLDivElement>(null);
 
   // 作品和章节相关状态
   const [novels, setNovels] = useState<Novel[]>([]);
   const [selectedNovelId, setSelectedNovelId] = useState('');
-  const [isSavingChapter, setIsSavingChapter] = useState(false);
-  const [currentChapterId, setCurrentChapterId] = useState<string | null>(null);
-  const [isLoadingChapter, setIsLoadingChapter] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [newProjectTitle, setNewProjectTitle] = useState('');
 
-  // 点击外部关闭导出菜单
+  // 点击外部关闭菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        exportMenuRef.current &&
-        !exportMenuRef.current.contains(event.target as Node)
-      ) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
         setShowExportMenu(false);
+      }
+      if (analysisMenuRef.current && !analysisMenuRef.current.contains(event.target as Node)) {
+        setShowAnalysisMenu(false);
       }
     };
 
-    if (showExportMenu) {
+    if (showExportMenu || showAnalysisMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showExportMenu]);
+  }, [showExportMenu, showAnalysisMenu]);
 
   // 加载作品列表
   useEffect(() => {
     loadNovels();
   }, []);
-
-  // 从URL参数加载章节
-  useEffect(() => {
-    if (chapterIdParam && novelIdParam) {
-      loadChapter(chapterIdParam);
-    }
-  }, [chapterIdParam, novelIdParam]);
-
-  // 当作品列表加载完成后，设置选中的作品
-  useEffect(() => {
-    if (novelIdParam && novels.length > 0) {
-      setSelectedNovelId(novelIdParam);
-    }
-  }, [novelIdParam, novels]);
 
   const loadNovels = async () => {
     try {
@@ -121,28 +103,223 @@ export default function WorkspacePage() {
     }
   };
 
-  const loadChapter = async (chapterId: string) => {
-    setIsLoadingChapter(true);
+  const handleCreateProject = async () => {
+    if (!newProjectTitle.trim()) {
+      alert('请输入作品标题');
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/chapters/${chapterId}`);
+      const response = await fetch('/api/novels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newProjectTitle.trim(),
+          description: '',
+          genre: '',
+        }),
+      });
+
       if (!response.ok) {
-        throw new Error('加载章节失败');
+        const error = await response.json();
+        throw new Error(error.error || '创建作品失败');
       }
 
       const result = await response.json();
-      if (result.success && result.data) {
-        const chapter = result.data;
-        setCurrentChapterId(chapter.id);
-        setChapterNum(chapter.chapterNum);
-        setChapterTitle(chapter.title);
-        setGeneratedContent(chapter.content);
-        setContentStats(calculateContentStats(chapter.content));
+      if (result.success) {
+        alert('作品创建成功！');
+        setShowNewProjectModal(false);
+        setNewProjectTitle('');
+        loadNovels();
+        setSelectedNovelId(result.data.id);
       }
     } catch (error) {
-      console.error('加载章节失败:', error);
-      alert('加载章节失败');
+      console.error('创建作品失败:', error);
+      alert(error instanceof Error ? error.message : '创建作品失败，请稍后重试');
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    try {
+      const content = await readFileContent(file);
+      setOriginalContent(content);
+      setContentStats(calculateContentStats(content));
+      alert('文件导入成功！');
+    } catch (error) {
+      console.error('导入失败:', error);
+      alert('导入失败: ' + (error instanceof Error ? error.message : '未知错误'));
     } finally {
-      setIsLoadingChapter(false);
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleAnalysis = async (type: 'original' | 'plot' | 'structure') => {
+    if (!originalContent.trim()) {
+      alert('请先导入原稿');
+      return;
+    }
+
+    if (!selectedNovelId) {
+      alert('请先选择作品');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: originalContent,
+          type,
+          context: {
+            storyContext,
+            chapterOutline,
+            bookOutline,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('分析失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setAnalysisResult(result.data);
+        alert('分析完成！');
+      } else {
+        throw new Error(result.error || '分析失败');
+      }
+    } catch (error) {
+      console.error('分析失败:', error);
+      alert('分析失败，请稍后重试');
+    } finally {
+      setIsAnalyzing(false);
+      setShowAnalysisMenu(false);
+    }
+  };
+
+  const handlePolish = async (type: 'full' | 'chapter' | 'batch') => {
+    if (!originalContent.trim()) {
+      alert('请先导入原稿');
+      return;
+    }
+
+    if (!selectedNovelId) {
+      alert('请先选择作品');
+      return;
+    }
+
+    setIsPolishing(true);
+    setPolishedContent('');
+
+    try {
+      const response = await fetch('/api/polish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: originalContent,
+          type,
+          context: {
+            storyContext,
+            chapterOutline,
+            bookOutline,
+            analysisResult,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('润色失败');
+      }
+
+      // 处理流式响应
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('无法读取响应流');
+      }
+
+      let fullContent = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        // 检查是否是完成标记
+        if (chunk.includes('[OPTIMIZED]')) {
+          const content = chunk.replace('[OPTIMIZED]', '');
+          fullContent += content;
+        } else {
+          fullContent += chunk;
+        }
+
+        setPolishedContent(fullContent);
+
+        // 实时更新内容统计
+        setContentStats(calculateContentStats(fullContent));
+      }
+
+      alert('润色完成！');
+
+    } catch (error) {
+      console.error('润色失败:', error);
+      alert('润色失败，请稍后重试');
+    } finally {
+      setIsPolishing(false);
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(polishedContent || originalContent);
+    alert('已复制到剪贴板');
+  };
+
+  const handleExport = async (format: 'word' | 'txt', content: string) => {
+    if (!content.trim()) {
+      alert('没有内容可导出');
+      return;
+    }
+
+    const filename = selectedNovelId ? `精修作品` : `精修内容`;
+
+    try {
+      const response = await fetch('/api/files/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          format,
+          filename,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '导出失败');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data.url) {
+        window.open(result.data.url, '_blank');
+        setShowExportMenu(false);
+        alert('导出成功！');
+      } else {
+        throw new Error(result.error || '导出失败');
+      }
+    } catch (error) {
+      console.error('导出失败:', error);
+      alert('导出失败: ' + (error instanceof Error ? error.message : '未知错误'));
     }
   };
 
@@ -207,390 +384,49 @@ export default function WorkspacePage() {
     };
   };
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      alert('请输入创作提示');
-      return;
-    }
-
-    setIsLoading(true);
-    setGeneratedContent('');
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'chapter',
-          prompt,
-          chapterNum,
-          context: storyContext,
-          characters: characterInfo,
-          outline: plotOutline,
-          wordCount,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('生成失败');
-      }
-
-      // 处理流式响应
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('无法读取响应流');
-      }
-
-      let fullContent = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-
-        // 检查是否是完成标记
-        if (chunk.includes('[DONE]')) {
-          const content = chunk.replace('[DONE]', '');
-          fullContent += content;
-        } else {
-          fullContent += chunk;
-        }
-
-        setGeneratedContent(fullContent);
-
-        // 实时更新内容统计
-        setContentStats(calculateContentStats(fullContent));
-      }
-
-    } catch (error) {
-      console.error('生成失败:', error);
-      alert('生成失败，请稍后重试');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePolish = async () => {
-    if (!generatedContent.trim()) {
-      alert('请先生成内容');
-      return;
-    }
-
-    setIsLoading(true);
-    const originalContent = generatedContent;
-    setGeneratedContent('');
-    try {
-      const response = await fetch('/api/polish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: generatedContent }),
-      });
-
-      if (!response.ok) {
-        throw new Error('润色失败');
-      }
-
-      // 处理流式响应
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('无法读取响应流');
-      }
-
-      let polishedContent = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-
-        // 检查是否是完成标记
-        if (chunk.includes('[OPTIMIZED]')) {
-          const content = chunk.replace('[OPTIMIZED]', '');
-          polishedContent += content;
-        } else {
-          polishedContent += chunk;
-        }
-
-        setGeneratedContent(polishedContent);
-
-        // 实时更新内容统计
-        setContentStats(calculateContentStats(polishedContent));
-      }
-
-    } catch (error) {
-      console.error('润色失败:', error);
-      // 恢复原始内容
-      setGeneratedContent(originalContent);
-      alert('润色失败，请稍后重试');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleContinue = async () => {
-    if (!generatedContent.trim()) {
-      alert('请先生成内容');
-      return;
-    }
-
-    setIsLoading(true);
-    const originalContent = generatedContent; // 保存原始内容
-    try {
-      const response = await fetch('/api/continue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: generatedContent,
-          context: storyContext,
-          characters: characterInfo,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('续写失败');
-      }
-
-      // 处理流式响应
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('无法读取响应流');
-      }
-
-      let newContent = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-
-        // 检查是否是完成标记
-        if (chunk.includes('[OPTIMIZED]')) {
-          const content = chunk.replace('[OPTIMIZED]', '');
-          newContent += content;
-        } else {
-          newContent += chunk;
-        }
-
-        // 只更新新累积的内容，避免重复
-        const fullContent = originalContent + '\n\n' + newContent;
-        setGeneratedContent(fullContent);
-
-        // 实时更新内容统计
-        setContentStats(calculateContentStats(fullContent));
-      }
-
-    } catch (error) {
-      console.error('续写失败:', error);
-      alert('续写失败，请稍后重试');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(generatedContent);
-    alert('已复制到剪贴板');
-  };
-
-  const handleDownload = () => {
-    const blob = new Blob([generatedContent], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `第${chapterNum}章.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsImporting(true);
-    try {
-      const content = await readFileContent(file);
-      setGeneratedContent(content);
-      // 计算内容统计
-      setContentStats(calculateContentStats(content));
-      alert('文件导入成功！');
-    } catch (error) {
-      console.error('导入失败:', error);
-      alert('导入失败: ' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setIsImporting(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleExport = async (format: 'word' | 'txt') => {
-    if (!generatedContent.trim()) {
-      alert('没有内容可导出');
-      return;
-    }
-
-    const filename = `第${chapterNum}章`;
-
-    try {
-      const response = await fetch('/api/files/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: generatedContent,
-          format,
-          filename,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '导出失败');
-      }
-
-      const result = await response.json();
-      if (result.success && result.data.url) {
-        // 下载文件
-        window.open(result.data.url, '_blank');
-        setShowExportMenu(false);
-        alert('导出成功！');
-      } else {
-        throw new Error(result.error || '导出失败');
-      }
-    } catch (error) {
-      console.error('导出失败:', error);
-      alert('导出失败: ' + (error instanceof Error ? error.message : '未知错误'));
-    }
-  };
-
-  const handleSaveChapter = async () => {
-    if (!selectedNovelId) {
-      alert('请先选择作品');
-      return;
-    }
-
-    if (!chapterTitle.trim()) {
-      alert('请输入章节标题');
-      return;
-    }
-
-    if (!generatedContent.trim()) {
-      alert('请先生成或输入内容');
-      return;
-    }
-
-    setIsSavingChapter(true);
-    try {
-      const body = {
-        novelId: selectedNovelId,
-        chapterNum,
-        title: chapterTitle.trim(),
-        content: generatedContent,
-        wordCount: generatedContent.length,
-        qualityScore: contentStats?.qualityScore || 0,
-        completionRate: contentStats?.completionRate || 0,
-        shuangdianCount: contentStats?.shuangdianCount || 0,
-      };
-
-      const url = currentChapterId
-        ? `/api/chapters/${currentChapterId}`
-        : '/api/chapters';
-
-      const response = await fetch(url, {
-        method: currentChapterId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || '保存失败');
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        setCurrentChapterId(result.data.id);
-        alert(currentChapterId ? '章节更新成功！' : '章节保存成功！');
-      } else {
-        throw new Error(result.error || '保存失败');
-      }
-    } catch (error) {
-      console.error('保存章节失败:', error);
-      alert(error instanceof Error ? error.message : '保存失败，请稍后重试');
-    } finally {
-      setIsSavingChapter(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-white to-blue-50">
       <Navigation />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* 功能标签页 */}
-        <div className="mb-8 flex gap-2 rounded-xl bg-white p-2 shadow-md">
-          <button
-            onClick={() => setActiveTab('write')}
-            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
-              activeTab === 'write'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <BrandIcons.Writing size={18} />
-            章节撰写
-          </button>
-          <button
-            onClick={() => setActiveTab('polish')}
-            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
-              activeTab === 'polish'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <BrandIcons.Sparkles size={18} />
-            精修润色
-          </button>
-          <button
-            onClick={() => setActiveTab('continue')}
-            className={`flex items-center gap-2 rounded-lg px-6 py-3 font-medium transition-all ${
-              activeTab === 'continue'
-                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <BrandIcons.Zap size={18} />
-            智能续写
-          </button>
+
+        {/* 页面标题 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                精修润色工作台
+              </h1>
+              <p className="mt-2 text-gray-600">专业的AI文本润色工具，提升作品质量</p>
+            </div>
+
+            {/* 新建项目按钮 */}
+            <GradientButton
+              onClick={() => setShowNewProjectModal(true)}
+              icon={<Plus size={18} />}
+            >
+              新建项目
+            </GradientButton>
+          </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* 左侧：输入区 */}
-          <div className="space-y-6">
-            {/* 章节信息 */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
-                    <BrandIcons.Book size={20} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">章节信息</h3>
+        {/* 作品选择器 */}
+        <div className="mb-8">
+          <Card>
+            <CardBody>
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-100 to-blue-100">
+                  <Book size={24} className="text-cyan-600" />
                 </div>
-                <div className="space-y-4">
-                  {/* 作品选择 */}
+                <div className="flex-1">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    选择作品
+                  </label>
                   <Select
-                    label="选择作品"
                     value={selectedNovelId}
                     onChange={(e) => setSelectedNovelId(e.target.value)}
                     options={[
-                      { value: '', label: '请选择作品' },
+                      { value: '', label: '请先选择或创建作品' },
                       ...novels.map((novel) => ({
                         value: novel.id,
                         label: novel.title,
@@ -598,222 +434,152 @@ export default function WorkspacePage() {
                     ]}
                     fullWidth
                   />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Input
-                      type="text"
-                      label="章节标题"
-                      value={chapterTitle}
-                      onChange={(e) => setChapterTitle(e.target.value)}
-                      placeholder="例如：系统觉醒"
-                      fullWidth
-                    />
-                    <Input
-                      type="number"
-                      label="章节号"
-                      value={chapterNum.toString()}
-                      onChange={(e) => setChapterNum(parseInt(e.target.value) || 1)}
-                      placeholder="1"
-                      fullWidth
-                    />
-                  </div>
-                  <Select
-                    label="目标字数"
-                    value={wordCount.toString()}
-                    onChange={(e) => setWordCount(parseInt(e.target.value) || 2500)}
-                    options={[
-                      { value: '2000', label: '2000字' },
-                      { value: '2500', label: '2500字' },
-                      { value: '3000', label: '3000字' },
-                      { value: '4000', label: '4000字' },
-                      { value: '5000', label: '5000字' },
-                    ]}
-                    fullWidth
-                  />
-                  {currentChapterId && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="flex h-2 w-2 rounded-full bg-green-500" />
-                      <span>已保存到数据库</span>
-                    </div>
-                  )}
                 </div>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* 左侧：输入区 */}
+          <div className="space-y-6">
+            {/* 原稿正文内容 */}
+            <Card>
+              <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-100 to-blue-100">
+                    <FileText size={20} className="text-cyan-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">原稿正文内容</h3>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx,.pdf,.txt"
+                    onChange={handleImport}
+                    className="hidden"
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isImporting}
+                    variant="outline"
+                    size="sm"
+                    icon={<Upload size={16} />}
+                  >
+                    {isImporting ? '导入中...' : '导入文件'}
+                  </Button>
+                  <Button
+                    onClick={handleCopy}
+                    disabled={!originalContent}
+                    variant="ghost"
+                    size="sm"
+                    icon={<Copy size={16} />}
+                  >
+                    复制
+                  </Button>
+                </div>
+              </div>
+              <CardBody>
+                <Textarea
+                  value={originalContent}
+                  onChange={(e) => {
+                    setOriginalContent(e.target.value);
+                    setContentStats(calculateContentStats(e.target.value));
+                  }}
+                  rows={15}
+                  placeholder="在此粘贴原稿内容，或点击「导入文件」上传文档..."
+                  fullWidth
+                  className="text-gray-900"
+                />
+                {contentStats && (
+                  <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+                    <span>字数: {contentStats.wordCount}</span>
+                    <span>质量: {contentStats.qualityScore}分</span>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* 章节剧情梗概 */}
+            <Card>
+              <div className="flex items-center gap-3 border-b border-gray-200/50 p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-100 to-pink-100">
+                  <Sparkles size={20} className="text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">章节剧情梗概</h3>
+              </div>
+              <CardBody>
+                <Textarea
+                  value={chapterOutline}
+                  onChange={(e) => setChapterOutline(e.target.value)}
+                  rows={5}
+                  placeholder="输入本章的剧情梗概，AI会参考这些信息进行润色..."
+                  fullWidth
+                />
+              </CardBody>
+            </Card>
+
+            {/* 本书大纲 */}
+            <Card>
+              <div className="flex items-center gap-3 border-b border-gray-200/50 p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-100 to-amber-100">
+                  <Book size={20} className="text-orange-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">本书大纲</h3>
+              </div>
+              <CardBody>
+                <Textarea
+                  value={bookOutline}
+                  onChange={(e) => setBookOutline(e.target.value)}
+                  rows={5}
+                  placeholder="输入本书的整体大纲、世界观设定、角色关系等..."
+                  fullWidth
+                />
               </CardBody>
             </Card>
 
             {/* 故事背景 */}
             <Card>
-              <CardBody>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 p-2">
-                    <BrandIcons.AI size={20} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">故事背景</h3>
+              <div className="flex items-center gap-3 border-b border-gray-200/50 p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100">
+                  <Target size={20} className="text-blue-600" />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-900">故事背景</h3>
+              </div>
+              <CardBody>
                 <Textarea
                   value={storyContext}
                   onChange={(e) => setStoryContext(e.target.value)}
                   rows={4}
-                  placeholder="输入故事世界观、背景设定等..."
+                  placeholder="输入故事世界观、背景设定等额外信息..."
                   fullWidth
                 />
               </CardBody>
             </Card>
-
-            {/* 角色信息 */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-gradient-to-br from-pink-100 to-orange-100 p-2">
-                    <BrandIcons.Sparkles size={20} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">角色信息</h3>
-                </div>
-                <Textarea
-                  value={characterInfo}
-                  onChange={(e) => setCharacterInfo(e.target.value)}
-                  rows={4}
-                  placeholder="输入主要角色的性格、能力、关系等..."
-                  fullWidth
-                />
-              </CardBody>
-            </Card>
-
-            {/* 大纲 */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 p-2">
-                    <BrandIcons.Export size={20} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">本章大纲</h3>
-                </div>
-                <Textarea
-                  value={plotOutline}
-                  onChange={(e) => setPlotOutline(e.target.value)}
-                  rows={4}
-                  placeholder="输入本章的主要情节发展..."
-                  fullWidth
-                />
-              </CardBody>
-            </Card>
-
-            {/* 创作提示 */}
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 p-2">
-                    <BrandIcons.Zap size={20} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">创作提示</h3>
-                </div>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={6}
-                  placeholder="输入本章的具体创作要求，如：主角发现金手指，系统激活，获得超强能力..."
-                  fullWidth
-                />
-              </CardBody>
-            </Card>
-
-            {/* 操作按钮 */}
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
-                <GradientButton
-                  onClick={handleGenerate}
-                  isLoading={isLoading}
-                  icon={<BrandIcons.Zap size={18} />}
-                  fullWidth
-                >
-                  AI生成章节
-                </GradientButton>
-                {activeTab === 'write' && (
-                  <Button
-                    onClick={handlePolish}
-                    disabled={isLoading || !generatedContent}
-                    variant="outline"
-                    icon={<BrandIcons.Sparkles size={18} />}
-                    fullWidth
-                  >
-                    {isLoading ? '润色中...' : '精修润色'}
-                  </Button>
-                )}
-                {activeTab === 'continue' && (
-                  <Button
-                    onClick={handleContinue}
-                    disabled={isLoading || !generatedContent}
-                    variant="outline"
-                    icon={<Zap size={18} />}
-                    fullWidth
-                  >
-                    {isLoading ? '续写中...' : '智能续写'}
-                  </Button>
-                )}
-              </div>
-              <Button
-                onClick={handleSaveChapter}
-                isLoading={isSavingChapter}
-                disabled={!generatedContent || !selectedNovelId || !chapterTitle}
-                variant="primary"
-                icon={<Save size={18} />}
-                fullWidth
-              >
-                {isSavingChapter ? '保存中...' : currentChapterId ? '更新章节' : '保存章节'}
-              </Button>
-            </div>
           </div>
 
-          {/* 右侧：输出区 */}
-          <Card>
-            <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
-                  <BrandIcons.Writing size={20} />
+          {/* 右侧：分析和润色区 */}
+          <div className="space-y-6">
+            {/* 分析结果 */}
+            <Card>
+              <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-100 to-emerald-100">
+                    <Eye size={20} className="text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">分析结果</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">生成结果</h3>
-              </div>
-              <div className="flex gap-2">
-                {/* 导入按钮 */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".docx,.pdf,.txt"
-                  onChange={handleImport}
-                  className="hidden"
-                />
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting || isLoading}
-                  variant="ghost"
-                  icon={isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                  size="sm"
-                  title="导入文件"
-                >
-                  {isImporting ? '导入中...' : '导入'}
-                </Button>
-
-                {/* 复制按钮 */}
-                <Button
-                  onClick={handleCopy}
-                  disabled={!generatedContent}
-                  variant="ghost"
-                  icon={<Copy size={16} />}
-                  size="sm"
-                  title="复制内容"
-                >
-                  复制
-                </Button>
-
-                {/* 导出菜单 */}
                 <div className="relative">
                   <button
-                    onClick={() => setShowExportMenu(!showExportMenu)}
-                    disabled={!generatedContent}
+                    onClick={() => setShowAnalysisMenu(!showAnalysisMenu)}
+                    disabled={!originalContent || !selectedNovelId}
                     className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <Download size={16} />
-                    导出
+                    <RefreshCw size={16} />
+                    开始分析
                     <svg
-                      className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
+                      className={`h-4 w-4 transition-transform ${showAnalysisMenu ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -827,194 +593,268 @@ export default function WorkspacePage() {
                     </svg>
                   </button>
 
-                  {showExportMenu && (
-                    <div ref={exportMenuRef} className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl animate-fadeIn">
+                  {showAnalysisMenu && (
+                    <div ref={analysisMenuRef} className="absolute right-0 z-10 mt-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl animate-fadeIn">
                       <button
-                        onClick={() => handleExport('word')}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-colors first:rounded-t-xl"
+                        onClick={() => handleAnalysis('original')}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-colors first:rounded-t-xl"
                       >
-                        <div className="rounded-lg bg-blue-100 p-1.5">
-                          <Download size={16} className="text-blue-600" />
+                        <div className="rounded-lg bg-green-100 p-1.5">
+                          <Eye size={16} className="text-green-600" />
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="font-medium">Word 文档</span>
-                          <span className="text-xs text-gray-500">.docx 格式</span>
+                          <span className="font-medium">原稿分析</span>
+                          <span className="text-xs text-gray-500">分析内容质量</span>
                         </div>
                       </button>
                       <button
-                        onClick={() => handleExport('txt')}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 transition-colors last:rounded-b-xl"
+                        onClick={() => handleAnalysis('plot')}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-colors"
                       >
-                        <div className="rounded-lg bg-gray-100 p-1.5">
-                          <Download size={16} className="text-gray-600" />
+                        <div className="rounded-lg bg-purple-100 p-1.5">
+                          <Sparkles size={16} className="text-purple-600" />
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="font-medium">TXT 文档</span>
-                          <span className="text-xs text-gray-500">纯文本格式</span>
+                          <span className="font-medium">剧情分析</span>
+                          <span className="text-xs text-gray-500">分析情节发展</span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleAnalysis('structure')}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 transition-colors last:rounded-b-xl"
+                      >
+                        <div className="rounded-lg bg-blue-100 p-1.5">
+                          <Target size={16} className="text-blue-600" />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">结构分析</span>
+                          <span className="text-xs text-gray-500">分析章节结构</span>
                         </div>
                       </button>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* 统计数据展示 */}
-            {contentStats && (
-              <div className="border-b border-gray-200/50 bg-gradient-to-r from-indigo-50 via-white to-purple-50 p-6">
-                <div className="mb-5 grid gap-4 md:grid-cols-5">
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600">
-                      <FileText size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">字数统计</p>
-                      <p className="text-lg font-bold text-gray-900">{contentStats.wordCount}</p>
+              <CardBody className="min-h-[200px]">
+                {isAnalyzing ? (
+                  <div className="flex min-h-[180px] items-center justify-center">
+                    <div className="text-center">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100">
+                        <Eye size={32} className="text-green-600 animate-pulse" />
+                      </div>
+                      <p className="text-gray-600">AI正在分析中，请稍候...</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
-                      <Star size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">质量评分</p>
-                      <p className="text-lg font-bold text-gray-900">{contentStats.qualityScore}分</p>
+                ) : analysisResult ? (
+                  <div className="space-y-4">
+                    {analysisResult.summary && (
+                      <div>
+                        <h4 className="mb-2 font-semibold text-gray-900">内容摘要</h4>
+                        <p className="text-sm text-gray-600">{analysisResult.summary}</p>
+                      </div>
+                    )}
+                    {analysisResult.suggestions && (
+                      <div>
+                        <h4 className="mb-2 font-semibold text-gray-900">修改建议</h4>
+                        <ul className="space-y-2">
+                          {analysisResult.suggestions.map((suggestion: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                              <ChevronRight size={16} className="mt-0.5 text-cyan-600 flex-shrink-0" />
+                              {suggestion}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex min-h-[180px] items-center justify-center text-gray-400">
+                    <div className="text-center">
+                      <AlertCircle size={32} className="mx-auto mb-2" />
+                      <p>请先导入原稿并开始分析</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-600">
-                      <Eye size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">预估完读率</p>
-                      <p className="text-lg font-bold text-gray-900">{contentStats.completionRate}%</p>
-                    </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* 润色结果 */}
+            <Card>
+              <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100">
+                    <Sparkles size={20} className="text-amber-600" />
                   </div>
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600">
-                      <Flame size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">爽点数量</p>
-                      <p className="text-lg font-bold text-gray-900">{contentStats.shuangdianCount}个</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600">
-                      <Clock size={24} className="text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-gray-600">阅读时间</p>
-                      <p className="text-lg font-bold text-gray-900">{contentStats.estimatedReadTime}秒</p>
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">润色结果</h3>
                 </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCopy}
+                    disabled={!polishedContent}
+                    variant="ghost"
+                    size="sm"
+                    icon={<Copy size={16} />}
+                  >
+                    复制
+                  </Button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                      disabled={!polishedContent}
+                      className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      <Download size={16} />
+                      导出
+                      <svg
+                        className={`h-4 w-4 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
 
-                {/* 进度条可视化 */}
-                <div className="space-y-4">
-                  {/* 质量评分进度条 */}
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700">质量评分</span>
-                      <span className={`text-sm font-bold ${
-                        contentStats.qualityScore >= 90 ? 'text-emerald-600' :
-                        contentStats.qualityScore >= 70 ? 'text-blue-600' :
-                        'text-orange-600'
-                      }`}>
-                        {contentStats.qualityScore}/100
-                      </span>
-                    </div>
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ease-out ${
-                          contentStats.qualityScore >= 90 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-200' :
-                          contentStats.qualityScore >= 70 ? 'bg-gradient-to-r from-blue-400 to-blue-600 shadow-lg shadow-blue-200' :
-                          contentStats.qualityScore >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-200' :
-                          'bg-gradient-to-r from-red-400 to-red-600 shadow-lg shadow-red-200'
-                        }`}
-                        style={{ width: `${contentStats.qualityScore}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 完读率进度条 */}
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700">预估完读率</span>
-                      <span className={`text-sm font-bold ${
-                        contentStats.completionRate >= 90 ? 'text-emerald-600' :
-                        contentStats.completionRate >= 70 ? 'text-blue-600' :
-                        'text-orange-600'
-                      }`}>
-                        {contentStats.completionRate}%
-                      </span>
-                    </div>
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ease-out ${
-                          contentStats.completionRate >= 90 ? 'bg-gradient-to-r from-purple-400 to-purple-600 shadow-lg shadow-purple-200' :
-                          contentStats.completionRate >= 70 ? 'bg-gradient-to-r from-indigo-400 to-indigo-600 shadow-lg shadow-indigo-200' :
-                          'bg-gradient-to-r from-orange-400 to-orange-600 shadow-lg shadow-orange-200'
-                        }`}
-                        style={{ width: `${contentStats.completionRate}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 爽点密度指示 */}
-                  <div>
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700">爽点密度</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        每500字 {(contentStats.shuangdianCount / (contentStats.wordCount / 500)).toFixed(1)}个
-                      </span>
-                    </div>
-                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600 shadow-lg shadow-pink-200 transition-all duration-700 ease-out"
-                        style={{
-                          width: `${Math.min(100, (contentStats.shuangdianCount / (contentStats.wordCount / 500)) * 80)}%`
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      目标：每500字至少1.2个爽点以达成90%+完读率
-                    </p>
+                    {showExportMenu && (
+                      <div ref={exportMenuRef} className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-gray-200 bg-white shadow-xl animate-fadeIn">
+                        <button
+                          onClick={() => handleExport('word', polishedContent)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 transition-colors first:rounded-t-xl"
+                        >
+                          <div className="rounded-lg bg-blue-100 p-1.5">
+                            <Download size={16} className="text-blue-600" />
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">Word 文档</span>
+                            <span className="text-xs text-gray-500">.docx 格式</span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleExport('txt', polishedContent)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-slate-50 transition-colors last:rounded-b-xl"
+                        >
+                          <div className="rounded-lg bg-gray-100 p-1.5">
+                            <Download size={16} className="text-gray-600" />
+                          </div>
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">TXT 文档</span>
+                            <span className="text-xs text-gray-500">纯文本格式</span>
+                          </div>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
 
-            <CardBody className="min-h-[600px]">
-              {isLoading ? (
-                <div className="flex min-h-[500px] items-center justify-center">
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100">
-                      <BrandIcons.Writing size={40} className="text-indigo-600 animate-pulse" />
+              <CardBody className="min-h-[400px]">
+                {isPolishing ? (
+                  <div className="flex min-h-[380px] items-center justify-center">
+                    <div className="text-center">
+                      <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100">
+                        <Sparkles size={40} className="text-amber-600 animate-pulse" />
+                      </div>
+                      <p className="text-gray-600">AI正在润色中，请稍候...</p>
                     </div>
-                    <p className="text-gray-600">AI正在创作中，请稍候...</p>
                   </div>
-                </div>
-              ) : generatedContent ? (
-                <div className="prose prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-gray-900 leading-relaxed">
-                    {generatedContent}
-                  </pre>
-                </div>
-              ) : (
-                <div className="flex min-h-[500px] items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200">
-                      <BrandIcons.Book size={40} />
+                ) : polishedContent ? (
+                  <div className="prose prose-sm max-w-none">
+                    <pre className="whitespace-pre-wrap font-sans text-gray-900 leading-relaxed">
+                      {polishedContent}
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="flex min-h-[380px] items-center justify-center text-gray-400">
+                    <div className="text-center">
+                      <Sparkles size={32} className="mx-auto mb-2" />
+                      <p>润色结果将显示在这里</p>
                     </div>
-                    <p>输入创作信息，点击"AI生成章节"开始创作</p>
                   </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* 润色操作按钮 */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <GradientButton
+                onClick={() => handlePolish('full')}
+                isLoading={isPolishing}
+                disabled={!originalContent || !selectedNovelId}
+                icon={<Sparkles size={18} />}
+              >
+                全文精修
+              </GradientButton>
+              <Button
+                onClick={() => handlePolish('chapter')}
+                isLoading={isPolishing}
+                disabled={!originalContent || !selectedNovelId}
+                variant="outline"
+                icon={<Book size={18} />}
+              >
+                单章精修
+              </Button>
+              <Button
+                onClick={() => handlePolish('batch')}
+                isLoading={isPolishing}
+                disabled={!originalContent || !selectedNovelId}
+                variant="outline"
+                icon={<Zap size={18} />}
+              >
+                批量精修
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* 新建项目弹窗 */}
+      {showNewProjectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900">新建作品</h3>
+              <button
+                onClick={() => setShowNewProjectModal(false)}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <Input
+                label="作品标题"
+                value={newProjectTitle}
+                onChange={(e) => setNewProjectTitle(e.target.value)}
+                placeholder="例如：都市神医"
+                fullWidth
+              />
+              <div className="flex gap-3">
+                <GradientButton
+                  onClick={handleCreateProject}
+                  fullWidth
+                >
+                  创建
+                </GradientButton>
+                <Button
+                  onClick={() => setShowNewProjectModal(false)}
+                  variant="outline"
+                  fullWidth
+                >
+                  取消
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
