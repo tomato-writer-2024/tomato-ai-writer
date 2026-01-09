@@ -14,11 +14,17 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: '精修润色', href: '/workspace', icon: <BrandIcons.Writing size={20} />, requireAuth: true },
-  { label: '智能续写', href: '/continue', icon: <BrandIcons.Zap size={20} />, requireAuth: true },
-  { label: '爆款拆解', href: '/explosive-analyze', icon: <BrandIcons.Star size={20} />, requireAuth: true },
-  { label: '编辑审稿', href: '/editor-review', icon: <BrandIcons.Award size={20} />, requireAuth: true },
-  { label: '黄金开头', href: '/golden-start', icon: <BrandIcons.Crown size={20} />, requireAuth: true },
+  { label: '角色设定', href: '/characters', icon: <BrandIcons.User size={20} />, requireAuth: true },
+  { label: '世界观', href: '/world-building', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
+  { label: '大纲生成', href: '/outline-generator', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
+  { label: '人物关系', href: '/relationship-map', icon: <BrandIcons.Zap size={20} />, requireAuth: true },
+  { label: '卡文诊断', href: '/writer-block', icon: <BrandIcons.Writing size={20} />, requireAuth: true },
+  { label: '爽点优化', href: '/satisfaction-engine', icon: <BrandIcons.Star size={20} />, requireAuth: true },
+  { label: '文风模拟', href: '/style-simulator', icon: <BrandIcons.Book size={20} />, requireAuth: true },
+  { label: '情节反转', href: '/plot-twist', icon: <BrandIcons.Crown size={20} />, requireAuth: true },
+  { label: '结局生成', href: '/ending-generator', icon: <BrandIcons.Award size={20} />, requireAuth: true },
+  { label: '书名生成', href: '/title-generator', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
+  { label: '封面描述', href: '/cover-generator', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
   { label: '素材库', href: '/materials', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
   { label: '作品管理', href: '/works', icon: <BrandIcons.Book size={20} />, requireAuth: true },
   { label: '数据统计', href: '/stats', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
