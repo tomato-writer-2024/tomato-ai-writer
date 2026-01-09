@@ -557,6 +557,26 @@ export const AwardIcon: React.FC<{ size?: number; className?: string }> = ({ siz
   </svg>
 );
 
+// User/用户图标
+export const UserIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
+    <defs>
+      <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#0891B2" />
+        <stop offset="100%" stopColor="#2563EB" />
+      </linearGradient>
+    </defs>
+    {/* 头部 */}
+    <circle cx="32" cy="24" r="14" fill="url(#userGradient)" opacity="0.9" />
+    {/* 身体 */}
+    <path
+      d="M8 60 C8 44 16 40 32 40 C48 40 56 44 56 60"
+      fill="url(#userGradient)"
+      opacity="0.9"
+    />
+  </svg>
+);
+
 // 品牌图标集合导出
 export const BrandIcons = {
   Logo: LogoIcon,
@@ -577,6 +597,7 @@ export const BrandIcons = {
   Calendar: CalendarIcon,
   Star: StarIcon,
   Award: AwardIcon,
+  User: UserIcon,
 } as const;
 
 export default BrandIcons;

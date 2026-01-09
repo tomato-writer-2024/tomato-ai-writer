@@ -217,8 +217,8 @@ ${world.magicSystem.limitations.map(l => `- ${l}`).join('\n')}
 ` : ''}
 
 ## 地理环境
-气候：${world.climate}
-主要资源：${world.naturalResources.join('、')}
+气候：${world.geography.climate}
+主要资源：${world.geography.naturalResources.join('、')}
 
 ### 主要大陆/区域
 ${world.geography.continents.map(c => `**${c.name}**：${c.description}\n- 主要国家/势力：${c.countries.join('、')}\n- 关键地点：${c.keyLocations.join('、')}`).join('\n\n')}
@@ -441,7 +441,7 @@ export function generateGeographicConflict(world: WorldSetting): string[] {
   }
 
   // 气候灾害
-  if (world.climate.includes('恶劣') || world.climate.includes('极端')) {
+  if (world.geography.climate.includes('恶劣') || world.geography.climate.includes('极端')) {
     conflicts.push('气候变化危机：恶劣环境迫使人类或势力迁徙，引发地缘冲突');
   }
 

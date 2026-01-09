@@ -101,7 +101,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '儒释道融合'
     },
     sampleText: '风清扬微微一笑，说道："独孤九剑，有进无退！招招都是进攻，攻敌之不得不守。你自己也不必守，变敌之不得不守。"',
-    promptTemplate: '请以金庸风格创作以下内容：要求文笔古朴典雅，善用成语典故，融合儒释道思想，注重侠义精神和情感描写，节奏适中，对话简洁有力，{prompt}'
+    promptTemplate: '请以金庸风格创作以下内容：要求文笔古朴典雅，善用成语典故，融合儒释道思想，注重侠义精神和情感描写，节奏适中，对话简洁有力，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-gulong',
@@ -128,7 +129,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '存在主义'
     },
     sampleText: '风。冷风。冷风吹在身上，就像刀割一样。他站在风中，一动也不动，仿佛已和这冷风融成了一体。',
-    promptTemplate: '请以古龙风格创作以下内容：要求短句为主，节奏快速，善用重复和对比制造悬念，描写简洁有力，对话富有哲理，人物形象鲜明，{prompt}'
+    promptTemplate: '请以古龙风格创作以下内容：要求短句为主，节奏快速，善用重复和对比制造悬念，描写简洁有力，对话富有哲理，人物形象鲜明，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-mo-yan',
@@ -155,7 +157,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '魔幻现实主义'
     },
     sampleText: '高密东北乡的土地是黑色的，像铁一样坚硬，又像女人的皮肤一样柔软。阳光照射下来，土地就变得像融化的金子一样流动。',
-    promptTemplate: '请以莫言风格创作以下内容：要求语言华丽而粗犷，善用魔幻现实主义手法，详细描写乡土风情和人物心理，情感浓烈，思想深刻，{prompt}'
+    promptTemplate: '请以莫言风格创作以下内容：要求语言华丽而粗犷，善用魔幻现实主义手法，详细描写乡土风情和人物心理，情感浓烈，思想深刻，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-yu-hua',
@@ -182,7 +185,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '存在主义'
     },
     sampleText: '我走进那间屋子，看到桌上放着一碗粥。粥是凉的，已经结了一层皮。我用勺子搅了搅，那层皮就破了，露出下面白色的米粒。',
-    promptTemplate: '请以余华风格创作以下内容：要求语言朴实，白描为主，冷峻克制，细节精准，情感隐而不发，关注小人物的苦难和尊严，{prompt}'
+    promptTemplate: '请以余华风格创作以下内容：要求语言朴实，白描为主，冷峻克制，细节精准，情感隐而不发，关注小人物的苦难和尊严，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-chen-dong',
@@ -209,7 +213,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '适者生存'
     },
     sampleText: '轰隆隆！九条龙影冲天而起，每一条都如山岳般巨大，龙鳞闪烁着寒光，龙吟声响彻九霄。叶凡一步踏出，如天神降临，镇压诸天！',
-    promptTemplate: '请以辰东风格创作以下内容：要求场面宏大，气势磅礴，善用夸张和排比，热血沸腾，描写细腻而富有画面感，{prompt}'
+    promptTemplate: '请以辰东风格创作以下内容：要求场面宏大，气势磅礴，善用夸张和排比，热血沸腾，描写细腻而富有画面感，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-tian-can-tu-dou',
@@ -236,7 +241,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '努力终有回报'
     },
     sampleText: '萧炎紧握着黑尺，眼中满是坚定。三十年河东，三十年河西，莫欺少年穷！今日之耻，他日必十倍奉还！',
-    promptTemplate: '请以天蚕土豆风格创作以下内容：要求节奏明快，情节紧凑，人物励志热血，对话口语化，打斗场面精彩，{prompt}'
+    promptTemplate: '请以天蚕土豆风格创作以下内容：要求节奏明快，情节紧凑，人物励志热血，对话口语化，打斗场面精彩，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-wo-cao-xi-nong',
@@ -263,7 +269,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '人定胜天'
     },
     sampleText: '盘古开天地，混沌化太极。宇宙无垠，强者如云。林雷凝视着星空，心中涌起无尽的向往。他要以武入道，成就无敌！',
-    promptTemplate: '请以我吃西红柿风格创作以下内容：要求世界观宏大，设定严谨，描写细腻，人物成长脉络清晰，{prompt}'
+    promptTemplate: '请以我吃西红柿风格创作以下内容：要求世界观宏大，设定严谨，描写细腻，人物成长脉络清晰，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-jiang-nan',
@@ -290,7 +297,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '浪漫主义'
     },
     sampleText: '那一年，我们站在世界的尽头，看着夕阳一点点沉入大海。风吹过，带走了所有的喧嚣，只剩下心跳的声音。我们知道，这一刻将永远留在记忆里。',
-    promptTemplate: '请以江南风格创作以下内容：要求文笔优美细腻，善用比喻和象征，情感真挚浓烈，富有诗意和哲思，{prompt}'
+    promptTemplate: '请以江南风格创作以下内容：要求文笔优美细腻，善用比喻和象征，情感真挚浓烈，富有诗意和哲思，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-feng-huo-xi-zhu-ling',
@@ -317,7 +325,8 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       philosophy: '现实主义'
     },
     sampleText: '江湖如棋，众生皆子。徐凤年站在城头，目光越过山川河流，落在那遥远的北凉。他想起父亲说过的话，天下虽大，终究逃不过人心二字。',
-    promptTemplate: '请以烽火戏诸侯风格创作以下内容：要求文笔厚重，富有哲理，善用典故，人物刻画细腻，权谋布局精妙，{prompt}'
+    promptTemplate: '请以烽火戏诸侯风格创作以下内容：要求文笔厚重，富有哲理，善用典故，人物刻画细腻，权谋布局精妙，{prompt}',
+    createdAt: new Date('2024-01-01')
   },
   {
     id: 'style-mao-ning',
@@ -343,8 +352,9 @@ export const FAMOUS_AUTHOR_STYLES: AuthorStyle[] = [
       symbolism: true,
       philosophy: '理想主义'
     },
-    sampleText: '李青山抬头望着漫天星辰，心中默念。他想，这世间或许并没有什么绝对的善恶，只有立场不同。每个人都有自己的道理，每个道理都有它的价值。',
-    promptTemplate: '请以猫腻风格创作以下内容：要求文笔优美，哲理深刻，人物立体，情节曲折，富有思想性，{prompt}'
+    sampleText: '宁缺站在城墙上，看着远方。他想起了桑桑，想起了那些年走过的路。人这一生，总要有些坚持，有些不舍，才能活得像个人。',
+    promptTemplate: '请以猫腻风格创作以下内容：要求文笔优雅，人物刻画深入，情感细腻，善用哲理和象征，{prompt}',
+    createdAt: new Date('2024-01-01')
   }
 ];
 
@@ -570,7 +580,7 @@ export function generateStyleSuggestions(analysis: StyleAnalysis): StyleSuggesti
     suggestions.push({
       type: 'enhance',
       feature: '对话比例',
-      current: dialogueFeature.value,
+      current: String(dialogueFeature.value),
       recommended: '30-40%',
       reason: '增加对话可以增强人物互动和情节张力'
     });

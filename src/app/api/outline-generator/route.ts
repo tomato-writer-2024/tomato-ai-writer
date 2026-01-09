@@ -156,10 +156,13 @@ export async function aiGenerateOutline(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = llmClient.stream(prompt);
+          const generator = llmClient.generateTextStream(
+            '你是一个专业的小说大纲创作助手，擅长构建番茄小说风格的爽文大纲。',
+            prompt
+          );
 
           for await (const chunk of generator) {
-            const text = chunk.content || '';
+            const text = chunk || '';
             controller.enqueue(encoder.encode(text));
           }
 

@@ -388,7 +388,7 @@ export function generateTensionCurve(content: string): TensionSegment[] {
 
 // 获取紧张度目的
 function getTensionPurpose(type: TensionSegment['type'], level: number): string {
-  const purposes: Record<TensionSegment['type'], Record<number, string>> = {
+  const purposes: Record<TensionSegment['type'], Record<string, string>> = {
     'rising': { high: '构建冲突，提升期待', medium: '逐步推进，加深悬念', low: '缓慢铺垫' },
     'falling': { high: '释放压力，过渡场景', medium: '调整节奏，准备下一波', low: '平缓收尾' },
     'plateau': { high: '维持紧张，持续施压', medium: '稳定推进，保持节奏', low: '日常描写，舒缓节奏' },

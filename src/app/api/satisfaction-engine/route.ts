@@ -77,10 +77,13 @@ export async function optimizeContent(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = llmClient.stream(prompt);
+          const generator = llmClient.generateTextStream(
+            '你是一个专业的小说爽点优化助手，擅长提升番茄小说作品的爽点密度和读者期待。',
+            prompt
+          );
 
           for await (const chunk of generator) {
-            const text = chunk.content || '';
+            const text = chunk || '';
             controller.enqueue(encoder.encode(text));
           }
 

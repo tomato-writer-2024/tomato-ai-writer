@@ -497,7 +497,7 @@ function generateDescriptionText(
   return `# ${novelTitle} 封面设计
 
 ## 整体风格
-风格：${composition.layout}构图，${composition.balance}平衡，${composition.mood}动势
+风格：${composition.layout}构图，${composition.balance}平衡，${composition.movement}动势
 情绪：${mood}
 配色：${colorScheme.mood}（${colorScheme.harmony}和谐）
 

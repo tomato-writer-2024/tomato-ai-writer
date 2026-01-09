@@ -484,7 +484,7 @@ function identifyFormula(title: string): TitleFormula {
     return 'number-element';
   }
   if (title.includes('与') || title.includes('和')) {
-    return 'symbolic'; // 使用symbolic代替contrasting
+    return 'contrasting';
   }
   if (title.includes('传') || title.includes('纪')) {
     return 'character-role';

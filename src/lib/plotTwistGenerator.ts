@@ -365,7 +365,7 @@ export const PLOT_TWISTS: PlotTwist[] = [
         scenario: '时间异常',
         before: '故事正常发展',
         after: '揭露时间线的异常或循环',
-       解释: '需要精心设计时间线和线索'
+        explanation: '需要精心设计时间线和线索'
       }
     ],
     setupSteps: [
@@ -396,7 +396,7 @@ export const PLOT_TWISTS: PlotTwist[] = [
         scenario: '起源揭露',
         before: '主角相信自己知道自己的身世',
         after: '揭露主角的真实起源',
-        解释: '需要前期埋下矛盾线索'
+        explanation: '需要前期埋下矛盾线索'
       }
     ],
     setupSteps: [

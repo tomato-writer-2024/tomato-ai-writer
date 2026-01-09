@@ -83,7 +83,12 @@ export const PERSONALITY_TYPES = {
 };
 
 // 角色原型库
-export const CHARACTER_ARCHETYPES = [
+export const CHARACTER_ARCHETYPES: Array<{
+  name: string;
+  description: string;
+  traits: Partial<Record<string, number>>;
+  commonFlaws: string[];
+}> = [
   {
     name: '英雄',
     description: '勇敢、正义，为正义事业而战',
@@ -228,16 +233,16 @@ export function createCharacterFromArchetype(
     gender: customizations.gender || 'male',
     appearance: customizations.appearance || '请填写外貌描述',
     personality: customizations.personality || {
-      openness: baseArchetype.traits.openness || 50,
-      conscientiousness: baseArchetype.traits.conscientiousness || 50,
-      extraversion: baseArchetype.traits.extraversion || 50,
-      agreeableness: baseArchetype.traits.agreeableness || 50,
-      neuroticism: 50,
+      openness: typeof baseArchetype.traits.openness === 'number' ? baseArchetype.traits.openness : 50,
+      conscientiousness: typeof baseArchetype.traits.conscientiousness === 'number' ? baseArchetype.traits.conscientiousness : 50,
+      extraversion: typeof baseArchetype.traits.extraversion === 'number' ? baseArchetype.traits.extraversion : 50,
+      agreeableness: typeof baseArchetype.traits.agreeableness === 'number' ? baseArchetype.traits.agreeableness : 50,
+      neuroticism: typeof baseArchetype.traits.neuroticism === 'number' ? baseArchetype.traits.neuroticism : 50,
       humor: 50,
       loyalty: 50,
-      ambition: baseArchetype.traits.ambition || 50,
-      courage: baseArchetype.traits.courage || 50,
-      empathy: baseArchetype.traits.empathy || 50
+      ambition: typeof baseArchetype.traits.ambition === 'number' ? baseArchetype.traits.ambition : 50,
+      courage: typeof baseArchetype.traits.courage === 'number' ? baseArchetype.traits.courage : 50,
+      empathy: typeof baseArchetype.traits.empathy === 'number' ? baseArchetype.traits.empathy : 50
     },
     background: customizations.background || '',
     motivation: customizations.motivation || '',
@@ -287,7 +292,7 @@ export function generateCharacterDialogue(
     `场景：${context}\n` +
     `语气风格：${toneModifiers[tone]}\n` +
     `性格特征：${personalityHints}\n` +
-    `性格数值：开放性${character.personality.openoutness}，尽责性${character.personality.conscientiousness}，外向性${character.personality.extraversion}，宜人性${character.personality.agreeableness}\n` +
+    `性格数值：开放性${character.personality.openness}，尽责性${character.personality.conscientiousness}，外向性${character.personality.extraversion}，宜人性${character.personality.agreeableness}\n` +
     `核心动机：${character.motivation}\n` +
     `要求：对话要符合人物性格，体现其价值观和说话方式，200-300字`;
 }

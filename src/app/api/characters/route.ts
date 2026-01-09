@@ -100,10 +100,13 @@ export async function generateBackstory(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = llmClient.stream(prompt);
+          const generator = llmClient.generateTextStream(
+            '你是一个专业的小说角色小传创作助手。',
+            prompt
+          );
 
           for await (const chunk of generator) {
-            const text = chunk.content || '';
+            const text = chunk || '';
             controller.enqueue(encoder.encode(text));
           }
 
@@ -229,10 +232,13 @@ export async function generateDialogue(request: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = llmClient.stream(prompt);
+          const generator = llmClient.generateTextStream(
+            '你是一个专业的小说对话创作助手。',
+            prompt
+          );
 
           for await (const chunk of generator) {
-            const text = chunk.content || '';
+            const text = chunk || '';
             controller.enqueue(encoder.encode(text));
           }
 
