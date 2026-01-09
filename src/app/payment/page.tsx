@@ -39,28 +39,34 @@ function PaymentContent() {
         return;
       }
 
-      // TODO: 实际调用API获取订单信息
-      // const token = localStorage.getItem('token');
-      // const response = await fetch(`/api/orders/${orderId}`, {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setOrder(data.data);
+      // 调用API获取订单信息
+      const response = await fetch(`/api/payment/${orderId}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '加载订单失败');
+      }
 
-      // 模拟订单数据
-      setOrder({
-        id: orderId,
-        transactionId: 'ORD20250108001',
-        level: 'BASIC',
-        amount: 2900,
-        billingCycle: 'monthly',
-        createdAt: new Date().toISOString(),
-      });
+      const result = await response.json();
+      if (result.success) {
+        setOrder({
+          ...result.data,
+          id: orderId,
+          transactionId: result.data.orderId,
+        });
 
-      // 模拟支付轮询
-      startPaymentPolling(orderId);
+        // 检查订单状态
+        if (result.data.paymentStatus === 'PAID') {
+          setPaymentStatus('success');
+        } else if (result.data.paymentStatus === 'FAILED' || result.data.paymentStatus === 'EXPIRED') {
+          setPaymentStatus('failed');
+        } else {
+          // 开始支付轮询
+          startPaymentPolling(orderId);
+        }
+      }
     } catch (error) {
       console.error('加载订单失败:', error);
+      router.push('/pricing');
     } finally {
       setIsLoading(false);
     }
@@ -69,16 +75,21 @@ function PaymentContent() {
   const startPaymentPolling = (orderId: string) => {
     const pollInterval = setInterval(async () => {
       try {
-        // TODO: 实际调用API查询支付状态
-        // const response = await fetch(`/api/payment/${orderId}/status`, {
-        //   headers: { 'Authorization': `Bearer ${token}` }
-        // });
-        // const data = await response.json();
+        const response = await fetch(`/api/payment/${orderId}`);
+        if (!response.ok) {
+          throw new Error('查询支付状态失败');
+        }
 
-        // 模拟：30%概率支付成功
-        if (Math.random() < 0.1) {
-          setPaymentStatus('success');
-          clearInterval(pollInterval);
+        const result = await response.json();
+        if (result.success && result.data) {
+          // 检查订单状态
+          if (result.data.paymentStatus === 'PAID') {
+            setPaymentStatus('success');
+            clearInterval(pollInterval);
+          } else if (result.data.paymentStatus === 'FAILED' || result.data.paymentStatus === 'EXPIRED') {
+            setPaymentStatus('failed');
+            clearInterval(pollInterval);
+          }
         }
       } catch (error) {
         console.error('查询支付状态失败:', error);

@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Check, X, Loader2 } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
@@ -10,7 +10,42 @@ import Navigation from '@/components/Navigation';
 import { Badge } from '@/components/Badge';
 
 export default function PricingPage() {
+  const router = useRouter();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  const handleSubscribe = async (level: string, cycle: 'monthly' | 'yearly') => {
+    setIsCreatingOrder(true);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level,
+          billingCycle: cycle,
+          paymentMethod: 'alipay', // 默认支付宝支付
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '创建订单失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        // 跳转到支付页面
+        router.push(`/payment?orderId=${result.data.orderId}`);
+      } else {
+        throw new Error(result.error || '创建订单失败');
+      }
+    } catch (error) {
+      console.error('创建订单失败:', error);
+      alert(error instanceof Error ? error.message : '创建订单失败，请稍后重试');
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  };
 
   const plans = [
     {
@@ -195,12 +230,16 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                {plan.popular ? (
-                  <GradientButton icon={<BrandIcons.Zap size={18} />} fullWidth>
+                {plan.level === 'FREE' ? (
+                  <Button variant="outline" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => router.push('/workspace')}>
+                    {plan.cta}
+                  </Button>
+                ) : plan.popular ? (
+                  <GradientButton icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => handleSubscribe(plan.level, billingCycle)}>
                     {plan.cta}
                   </GradientButton>
                 ) : (
-                  <Button variant="outline" icon={<BrandIcons.Zap size={18} />} fullWidth>
+                  <Button variant="outline" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => handleSubscribe(plan.level, billingCycle)}>
                     {plan.cta}
                   </Button>
                 )}
