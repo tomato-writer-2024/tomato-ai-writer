@@ -14,10 +14,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: '工作区', href: '/workspace', icon: <BrandIcons.Writing size={20} />, requireAuth: true },
+  { label: '精修润色', href: '/workspace', icon: <BrandIcons.Writing size={20} />, requireAuth: true },
+  { label: '智能续写', href: '/continue', icon: <BrandIcons.Zap size={20} />, requireAuth: true },
   { label: '作品管理', href: '/works', icon: <BrandIcons.Book size={20} />, requireAuth: true },
   { label: '数据统计', href: '/stats', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
-  { label: '测试报告', href: '/test-report', icon: <BarChart3 size={20} />, requireAuth: true },
   { label: '个人中心', href: '/profile', icon: <User size={20} />, requireAuth: true },
 ];
 
