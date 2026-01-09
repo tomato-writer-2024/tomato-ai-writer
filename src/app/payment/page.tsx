@@ -11,7 +11,6 @@ function PaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'alipay' | 'wechat'>('alipay');
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
   const [countdown, setCountdown] = useState(300); // 5分钟倒计时
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +94,32 @@ function PaymentContent() {
         console.error('查询支付状态失败:', error);
       }
     }, 3000); // 每3秒查询一次
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!order) return;
+
+    try {
+      const response = await fetch(`/api/payment/${order.transactionId}/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '确认支付失败');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        alert('支付确认成功！系统正在开通会员服务，请稍候...');
+      } else {
+        throw new Error(result.error || '确认支付失败');
+      }
+    } catch (error) {
+      console.error('确认支付失败:', error);
+      alert(error instanceof Error ? error.message : '确认支付失败，请稍后重试');
+    }
   };
 
   const formatCountdown = (seconds: number) => {
@@ -280,7 +305,7 @@ function PaymentContent() {
                   <ul className="space-y-3 text-sm text-gray-600">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
-                      <span>请使用手机扫码支付，支付成功后自动跳转</span>
+                      <span>请使用微信扫描右侧二维码支付，支付成功后系统将自动确认订单</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
@@ -288,7 +313,7 @@ function PaymentContent() {
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="mt-0.5 text-green-500 flex-shrink-0" size={16} />
-                      <span>如有问题请联系客服</span>
+                      <span>如有问题请联系客服，支付成功后会员立即生效</span>
                     </li>
                   </ul>
                 </CardBody>
@@ -303,71 +328,45 @@ function PaymentContent() {
                     <div className="rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
                       <BrandIcons.Export size={20} />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">选择支付方式</h3>
+                    <h3 className="text-lg font-bold text-gray-900">微信支付</h3>
                   </div>
 
-                  {/* 支付方式选择 */}
-                  <div className="mb-6 space-y-3">
-                    <button
-                      onClick={() => setPaymentMethod('alipay')}
-                      className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                        paymentMethod === 'alipay'
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200/50 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-lg p-2 ${
-                          paymentMethod === 'alipay'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <BrandIcons.Export size={20} />
-                        </div>
-                        <span className="font-medium">支付宝</span>
+                  {/* 微信支付说明 */}
+                  <div className="mb-6 rounded-xl bg-green-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <BrandIcons.Quality size={20} className="mt-0.5 text-green-600 flex-shrink-0" />
+                      <div className="text-sm text-gray-700">
+                        <p className="font-medium text-gray-900 mb-1">个人开发者收款</p>
+                        <p>本人为个人开发者，使用个人微信收款码收款。支付成功后系统将自动确认订单并开通会员服务。</p>
                       </div>
-                      {paymentMethod === 'alipay' && (
-                        <div className="h-6 w-6 rounded-full bg-blue-600">
-                          <CheckCircle className="m-1 text-white" size={16} />
-                        </div>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => setPaymentMethod('wechat')}
-                      className={`flex w-full items-center justify-between rounded-xl border-2 p-4 transition-all ${
-                        paymentMethod === 'wechat'
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200/50 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-lg p-2 ${
-                          paymentMethod === 'wechat'
-                            ? 'bg-green-500 text-white'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          <BrandIcons.Export size={20} />
-                        </div>
-                        <span className="font-medium">微信支付</span>
-                      </div>
-                      {paymentMethod === 'wechat' && (
-                        <div className="h-6 w-6 rounded-full bg-green-600">
-                          <CheckCircle className="m-1 text-white" size={16} />
-                        </div>
-                      )}
-                    </button>
+                    </div>
                   </div>
 
                   {/* 二维码 */}
                   <div className="mb-6 rounded-xl border-2 border-dashed border-gray-300 p-8 text-center">
                     <div className="mb-4 flex justify-center">
-                      <div className="h-48 w-48 rounded-lg bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-400">二维码占位</span>
-                      </div>
+                      <img
+                        src="/wechat-qr-code.png"
+                        alt="微信收款码"
+                        className="h-48 w-48 rounded-lg object-contain"
+                      />
                     </div>
-                    <p className="text-sm text-gray-600">请使用{paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付</p>
+                    <p className="text-sm text-gray-600">请使用微信扫码支付</p>
+                    <p className="mt-2 text-xs text-orange-600 font-medium">
+                      扫码支付后，点击下方按钮确认支付
+                    </p>
                   </div>
+
+                  {/* 确认支付按钮 */}
+                  <Button
+                    variant="outline"
+                    icon={<CheckCircle size={18} />}
+                    fullWidth
+                    className="mb-4"
+                    onClick={() => handleConfirmPayment()}
+                  >
+                    我已完成支付，确认开通会员
+                  </Button>
 
                   {/* 支付金额确认 */}
                   <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4 text-center">

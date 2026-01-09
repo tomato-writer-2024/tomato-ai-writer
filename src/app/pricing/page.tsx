@@ -23,7 +23,7 @@ export default function PricingPage() {
         body: JSON.stringify({
           level,
           billingCycle: cycle,
-          paymentMethod: 'alipay', // 默认支付宝支付
+          paymentMethod: 'wechat', // 微信支付
         }),
       });
 
