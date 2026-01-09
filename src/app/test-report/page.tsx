@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge';
 import {
   Play, BarChart3, Zap, Clock, CheckCircle, XCircle,
   TrendingUp, Target, AlertTriangle, Download, RefreshCw,
+  FileText, Share2,
 } from 'lucide-react';
 
 interface TestSummary {
@@ -24,6 +25,7 @@ interface TestSummary {
   minResponseTime: string;
   maxResponseTime: string;
   responseTimeUnder1s: string;
+  details?: any[]; // 测试详情
 }
 
 interface TestResult {
@@ -75,6 +77,20 @@ export default function TestReportPage() {
     }
   };
 
+  // 导出测试结果
+  const exportTestResult = () => {
+    if (!testResult || !testResult.success) return;
+
+    const dataStr = JSON.stringify(testResult, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `test-result-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // 执行A/B测试
   const runABTest = async () => {
     setIsLoading(true);
@@ -100,6 +116,20 @@ export default function TestReportPage() {
     }
   };
 
+  // 导出A/B测试结果
+  const exportABResult = () => {
+    if (!abTestResult) return;
+
+    const dataStr = JSON.stringify(abTestResult, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ab-test-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // 执行性能测试
   const runPerformanceTest = async () => {
     setIsLoading(true);
@@ -122,6 +152,19 @@ export default function TestReportPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 导出性能测试结果
+  const exportPerfResult = () => {
+    if (!perfResult) return;
+
+    const dataStr = JSON.stringify(perfResult, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.download = `perf-test-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -200,6 +243,16 @@ export default function TestReportPage() {
                 {testResult && testResult.success && testResult.data && (
                   <div className="space-y-6">
                     {/* 汇总卡片 */}
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={<Download className="w-4 h-4 mr-2" />}
+                        onClick={exportTestResult}
+                      >
+                        导出结果
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <Card className="bg-gradient-to-br from-green-50 to-green-100">
                         <CardBody>
@@ -314,6 +367,56 @@ export default function TestReportPage() {
                         </div>
                       </CardBody>
                     </Card>
+
+                    {/* 测试用例列表 */}
+                    <Card>
+                      <CardBody>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4">测试用例详情</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 px-3">ID</th>
+                                <th className="text-left py-2 px-3">类型</th>
+                                <th className="text-left py-2 px-3">字数</th>
+                                <th className="text-left py-2 px-3">完读率</th>
+                                <th className="text-left py-2 px-3">质量分</th>
+                                <th className="text-left py-2 px-3">响应时间</th>
+                                <th className="text-left py-2 px-3">状态</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {testResult.data.summary.details?.slice(0, 20).map((detail: any, idx: number) => (
+                                <tr key={idx} className="border-b">
+                                  <td className="py-2 px-3 text-slate-600">{detail.testCaseId.split('_').slice(-1)[0]}</td>
+                                  <td className="py-2 px-3">
+                                    <Badge variant={detail.type === 'generate' ? 'success' : detail.type === 'continue' ? 'info' : 'warning'}>
+                                      {detail.type}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-3 text-slate-800">{detail.metrics?.wordCount || '-'}</td>
+                                  <td className="py-2 px-3 text-slate-800">{detail.metrics?.completionRate?.toFixed(2) || '-'}%</td>
+                                  <td className="py-2 px-3 text-slate-800">{detail.metrics?.qualityScore?.toFixed(2) || '-'}</td>
+                                  <td className="py-2 px-3 text-slate-800">{detail.responseTime}ms</td>
+                                  <td className="py-2 px-3">
+                                    {detail.passed ? (
+                                      <CheckCircle className="w-5 h-5 text-green-500" />
+                                    ) : (
+                                      <XCircle className="w-5 h-5 text-red-500" />
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {testResult.data.summary.details && testResult.data.summary.details.length > 20 && (
+                            <p className="text-sm text-slate-500 mt-3 text-center">
+                              仅显示前20条，导出完整结果查看详情
+                            </p>
+                          )}
+                        </div>
+                      </CardBody>
+                    </Card>
                   </div>
                 )}
 
@@ -360,6 +463,17 @@ export default function TestReportPage() {
 
                 {abTestResult && (
                   <div className="space-y-6">
+                    {/* 导出按钮 */}
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={<Download className="w-4 h-4 mr-2" />}
+                        onClick={exportABResult}
+                      >
+                        导出结果
+                      </Button>
+                    </div>
                     {/* 胜者展示 */}
                     <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200">
                       <CardBody>
@@ -488,6 +602,17 @@ export default function TestReportPage() {
 
                 {perfResult && (
                   <div className="space-y-6">
+                    {/* 导出按钮 */}
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon={<Download className="w-4 h-4 mr-2" />}
+                        onClick={exportPerfResult}
+                      >
+                        导出结果
+                      </Button>
+                    </div>
                     {/* 核心指标 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card className={`${

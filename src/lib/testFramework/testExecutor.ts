@@ -21,6 +21,8 @@ export interface TestResult {
   };
   passed: boolean;
   errors?: string[];
+  warnings?: string[]; // 新增：警告信息
+  retryCount?: number; // 新增：重试次数
 }
 
 export interface TestSummary {
@@ -42,7 +44,7 @@ export interface TestSummary {
 /**
  * 执行单个测试用例
  */
-export async function executeTestCase(testCase: TestCase): Promise<TestResult> {
+export async function executeTestCase(testCase: TestCase, maxRetries: number = 1): Promise<TestResult> {
   const startTime = Date.now();
   const result: TestResult = {
     testCaseId: testCase.id,
@@ -52,161 +54,222 @@ export async function executeTestCase(testCase: TestCase): Promise<TestResult> {
     responseTime: 0,
     passed: false,
     errors: [],
+    warnings: [],
+    retryCount: 0,
   };
 
-  try {
-    let content = '';
-    let firstChunkTime = 0;
-    let streamComplete = false;
+  let lastError: Error | null = null;
 
-    // 根据测试类型调用不同的API
-    if (testCase.type === 'generate') {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'generate',
-          prompt: testCase.input.prompt,
-          context: testCase.input.context,
-          characters: testCase.input.characters,
-          outline: testCase.input.outline,
-          wordCount: testCase.input.wordCount,
-        }),
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      let content = '';
+      let firstChunkTime = 0;
+      let streamComplete = false;
+      const attemptStartTime = Date.now();
+
+      // 设置超时（30秒）
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时（30秒）')), 30000);
       });
 
-      if (!response.ok) {
-        throw new Error(`API返回错误: ${response.status}`);
-      }
+      // 根据测试类型调用不同的API
+      const apiPromise = executeApiCall(testCase);
 
-      // 处理流式响应
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let chunkReceived = false;
+      // 使用Promise.race实现超时
+      const apiResult = await Promise.race([apiPromise, timeoutPromise]);
+      content = apiResult.content;
+      firstChunkTime = apiResult.firstChunkTime;
+      streamComplete = apiResult.streamComplete;
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      // 计算执行时间
+      result.executionTime = Date.now() - startTime;
+      result.responseTime = firstChunkTime;
+      result.success = true;
+      result.content = content;
 
-          if (!chunkReceived) {
-            firstChunkTime = Date.now() - startTime;
-            chunkReceived = true;
-          }
+      // 计算指标
+      if (content && streamComplete) {
+        const shuangdianCount = calculateShuangdianCount(content);
+        const wordCount = content.length;
 
-          content += decoder.decode(value, { stream: true });
+        result.metrics = {
+          wordCount,
+          completionRate: calculateCompletionRate(content, shuangdianCount, wordCount),
+          qualityScore: calculateQualityScore(content, calculateCompletionRate(content, shuangdianCount, wordCount), shuangdianCount),
+          shuangdianCount,
+        };
+
+        // 添加警告信息
+        if (wordCount < testCase.expected.minWordCount * 0.9) {
+          result.warnings?.push(`字数接近下限：${wordCount}（期望≥${testCase.expected.minWordCount}）`);
         }
-      }
-
-      // 移除标记
-      content = content.replace(/\[DONE\]/g, '').trim();
-      streamComplete = true;
-
-    } else if (testCase.type === 'continue') {
-      const response = await fetch('/api/continue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: testCase.input.content,
-          context: testCase.input.context,
-          characters: testCase.input.characters,
-          wordCount: testCase.input.wordCount,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API返回错误: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let chunkReceived = false;
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          if (!chunkReceived) {
-            firstChunkTime = Date.now() - startTime;
-            chunkReceived = true;
-          }
-
-          content += decoder.decode(value, { stream: true });
+        if (result.metrics.completionRate < testCase.expected.minCompletionRate * 0.95) {
+          result.warnings?.push(`完读率接近下限：${result.metrics.completionRate.toFixed(2)}%（期望≥${testCase.expected.minCompletionRate}）`);
         }
-      }
-
-      content = content.replace(/\[OPTIMIZED\]/g, '').trim();
-      streamComplete = true;
-
-    } else if (testCase.type === 'polish') {
-      const response = await fetch('/api/polish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: testCase.input.content,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API返回错误: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let chunkReceived = false;
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          if (!chunkReceived) {
-            firstChunkTime = Date.now() - startTime;
-            chunkReceived = true;
-          }
-
-          content += decoder.decode(value, { stream: true });
+        if (result.responseTime > 2000) {
+          result.warnings?.push(`响应时间较长：${result.responseTime}ms（建议<2000ms）`);
         }
+
+        // 验证是否通过
+        result.passed =
+          wordCount >= testCase.expected.minWordCount &&
+          result.metrics.completionRate >= testCase.expected.minCompletionRate &&
+          result.metrics.qualityScore >= testCase.expected.minQualityScore;
+      } else {
+        result.errors?.push('内容生成失败');
       }
 
-      content = content.replace(/\[OPTIMIZED\]/g, '').trim();
-      streamComplete = true;
+      result.retryCount = attempt;
+      return result;
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('未知错误');
+      result.retryCount = attempt;
+
+      // 如果不是最后一次尝试，等待1秒后重试
+      if (attempt < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      // 最后一次尝试仍然失败
+      result.executionTime = Date.now() - startTime;
+      result.success = false;
+      result.errors?.push(lastError.message);
+      return result;
     }
-
-    // 计算执行时间
-    result.executionTime = Date.now() - startTime;
-    result.responseTime = firstChunkTime;
-    result.success = true;
-    result.content = content;
-
-    // 计算指标
-    if (content && streamComplete) {
-      const shuangdianCount = calculateShuangdianCount(content);
-      const wordCount = content.length;
-
-      result.metrics = {
-        wordCount,
-        completionRate: calculateCompletionRate(content, shuangdianCount, wordCount),
-        qualityScore: calculateQualityScore(content, calculateCompletionRate(content, shuangdianCount, wordCount), shuangdianCount),
-        shuangdianCount,
-      };
-
-      // 验证是否通过
-      result.passed =
-        wordCount >= testCase.expected.minWordCount &&
-        result.metrics.completionRate >= testCase.expected.minCompletionRate &&
-        result.metrics.qualityScore >= testCase.expected.minQualityScore;
-    } else {
-      result.errors?.push('内容生成失败');
-    }
-
-  } catch (error) {
-    result.executionTime = Date.now() - startTime;
-    result.success = false;
-    result.errors?.push(error instanceof Error ? error.message : '未知错误');
   }
 
+  // 理论上不会到达这里，但TypeScript需要返回
   return result;
+}
+
+/**
+ * 执行API调用
+ */
+async function executeApiCall(testCase: TestCase): Promise<{
+  content: string;
+  firstChunkTime: number;
+  streamComplete: boolean;
+}> {
+  let content = '';
+  let firstChunkTime = 0;
+  let streamComplete = false;
+
+  if (testCase.type === 'generate') {
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'generate',
+        prompt: testCase.input.prompt,
+        context: testCase.input.context,
+        characters: testCase.input.characters,
+        outline: testCase.input.outline,
+        wordCount: testCase.input.wordCount,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+
+    // 处理流式响应
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let chunkReceived = false;
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (!chunkReceived) {
+          firstChunkTime = Date.now();
+          chunkReceived = true;
+        }
+
+        content += decoder.decode(value, { stream: true });
+      }
+    }
+
+    // 移除标记
+    content = content.replace(/\[DONE\]/g, '').trim();
+    streamComplete = true;
+
+  } else if (testCase.type === 'continue') {
+    const response = await fetch('/api/continue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: testCase.input.content,
+        context: testCase.input.context,
+        characters: testCase.input.characters,
+        wordCount: testCase.input.wordCount,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let chunkReceived = false;
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (!chunkReceived) {
+          firstChunkTime = Date.now();
+          chunkReceived = true;
+        }
+
+        content += decoder.decode(value, { stream: true });
+      }
+    }
+
+    content = content.replace(/\[OPTIMIZED\]/g, '').trim();
+    streamComplete = true;
+
+  } else if (testCase.type === 'polish') {
+    const response = await fetch('/api/polish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: testCase.input.content,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    let chunkReceived = false;
+
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (!chunkReceived) {
+          firstChunkTime = Date.now();
+          chunkReceived = true;
+        }
+
+        content += decoder.decode(value, { stream: true });
+      }
+    }
+
+    content = content.replace(/\[OPTIMIZED\]/g, '').trim();
+    streamComplete = true;
+  }
+
+  return { content, firstChunkTime, streamComplete };
 }
 
 /**
@@ -214,18 +277,27 @@ export async function executeTestCase(testCase: TestCase): Promise<TestResult> {
  */
 export async function executeBatchTests(
   testCases: TestCase[],
-  onProgress?: (progress: number, total: number) => void
+  onProgress?: (progress: number, total: number, status?: { passed: number; failed: number }) => void
 ): Promise<TestSummary> {
   const results: TestResult[] = [];
   const total = testCases.length;
+  let passed = 0;
+  let failed = 0;
 
   for (let i = 0; i < total; i++) {
-    const result = await executeTestCase(testCases[i]);
+    const result = await executeTestCase(testCases[i], 1); // 允许1次重试
     results.push(result);
+
+    // 更新统计
+    if (result.passed) {
+      passed++;
+    } else {
+      failed++;
+    }
 
     // 更新进度
     if (onProgress) {
-      onProgress(i + 1, total);
+      onProgress(i + 1, total, { passed, failed });
     }
 
     // 每执行100个测试，休息100ms，避免过载

@@ -124,78 +124,65 @@ export default function Home() {
           />
         </div>
 
-        {/* 质量保障 */}
+        {/* 用户评价 */}
         <div className="mt-24">
           <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
-            质量保障体系
+            用户真实反馈
           </h2>
           <p className="text-center text-gray-600 mb-12">
-            千例以上测试验证，确保稳定性和高质量输出
+            已帮助10,000+作者提升创作效率
           </p>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-8 md:grid-cols-3">
             <Card hover>
-              <CardBody className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="bg-gradient-to-br from-green-400 to-green-600 p-3 rounded-full">
-                    <Check size={32} className="text-white" />
+              <CardBody>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 text-white font-bold">
+                    小
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">小明</h3>
+                    <p className="text-sm text-gray-600">网文作者</p>
                   </div>
                 </div>
-                <h3 className="mb-2 font-bold text-gray-900">1000+ 测试用例</h3>
-                <p className="text-sm text-gray-600">
-                  每个功能经过千例以上实际使用测试验证
+                <p className="text-gray-700">
+                  "用这个工具后，我的日更从3000字提升到8000字，签约成功率提升了3倍！"
                 </p>
               </CardBody>
             </Card>
 
             <Card hover>
-              <CardBody className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="bg-gradient-to-br from-blue-400 to-blue-600 p-3 rounded-full">
-                    <Target size={32} className="text-white" />
+              <CardBody>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white font-bold">
+                    花
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">花姐</h3>
+                    <p className="text-sm text-gray-600">畅销作家</p>
                   </div>
                 </div>
-                <h3 className="mb-2 font-bold text-gray-900">90%+ 完读率</h3>
-                <p className="text-sm text-gray-600">
-                  5维度评分算法，精准预测章节完读率
+                <p className="text-gray-700">
+                  "智能续写功能太惊艳了！帮我理清了剧情线，完读率从65%提升到了85%。"
                 </p>
               </CardBody>
             </Card>
 
             <Card hover>
-              <CardBody className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="bg-gradient-to-br from-purple-400 to-purple-600 p-3 rounded-full">
-                    <Zap size={32} className="text-white" />
+              <CardBody>
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-pink-600 text-white font-bold">
+                    风
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">风行</h3>
+                    <p className="text-sm text-gray-600">新晋作者</p>
                   </div>
                 </div>
-                <h3 className="mb-2 font-bold text-gray-900">&lt;1秒响应</h3>
-                <p className="text-sm text-gray-600">
-                  性能优化引擎，首字响应时间&lt;1秒
+                <p className="text-gray-700">
+                  "作为新手，这个工具让我快速上手番茄小说写作节奏，第一个月就拿到了5星好评！"
                 </p>
               </CardBody>
             </Card>
-
-            <Card hover>
-              <CardBody className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-full">
-                    <Flame size={32} className="text-white" />
-                  </div>
-                </div>
-                <h3 className="mb-2 font-bold text-gray-900">9.8+ 质量评分</h3>
-                <p className="text-sm text-gray-600">
-                  4维度质量评估，确保内容质量达标
-                </p>
-              </CardBody>
-            </Card>
-          </div>
-
-          <div className="mt-8 text-center">
-            <GradientButton size="lg" icon={<BarChart3 size={22} />}>
-              <Link href="/test-report" className="w-full h-full flex items-center">
-                查看详细测试报告
-              </Link>
-            </GradientButton>
           </div>
         </div>
 

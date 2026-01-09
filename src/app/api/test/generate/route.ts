@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
           minResponseTime: summary.minResponseTime.toFixed(0) + 'ms',
           maxResponseTime: summary.maxResponseTime.toFixed(0) + 'ms',
           responseTimeUnder1s: summary.responseTimeUnder1s.toFixed(2) + '%',
+          details: summary.details.slice(0, 20), // 只返回前20条
         },
         executionTime: `${(executionTime / 1000).toFixed(2)}秒`,
         testCaseCount: testCases.length,
