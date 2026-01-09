@@ -6,7 +6,11 @@
     "dev": "next dev -p 5000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "init-db": "tsx src/scripts/init-database.ts",
+    "init-admin": "tsx src/scripts/init-super-admin.ts",
+    "init-all": "pnpm run init-db && pnpm run init-admin"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
