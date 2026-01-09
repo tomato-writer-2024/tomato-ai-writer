@@ -42,20 +42,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 验证密码强度
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: '密码必须包含大小写字母和数字',
-        },
-        { status: 400 }
-      );
-    }
+    // 降低密码强度要求，不再强制要求大小写字母和数字
+    // 只要长度>=6即可，让用户设置简单的密码
 
     // 验证确认密码
     if (password !== confirmPassword) {
