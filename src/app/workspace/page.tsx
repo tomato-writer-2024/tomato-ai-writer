@@ -14,7 +14,7 @@ import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';
 import { Badge } from '@/components/Badge';
 import Navigation from '@/components/Navigation';
-import { Loader2, Download, Copy, Upload, Clock } from 'lucide-react';
+import { Loader2, Download, Copy, Upload, Clock, Save, Sparkles, FileText, Book, Zap, Star, Target, Flame, Eye } from 'lucide-react';
 
 interface ContentStats {
   wordCount: number;
@@ -248,12 +248,20 @@ export default function WorkspacePage() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-        setGeneratedContent(fullContent);
-      }
 
-      // 计算内容统计
-      setContentStats(calculateContentStats(fullContent));
+        // 检查是否是完成标记
+        if (chunk.includes('[DONE]')) {
+          const content = chunk.replace('[DONE]', '');
+          fullContent += content;
+        } else {
+          fullContent += chunk;
+        }
+
+        setGeneratedContent(fullContent);
+
+        // 实时更新内容统计
+        setContentStats(calculateContentStats(fullContent));
+      }
 
     } catch (error) {
       console.error('生成失败:', error);
@@ -270,6 +278,8 @@ export default function WorkspacePage() {
     }
 
     setIsLoading(true);
+    const originalContent = generatedContent;
+    setGeneratedContent('');
     try {
       const response = await fetch('/api/polish', {
         method: 'POST',
@@ -289,21 +299,31 @@ export default function WorkspacePage() {
         throw new Error('无法读取响应流');
       }
 
-      let fullContent = '';
+      let polishedContent = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        fullContent += chunk;
-        setGeneratedContent(fullContent);
-      }
 
-      // 计算内容统计
-      setContentStats(calculateContentStats(fullContent));
+        // 检查是否是完成标记
+        if (chunk.includes('[OPTIMIZED]')) {
+          const content = chunk.replace('[OPTIMIZED]', '');
+          polishedContent += content;
+        } else {
+          polishedContent += chunk;
+        }
+
+        setGeneratedContent(polishedContent);
+
+        // 实时更新内容统计
+        setContentStats(calculateContentStats(polishedContent));
+      }
 
     } catch (error) {
       console.error('润色失败:', error);
+      // 恢复原始内容
+      setGeneratedContent(originalContent);
       alert('润色失败，请稍后重试');
     } finally {
       setIsLoading(false);
@@ -347,12 +367,20 @@ export default function WorkspacePage() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        newContent += chunk;
+
+        // 检查是否是完成标记
+        if (chunk.includes('[OPTIMIZED]')) {
+          const content = chunk.replace('[OPTIMIZED]', '');
+          newContent += content;
+        } else {
+          newContent += chunk;
+        }
+
         // 只更新新累积的内容，避免重复
         const fullContent = originalContent + '\n\n' + newContent;
         setGeneratedContent(fullContent);
 
-        // 计算内容统计
+        // 实时更新内容统计
         setContentStats(calculateContentStats(fullContent));
       }
 
@@ -409,19 +437,33 @@ export default function WorkspacePage() {
       return;
     }
 
-    const filename = `第${chapterNum}章.${format === 'word' ? 'docx' : 'txt'}`;
+    const filename = `第${chapterNum}章`;
 
     try {
-      switch (format) {
-        case 'word':
-          await exportAsWord(generatedContent, filename);
-          break;
-        case 'txt':
-          exportAsTxt(generatedContent, filename);
-          break;
+      const response = await fetch('/api/files/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: generatedContent,
+          format,
+          filename,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '导出失败');
       }
-      setShowExportMenu(false);
-      alert('导出成功！');
+
+      const result = await response.json();
+      if (result.success && result.data.url) {
+        // 下载文件
+        window.open(result.data.url, '_blank');
+        setShowExportMenu(false);
+        alert('导出成功！');
+      } else {
+        throw new Error(result.error || '导出失败');
+      }
     } catch (error) {
       console.error('导出失败:', error);
       alert('导出失败: ' + (error instanceof Error ? error.message : '未知错误'));
@@ -700,7 +742,7 @@ export default function WorkspacePage() {
                     onClick={handleContinue}
                     disabled={isLoading || !generatedContent}
                     variant="outline"
-                    icon={<BrandIcons.Efficiency size={18} />}
+                    icon={<Zap size={18} />}
                     fullWidth
                   >
                     {isLoading ? '续写中...' : '智能续写'}
@@ -712,7 +754,7 @@ export default function WorkspacePage() {
                 isLoading={isSavingChapter}
                 disabled={!generatedContent || !selectedNovelId || !chapterTitle}
                 variant="primary"
-                icon={<BrandIcons.Efficiency size={18} />}
+                icon={<Save size={18} />}
                 fullWidth
               >
                 {isSavingChapter ? '保存中...' : currentChapterId ? '更新章节' : '保存章节'}
@@ -819,72 +861,76 @@ export default function WorkspacePage() {
 
             {/* 统计数据展示 */}
             {contentStats && (
-              <div className="border-b border-gray-200/50 bg-gradient-to-r from-indigo-50 to-purple-50 p-6">
-                <div className="mb-4 grid gap-4 md:grid-cols-5">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <BrandIcons.Book size={24} className="text-indigo-600" />
+              <div className="border-b border-gray-200/50 bg-gradient-to-r from-indigo-50 via-white to-purple-50 p-6">
+                <div className="mb-5 grid gap-4 md:grid-cols-5">
+                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600">
+                      <FileText size={24} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">字数统计</p>
+                      <p className="text-xs font-medium text-gray-600">字数统计</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.wordCount}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <BrandIcons.Quality size={24} className="text-purple-600" />
+                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600">
+                      <Star size={24} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">质量评分</p>
+                      <p className="text-xs font-medium text-gray-600">质量评分</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.qualityScore}分</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <BrandIcons.Stats size={24} className="text-pink-600" />
+                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-pink-600">
+                      <Eye size={24} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">预估完读率</p>
+                      <p className="text-xs font-medium text-gray-600">预估完读率</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.completionRate}%</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <BrandIcons.Shuangdian size={24} className="text-orange-600" />
+                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600">
+                      <Flame size={24} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">爽点数量</p>
+                      <p className="text-xs font-medium text-gray-600">爽点数量</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.shuangdianCount}个</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-white p-3 shadow-sm">
-                      <Clock size={24} className="text-green-600" />
+                  <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-md transition-all hover:shadow-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600">
+                      <Clock size={24} className="text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-gray-600">阅读时间</p>
+                      <p className="text-xs font-medium text-gray-600">阅读时间</p>
                       <p className="text-lg font-bold text-gray-900">{contentStats.estimatedReadTime}秒</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 进度条可视化 */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {/* 质量评分进度条 */}
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between text-sm">
-                      <span className="font-medium text-gray-700">质量评分</span>
-                      <span className={`font-bold ${contentStats.qualityScore >= 90 ? 'text-green-600' : contentStats.qualityScore >= 70 ? 'text-blue-600' : 'text-orange-600'}`}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-700">质量评分</span>
+                      <span className={`text-sm font-bold ${
+                        contentStats.qualityScore >= 90 ? 'text-emerald-600' :
+                        contentStats.qualityScore >= 70 ? 'text-blue-600' :
+                        'text-orange-600'
+                      }`}>
                         {contentStats.qualityScore}/100
                       </span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          contentStats.qualityScore >= 90 ? 'bg-gradient-to-r from-green-400 to-green-600' :
-                          contentStats.qualityScore >= 70 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                          contentStats.qualityScore >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
-                          'bg-gradient-to-r from-red-400 to-red-600'
+                        className={`h-full rounded-full transition-all duration-700 ease-out ${
+                          contentStats.qualityScore >= 90 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-200' :
+                          contentStats.qualityScore >= 70 ? 'bg-gradient-to-r from-blue-400 to-blue-600 shadow-lg shadow-blue-200' :
+                          contentStats.qualityScore >= 50 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-200' :
+                          'bg-gradient-to-r from-red-400 to-red-600 shadow-lg shadow-red-200'
                         }`}
                         style={{ width: `${contentStats.qualityScore}%` }}
                       />
@@ -893,40 +939,47 @@ export default function WorkspacePage() {
 
                   {/* 完读率进度条 */}
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between text-sm">
-                      <span className="font-medium text-gray-700">预估完读率</span>
-                      <span className={`font-bold ${contentStats.completionRate >= 85 ? 'text-green-600' : contentStats.completionRate >= 70 ? 'text-blue-600' : 'text-orange-600'}`}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-700">预估完读率</span>
+                      <span className={`text-sm font-bold ${
+                        contentStats.completionRate >= 90 ? 'text-emerald-600' :
+                        contentStats.completionRate >= 70 ? 'text-blue-600' :
+                        'text-orange-600'
+                      }`}>
                         {contentStats.completionRate}%
                       </span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          contentStats.completionRate >= 85 ? 'bg-gradient-to-r from-pink-400 to-pink-600' :
-                          contentStats.completionRate >= 70 ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
-                          'bg-gradient-to-r from-orange-400 to-orange-600'
+                        className={`h-full rounded-full transition-all duration-700 ease-out ${
+                          contentStats.completionRate >= 90 ? 'bg-gradient-to-r from-purple-400 to-purple-600 shadow-lg shadow-purple-200' :
+                          contentStats.completionRate >= 70 ? 'bg-gradient-to-r from-indigo-400 to-indigo-600 shadow-lg shadow-indigo-200' :
+                          'bg-gradient-to-r from-orange-400 to-orange-600 shadow-lg shadow-orange-200'
                         }`}
                         style={{ width: `${contentStats.completionRate}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* 爽点密度 */}
+                  {/* 爽点密度指示 */}
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between text-sm">
-                      <span className="font-medium text-gray-700">爽点密度</span>
-                      <span className="font-bold text-orange-600">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-gray-700">爽点密度</span>
+                      <span className="text-sm font-bold text-gray-900">
                         每500字 {(contentStats.shuangdianCount / (contentStats.wordCount / 500)).toFixed(1)}个
                       </span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200 shadow-inner">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600 shadow-lg shadow-pink-200 transition-all duration-700 ease-out"
                         style={{
-                          width: `${Math.min(100, (contentStats.shuangdianCount / (contentStats.wordCount / 500)) * 40)}%`
+                          width: `${Math.min(100, (contentStats.shuangdianCount / (contentStats.wordCount / 500)) * 80)}%`
                         }}
                       />
                     </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      目标：每500字至少1.2个爽点以达成90%+完读率
+                    </p>
                   </div>
                 </div>
               </div>
