@@ -2,12 +2,12 @@
  * 高性能内容生成引擎
  *
  * 目标：
- * 1. 提升AI反应效率（响应时间 < 2秒）
+ * 1. 提升AI反应效率（响应时间 < 1秒，优化目标<500ms）
  * 2. 章节完读率达90%以上
  * 3. 9.8分+内容质量
  */
 
-import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { optimizedStreamCall } from '@/lib/performanceOptimizer';
 
 // ============================================================================
 // 类型定义
@@ -238,10 +238,7 @@ export async function* generateContentStream(
   // 构建提示词
   const prompt = buildPrompt(config);
 
-  // 初始化LLM客户端
-  const llmConfig = new Config();
-  const client = new LLMClient(llmConfig);
-
+  // 使用性能优化的流式调用
   const messages = [
     {
       role: 'system' as const,
@@ -253,18 +250,18 @@ export async function* generateContentStream(
     },
   ];
 
-  // 调用流式AI
-  const stream = client.stream(messages, {
+  // 调用优化的流式AI
+  const { stream } = await optimizedStreamCall(messages, {
     model: 'doubao-pro-4k', // 使用快速模型
     temperature: 0.8, // 提升创意性
-    streaming: true,
+    usePromptCompression: true, // 启用提示词压缩
+    cacheSystemPrompt: true, // 缓存系统提示词
+    enableStreaming: true,
   });
 
   // 流式输出
   for await (const chunk of stream) {
-    if (chunk.content) {
-      yield chunk.content.toString();
-    }
+    yield chunk;
   }
 }
 
@@ -374,7 +371,7 @@ function calculateShuangdianCount(content: string): number {
 /**
  * 计算质量评分（0-100分，目标：9.8分+）
  */
-function calculateQualityScore(
+export function calculateQualityScore(
   content: string,
   completionRate: number,
   shuangdianCount: number
@@ -402,7 +399,7 @@ function calculateQualityScore(
 /**
  * 计算文字质量（0-20分）
  */
-function calculateTextQuality(content: string): number {
+export function calculateTextQuality(content: string): number {
   let score = 10; // 基础分
 
   // 1. 检查重复词汇

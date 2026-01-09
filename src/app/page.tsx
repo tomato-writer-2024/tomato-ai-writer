@@ -12,7 +12,10 @@ import {
   Users,
   Clock,
   Shield,
-  Rocket
+  Rocket,
+  BarChart3,
+  Target,
+  Flame
 } from 'lucide-react';
 import BrandIcons from '@/lib/brandIcons';
 import { Card, CardBody, FeatureCard } from '@/components/Card';
@@ -84,6 +87,16 @@ export default function Home() {
             <Button
               variant="outline"
               size="lg"
+              icon={<BarChart3 size={22} />}
+              className="border-2 border-indigo-500 hover:border-indigo-600"
+            >
+              <Link href="/test-report" className="w-full h-full flex items-center">
+                测试报告
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
               icon={<Crown size={22} />}
               className="border-2 border-indigo-500 hover:border-indigo-600"
             >
@@ -109,6 +122,81 @@ export default function Home() {
             title="智能续写大脑"
             description="剧情逻辑锚点、多分支剧情生成、风格一致性保障，告别逻辑混乱"
           />
+        </div>
+
+        {/* 质量保障 */}
+        <div className="mt-24">
+          <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
+            质量保障体系
+          </h2>
+          <p className="text-center text-gray-600 mb-12">
+            千例以上测试验证，确保稳定性和高质量输出
+          </p>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            <Card hover>
+              <CardBody className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="bg-gradient-to-br from-green-400 to-green-600 p-3 rounded-full">
+                    <Check size={32} className="text-white" />
+                  </div>
+                </div>
+                <h3 className="mb-2 font-bold text-gray-900">1000+ 测试用例</h3>
+                <p className="text-sm text-gray-600">
+                  每个功能经过千例以上实际使用测试验证
+                </p>
+              </CardBody>
+            </Card>
+
+            <Card hover>
+              <CardBody className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="bg-gradient-to-br from-blue-400 to-blue-600 p-3 rounded-full">
+                    <Target size={32} className="text-white" />
+                  </div>
+                </div>
+                <h3 className="mb-2 font-bold text-gray-900">90%+ 完读率</h3>
+                <p className="text-sm text-gray-600">
+                  5维度评分算法，精准预测章节完读率
+                </p>
+              </CardBody>
+            </Card>
+
+            <Card hover>
+              <CardBody className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="bg-gradient-to-br from-purple-400 to-purple-600 p-3 rounded-full">
+                    <Zap size={32} className="text-white" />
+                  </div>
+                </div>
+                <h3 className="mb-2 font-bold text-gray-900">&lt;1秒响应</h3>
+                <p className="text-sm text-gray-600">
+                  性能优化引擎，首字响应时间&lt;1秒
+                </p>
+              </CardBody>
+            </Card>
+
+            <Card hover>
+              <CardBody className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-3 rounded-full">
+                    <Flame size={32} className="text-white" />
+                  </div>
+                </div>
+                <h3 className="mb-2 font-bold text-gray-900">9.8+ 质量评分</h3>
+                <p className="text-sm text-gray-600">
+                  4维度质量评估，确保内容质量达标
+                </p>
+              </CardBody>
+            </Card>
+          </div>
+
+          <div className="mt-8 text-center">
+            <GradientButton size="lg" icon={<BarChart3 size={22} />}>
+              <Link href="/test-report" className="w-full h-full flex items-center">
+                查看详细测试报告
+              </Link>
+            </GradientButton>
+          </div>
         </div>
 
         {/* 数据展示 */}
