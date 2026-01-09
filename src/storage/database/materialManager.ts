@@ -1,4 +1,4 @@
-import { eq, and, SQL, like, desc } from "drizzle-orm";
+import { eq, and, SQL, like, desc, sql } from "drizzle-orm";
 import { getDb } from "coze-coding-dev-sdk";
 import { materials, insertMaterialSchema, updateMaterialSchema } from "./shared/schema";
 import type { Material, InsertMaterial, UpdateMaterial } from "./shared/schema";
@@ -31,6 +31,7 @@ export class MaterialManager {
 		const { skip = 0, limit = 100, filters = {}, searchQuery, sortBy = 'createdAt', sortOrder = 'desc' } = options;
 		const db = await getDb();
 
+		// 构建查询条件
 		const conditions: SQL[] = [];
 
 		// 精确条件
@@ -44,16 +45,15 @@ export class MaterialManager {
 			conditions.push(eq(materials.category, filters.category));
 		}
 		if (filters.novelId !== undefined) {
-			conditions.push(eq(materials.novelId, filters.novelId));
+			if (filters.novelId === null) {
+				conditions.push(sql`${materials.novelId} IS NULL`);
+			} else {
+				conditions.push(eq(materials.novelId, filters.novelId));
+			}
 		}
 		if (filters.isFavorite !== undefined) {
 			conditions.push(eq(materials.isFavorite, filters.isFavorite));
 		}
-		if (filters.isDeleted !== undefined) {
-			conditions.push(eq(materials.isDeleted, filters.isDeleted));
-		}
-
-		// 默认过滤已删除的素材
 		if (filters.isDeleted === undefined) {
 			conditions.push(eq(materials.isDeleted, false));
 		}
@@ -65,19 +65,26 @@ export class MaterialManager {
 			);
 		}
 
-		let query = db.select().from(materials);
+		// 构建基础查询
+		let baseQuery = db.select().from(materials);
+
+		// 添加WHERE条件
 		if (conditions.length > 0) {
-			query = query.where(and(...conditions));
+			baseQuery = baseQuery.where(and(...conditions)) as any;
 		}
 
-		// 排序
-		if (sortOrder === 'desc') {
-			query = query.orderBy(desc(materials[sortBy]));
-		} else {
-			query = query.orderBy(materials[sortBy]);
+		// 添加排序
+		if (sortBy && materials[sortBy]) {
+			const column = materials[sortBy];
+			if (sortOrder === 'desc') {
+				baseQuery = baseQuery.orderBy(desc(column as any)) as any;
+			} else {
+				baseQuery = baseQuery.orderBy(column as any) as any;
+			}
 		}
 
-		return query.limit(limit).offset(skip);
+		// 执行查询
+		return (baseQuery as any).limit(limit).offset(skip);
 	}
 
 	/**
@@ -127,7 +134,7 @@ export class MaterialManager {
 		const [material] = await db
 			.update(materials)
 			.set({
-				usageCount: sql`${materials.usageCount} + 1`,
+				usageCount: sql`COALESCE(${materials.usageCount}, 0) + 1`,
 				updatedAt: new Date().toISOString(),
 			})
 			.where(eq(materials.id, id))

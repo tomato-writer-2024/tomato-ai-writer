@@ -14,6 +14,7 @@ import {
 import BrandIcons from '@/lib/brandIcons';
 import { Card, CardBody, FeatureCard } from '@/components/Card';
 import { Button, GradientButton } from '@/components/Button';
+import { Badge } from '@/components/Badge';
 
 export const metadata: Metadata = {
   title: "番茄小说AI辅助写作工具 - 智能创作助手",

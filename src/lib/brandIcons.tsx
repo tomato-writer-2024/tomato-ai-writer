@@ -510,6 +510,53 @@ export const CalendarIcon: React.FC<{ size?: number; className?: string }> = ({ 
   </svg>
 );
 
+// Star/星标图标（用于爆款拆解、收藏等）
+export const StarIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
+    <defs>
+      <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F59E0B" />
+        <stop offset="100%" stopColor="#DB2777" />
+      </linearGradient>
+    </defs>
+    {/* 主星星 */}
+    <path
+      d="M32 8 L38 24 L56 28 L40 36 L36 56 L28 40 L12 40 L16 28 L32 8 Z"
+      fill="url(#starGradient)"
+      opacity="0.9"
+    />
+    {/* 星星光芒 */}
+    <circle cx="52" cy="12" r="2" fill="#F59E0B" opacity="0.8" />
+    <circle cx="12" cy="20" r="1.5" fill="#F59E0B" opacity="0.6" />
+    <circle cx="56" cy="40" r="1.5" fill="#F59E0B" opacity="0.6" />
+  </svg>
+);
+
+// Award/奖项图标（用于编辑审稿、成就系统）
+export const AwardIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
+    <defs>
+      <linearGradient id="awardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#F59E0B" />
+        <stop offset="100%" stopColor="#DC2626" />
+      </linearGradient>
+    </defs>
+    {/* 奖章外圈 */}
+    <circle cx="32" cy="28" r="20" fill="url(#awardGradient)" opacity="0.9" />
+    {/* 奖章内圈 */}
+    <circle cx="32" cy="28" r="16" fill="white" opacity="0.2" />
+    {/* 星星 */}
+    <path
+      d="M32 16 L35 22 L42 22 L36 26 L38 32 L32 28 L26 32 L28 26 L22 22 L29 22 Z"
+      fill="white"
+      opacity="0.9"
+    />
+    {/* 奖章丝带 */}
+    <path d="M24 48 L32 36 L40 48 L40 60 L32 56 L24 60 Z" fill="#DC2626" opacity="0.8" />
+    <path d="M24 48 L32 36 L40 48" stroke="#F59E0B" strokeWidth="2" fill="none" opacity="0.6" />
+  </svg>
+);
+
 // 品牌图标集合导出
 export const BrandIcons = {
   Logo: LogoIcon,
@@ -528,6 +575,8 @@ export const BrandIcons = {
   Home: HomeIcon,
   Settings: SettingsIcon,
   Calendar: CalendarIcon,
+  Star: StarIcon,
+  Award: AwardIcon,
 } as const;
 
 export default BrandIcons;

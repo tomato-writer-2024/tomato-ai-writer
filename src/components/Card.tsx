@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { BRAND_COLORS } from '@/lib/brandIcons';
 
 interface CardProps {
@@ -130,21 +131,36 @@ interface FeatureCardProps {
   icon?: React.ReactNode;
   title: string;
   description: string;
+  link?: string;
   className?: string;
 }
 
-export function FeatureCard({ icon, title, description, className = '' }: FeatureCardProps) {
+export function FeatureCard({ icon, title, description, link, className = '' }: FeatureCardProps) {
+  const cardContent = (
+    <CardBody>
+      {icon && (
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100">
+          {icon}
+        </div>
+      )}
+      <h3 className="mb-2 text-lg font-semibold text-gray-900">{title}</h3>
+      <p className="text-sm text-gray-600">{description}</p>
+    </CardBody>
+  );
+
+  if (link) {
+    return (
+      <Link href={link} className="block">
+        <Card hover className={`text-center ${className}`}>
+          {cardContent}
+        </Card>
+      </Link>
+    );
+  }
+
   return (
     <Card hover className={`text-center ${className}`}>
-      <CardBody>
-        {icon && (
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100">
-            {icon}
-          </div>
-        )}
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
-      </CardBody>
+      {cardContent}
     </Card>
   );
 }

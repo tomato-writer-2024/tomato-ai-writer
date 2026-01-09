@@ -3,7 +3,7 @@ import { CheckCircle, AlertCircle, Clock, XCircle } from 'lucide-react';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info';
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'outline' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   className?: string;
@@ -34,6 +34,16 @@ const variants = {
     bg: 'bg-blue-50',
     text: 'text-blue-700',
     border: 'border-blue-200',
+  },
+  outline: {
+    bg: 'bg-transparent',
+    text: 'text-gray-700',
+    border: 'border-gray-300',
+  },
+  secondary: {
+    bg: 'bg-indigo-50',
+    text: 'text-indigo-700',
+    border: 'border-indigo-200',
   },
 };
 
