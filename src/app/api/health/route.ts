@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getDb } from 'coze-coding-dev-sdk';
-import { users } from '@/storage/database/shared/schema';
 
 export async function GET() {
   try {
     const db = await getDb();
-    const result = await db.select().from(users).limit(1);
-    
+
+    // 使用原生SQL查询以避免Drizzle ORM问题
+    const result = await db.execute('SELECT 1 as health_check');
+
     return NextResponse.json({
       success: true,
       message: 'API is healthy',

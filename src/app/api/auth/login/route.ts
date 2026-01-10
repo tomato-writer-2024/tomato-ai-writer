@@ -86,29 +86,30 @@ export async function POST(request: NextRequest) {
       passwordHashValue: user.password_hash,
       passwordHashCamelExists: 'passwordHash' in user,
       passwordHashCamelValue: user.passwordHash,
-      isActive: user.isActive,
-      isBanned: user.isBanned,
-      isSuperAdmin: user.isSuperAdmin,
+      isActive: user.is_active,
+      isBanned: user.is_banned,
+      isSuperAdmin: user.is_super_admin,
     });
 
     console.log(`[${requestId}] 找到用户:`, {
       userId: user.id,
       email: user.email,
-      isActive: user.isActive,
-      isBanned: user.isBanned,
-      isSuperAdmin: user.isSuperAdmin,
+      isActive: user.is_active,
+      isBanned: user.is_banned,
+      isSuperAdmin: user.is_super_admin,
     });
 
     // 验证密码
     console.log(`[${requestId}] 验证密码...`);
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    const passwordHash = user.password_hash as string;
+    const isPasswordValid = await verifyPassword(password, passwordHash);
 
     if (!isPasswordValid) {
       console.log(`[${requestId}] 密码验证失败`);
 
       // 记录失败的登录尝试
       await authManager.logSecurityEvent({
-        userId: user.id,
+        userId: String(user.id),
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'Invalid password' }),
         ipAddress: clientIp,
@@ -124,15 +125,19 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] 密码验证成功`);
 
     // 检查用户状态
-    if (!user.is_active || user.is_banned) {
+    const isActive = user.is_active as boolean;
+    const isBanned = user.is_banned as boolean;
+    const banReason = user.ban_reason as string | null | undefined;
+
+    if (!isActive || isBanned) {
       console.log(`[${requestId}] 用户状态异常:`, {
-        isActive: user.is_active,
-        isBanned: user.is_banned,
-        banReason: user.ban_reason,
+        isActive: isActive,
+        isBanned: isBanned,
+        banReason: banReason,
       });
 
       await authManager.logSecurityEvent({
-        userId: user.id,
+        userId: String(user.id),
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'User is banned or inactive' }),
         ipAddress: clientIp,
@@ -140,20 +145,20 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { success: false, error: `账号已被封禁：${user.ban_reason || '未知原因'}` },
+        { success: false, error: `账号已被封禁：${banReason || '未知原因'}` },
         { status: 403 }
       );
     }
 
     // 检测异常登录行为
     console.log(`[${requestId}] 检测异常登录行为...`);
-    const abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
+    const abnormalCheck = await authManager.detectAbnormalLogin(String(user.id), clientIp);
 
     if (abnormalCheck.isAbnormal) {
       console.log(`[${requestId}] 检测到异常登录:`, abnormalCheck);
 
       await authManager.logSecurityEvent({
-        userId: user.id,
+        userId: String(user.id),
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: abnormalCheck.reason }),
         ipAddress: clientIp,
@@ -169,26 +174,26 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] 登录检查通过，生成token...`);
 
     // 更新最后登录时间
-    await userManager.updateLastLogin(user.id);
+    await userManager.updateLastLogin(String(user.id));
 
     // 生成token
     const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
+      userId: String(user.id),
+      email: String(user.email),
       role: user.role as UserRole,
       membershipLevel: user.membershipLevel as MembershipLevel,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
+      userId: String(user.id),
+      email: String(user.email),
     });
 
     console.log(`[${requestId}] Token生成成功`);
 
     // 记录成功的登录
     await authManager.logSecurityEvent({
-      userId: user.id,
+      userId: String(user.id),
       action: 'LOGIN',
       details: JSON.stringify({ email }),
       ipAddress: clientIp,

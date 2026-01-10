@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     // 记录注册事件
     await authManager.logSecurityEvent({
-      userId: newUser.id,
+      userId: String(newUser.id),
       action: 'LOGIN',
       details: JSON.stringify({ email, action: 'User registered' }),
       ipAddress: getClientIp(request),
@@ -135,15 +135,15 @@ export async function POST(request: NextRequest) {
 
     // 生成token
     const accessToken = generateAccessToken({
-      userId: newUser.id,
-      email: newUser.email,
+      userId: String(newUser.id),
+      email: String(newUser.email),
       role: newUser.role as UserRole,
       membershipLevel: newUser.membershipLevel as MembershipLevel,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: newUser.id,
-      email: newUser.email,
+      userId: String(newUser.id),
+      email: String(newUser.email),
     });
 
     // 返回用户信息
@@ -153,16 +153,16 @@ export async function POST(request: NextRequest) {
         token: accessToken,
         refreshToken,
         user: {
-          id: newUser.id,
-          email: newUser.email,
-          username: newUser.username,
+          id: String(newUser.id),
+          email: String(newUser.email),
+          username: String(newUser.username),
           role: newUser.role,
           membershipLevel: newUser.membershipLevel,
-          membershipExpireAt: newUser.membershipExpireAt,
-          dailyUsageCount: newUser.dailyUsageCount,
-          monthlyUsageCount: newUser.monthlyUsageCount,
-          storageUsed: newUser.storageUsed,
-          createdAt: newUser.createdAt,
+          membershipExpireAt: newUser.membership_expire_at,
+          dailyUsageCount: Number(newUser.daily_usage_count),
+          monthlyUsageCount: Number(newUser.monthly_usage_count),
+          storageUsed: Number(newUser.storage_used),
+          createdAt: newUser.created_at,
         },
       },
     });

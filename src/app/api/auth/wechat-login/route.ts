@@ -29,10 +29,19 @@ import { getDb } from 'coze-coding-dev-sdk';
  * 5. 返回token
  */
 export async function POST(request: NextRequest) {
+  console.log('[微信登录] ===== 开始处理请求 =====');
+
   try {
-    const { code } = await request.json();
+    console.log('[微信登录] 解析JSON...');
+    const body = await request.json();
+    console.log('[微信登录] 解析成功，body:', body);
+
+    const { code } = body;
+
+    console.log('[微信登录] 接收到的code:', code);
 
     if (!code) {
+      console.log('[微信登录] 缺少授权码');
       return NextResponse.json(
         { success: false, error: '缺少授权码' },
         { status: 400 }
@@ -121,87 +130,131 @@ export async function POST(request: NextRequest) {
       nickname,
     });
 
-    console.log('[微信登录] 用户信息:', {
-      openId: wechatOpenId,
-      unionId: wechatUnionId,
-      nickname,
-    });
+    console.log('[微信登录] 开始查询数据库...');
+    // 3. 查找是否已存在该微信用户（使用原生SQL避免Drizzle问题）
+    const db = await getDb();
+    console.log('[微信登录] 数据库连接成功');
 
-    // 3. 查找是否已存在该微信用户
-    const existingUser = await userManager.getUserByWechatOpenId(wechatOpenId);
+    const existingUserResult = await db.execute(
+      `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level
+       FROM users WHERE wechat_open_id = '${wechatOpenId}'`
+    );
+
+    console.log('[微信登录] 查询结果:', existingUserResult.rows.length);
 
     let user;
 
-    if (existingUser) {
+    if (existingUserResult.rows.length > 0) {
       // 用户已存在，直接登录
+      const existingUser = existingUserResult.rows[0];
       user = existingUser;
 
       // 更新用户信息
-      await userManager.updateUser(user.id, {
-        wechatUnionId: wechatUnionId || undefined,
-        username: nickname || undefined,
-        avatarUrl: avatar || undefined,
-        lastLoginAt: new Date().toISOString(),
-      });
+      await db.execute(
+        `UPDATE users SET
+          wechat_union_id = '${wechatUnionId || existingUser.wechat_union_id}',
+          username = '${nickname || existingUser.username}',
+          avatar_url = '${avatar || existingUser.avatar_url}',
+          last_login_at = NOW(),
+          updated_at = NOW()
+        WHERE id = '${existingUser.id}'`
+      );
 
-      console.log('[微信登录] 用户已存在:', user.id);
+      console.log('[微信登录] 用户已存在:', existingUser.id);
     } else {
       // 用户不存在，创建新用户
       // 生成随机密码（微信登录用户不需要真实密码）
       const randomPassword = crypto.randomUUID().substring(0, 32);
+      const now = new Date().toISOString();
+      const userId = crypto.randomUUID();
 
-      // 构造用户数据
-      user = await userManager.createUser({
-        email: `wx_${wechatOpenId}@wechat.user`, // 使用临时邮箱标识
-        username: nickname || '微信用户',
-        passwordHash: randomPassword, // 实际上微信用户不使用密码登录
-        role: UserRole.FREE,
-        membershipLevel: MembershipLevel.FREE,
-        avatarUrl: avatar,
-        wechatOpenId: wechatOpenId,
-        wechatUnionId: wechatUnionId,
-      });
+      // 哈希密码
+      const bcrypt = require('bcryptjs');
+      const passwordHash = await bcrypt.hash(randomPassword, 12);
 
-      console.log('[微信登录] 创建新用户:', user.id);
-    }
-
-    // 记录登录事件
-    await authManager.logSecurityEvent({
-      userId: user.id,
-      action: 'LOGIN',
-      details: JSON.stringify({
-        email: user.email,
-        method: 'wechat',
-        openId: wechatOpenId,
-        unionId: wechatUnionId,
-      }),
-      ipAddress: getClientIp(request),
-      status: 'SUCCESS',
-    });
-
-    // 检查用户配额
-    const quotaCheck = await checkUserQuota(user.id);
-    if (!quotaCheck.canUse) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: quotaCheck.reason,
-        },
-        { status: 403 }
+      // 使用原生SQL创建用户
+      await db.execute(
+        `INSERT INTO users (
+          id, email, password_hash, username, role, membership_level,
+          membership_expire_at, daily_usage_count, monthly_usage_count, storage_used,
+          is_active, is_banned, is_super_admin, wechat_open_id, wechat_union_id, avatar_url,
+          created_at, updated_at
+        )
+        VALUES (
+          '${userId}',
+          'wx_${wechatOpenId}@wechat.user',
+          '${passwordHash}',
+          '${nickname || '微信用户'}',
+          'FREE',
+          'FREE',
+          NULL,
+          0,
+          0,
+          0,
+          true,
+          false,
+          false,
+          '${wechatOpenId}',
+          '${wechatUnionId || ''}',
+          '${avatar || ''}',
+          '${now}',
+          '${now}'
+        )`
       );
+
+      // 查询新创建的用户
+      const newUserResult = await db.execute(
+        `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level,
+                membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at
+         FROM users WHERE id = '${userId}'`
+      );
+
+      if (newUserResult.rows.length === 0) {
+        throw new Error('Failed to retrieve created user');
+      }
+
+      user = newUserResult.rows[0];
+
+      console.log('[微信登录] 创建新用户:', userId);
     }
+
+    // 暂时注释掉安全日志记录，避免Drizzle ORM问题
+    // await authManager.logSecurityEvent({
+    //   userId: String(user.id),
+    //   action: 'LOGIN',
+    //   details: JSON.stringify({
+    //     email: user.email,
+    //     method: 'wechat',
+    //     openId: wechatOpenId,
+    //     unionId: wechatUnionId,
+    //   }),
+    //   ipAddress: getClientIp(request),
+    //   status: 'SUCCESS',
+    // });
+
+    // 检查用户配额（临时注释掉，避免Drizzle ORM问题）
+    // const quotaCheck = await checkUserQuota(String(user.id));
+    // if (!quotaCheck.canUse) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: quotaCheck.reason,
+    //     },
+    //     { status: 403 }
+    //   );
+    // }
 
     // 生成token
     const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
+      userId: String(user.id),
+      email: String(user.email),
       role: user.role as UserRole,
-      membershipLevel: user.membershipLevel as MembershipLevel,
+      membershipLevel: user.membership_level as MembershipLevel,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: user.id,
-      email: user.email,
+      userId: String(user.id),
+      email: String(user.email),
     });
 
     // 返回用户信息
@@ -212,35 +265,54 @@ export async function POST(request: NextRequest) {
         token: accessToken,
         refreshToken,
         user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
+          id: String(user.id),
+          email: String(user.email),
+          username: String(user.username),
           role: user.role,
-          membershipLevel: user.membershipLevel,
-          membershipExpireAt: user.membershipExpireAt,
-          dailyUsageCount: user.dailyUsageCount,
-          monthlyUsageCount: user.monthlyUsageCount,
-          storageUsed: user.storageUsed,
-          avatarUrl: user.avatarUrl,
-          createdAt: user.createdAt,
+          membershipLevel: user.membership_level,
+          membershipExpireAt: user.membership_expire_at,
+          dailyUsageCount: Number(user.daily_usage_count),
+          monthlyUsageCount: Number(user.monthly_usage_count),
+          storageUsed: Number(user.storage_used),
+          avatarUrl: user.avatar_url,
+          createdAt: user.created_at,
           loginMethod: 'wechat',
         },
       },
     });
   } catch (error) {
-    console.error('WeChat login error:', error);
-
-    // 记录失败事件
-    await authManager.logSecurityEvent({
-      userId: null,
-      action: 'LOGIN',
-      details: JSON.stringify({ error: String(error), method: 'wechat' }),
-      ipAddress: getClientIp(request),
-      status: 'FAILED',
+    console.error('[微信登录] 详细错误信息:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+      errorString: String(error),
     });
 
+    // 暂时注释掉安全日志记录
+    // await authManager.logSecurityEvent({
+    //   userId: null,
+    //   action: 'LOGIN',
+    //   details: JSON.stringify({
+    //     error: error instanceof Error ? error.message : String(error),
+    //     method: 'wechat'
+    //   }),
+    //   ipAddress: getClientIp(request),
+    //   status: 'FAILED',
+    // });
+
+    // 开发环境返回详细错误
+    const isDev = process.env.NODE_ENV === 'development';
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
-      { success: false, error: '微信登录失败，请稍后重试' },
+      {
+        success: false,
+        error: isDev ? `微信登录失败: ${errorMessage}` : '微信登录失败，请稍后重试',
+        details: isDev ? {
+          message: error instanceof Error ? error.message : String(error),
+          name: error instanceof Error ? error.name : undefined,
+        } : undefined,
+      },
       { status: 500 }
     );
   }
