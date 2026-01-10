@@ -17,11 +17,33 @@ import { UserRole, MembershipLevel } from '@/lib/types/user';
  * 用户登录API
  */
 export async function POST(request: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[${requestId}] ===== 登录请求开始 =====`);
+
   try {
+    const userAgent = getUserAgent(request);
+    const clientIp = getClientIp(request);
+
+    console.log(`[${requestId}] 客户端信息:`, {
+      ip: clientIp,
+      userAgent: userAgent.substring(0, 100),
+      headers: {
+        contentType: request.headers.get('content-type'),
+        origin: request.headers.get('origin'),
+        referer: request.headers.get('referer'),
+      },
+    });
+
     const { email, password } = await request.json();
+
+    console.log(`[${requestId}] 请求参数:`, {
+      email,
+      hasPassword: !!password,
+    });
 
     // 验证输入
     if (!email || !password) {
+      console.log(`[${requestId}] 参数验证失败: 邮箱或密码为空`);
       return NextResponse.json(
         { success: false, error: '邮箱和密码不能为空' },
         { status: 400 }
@@ -29,15 +51,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 查找用户
+    console.log(`[${requestId}] 查找用户: ${email}`);
     const user = await userManager.getUserByEmail(email);
 
     if (!user) {
+      console.log(`[${requestId}] 用户不存在: ${email}`);
+
       // 记录失败的登录尝试
       await authManager.logSecurityEvent({
         userId: null,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'User not found' }),
-        ipAddress: getClientIp(request),
+        ipAddress: clientIp,
         status: 'FAILED',
       });
 
@@ -47,16 +72,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`[${requestId}] 找到用户:`, {
+      userId: user.id,
+      email: user.email,
+      isActive: user.isActive,
+      isBanned: user.isBanned,
+      isSuperAdmin: user.isSuperAdmin,
+    });
+
     // 验证密码
+    console.log(`[${requestId}] 验证密码...`);
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      console.log(`[${requestId}] 密码验证失败`);
+
       // 记录失败的登录尝试
       await authManager.logSecurityEvent({
         userId: user.id,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'Invalid password' }),
-        ipAddress: getClientIp(request),
+        ipAddress: clientIp,
         status: 'FAILED',
       });
 
@@ -66,13 +102,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log(`[${requestId}] 密码验证成功`);
+
     // 检查用户状态
     if (!user.isActive || user.isBanned) {
+      console.log(`[${requestId}] 用户状态异常:`, {
+        isActive: user.isActive,
+        isBanned: user.isBanned,
+        banReason: user.banReason,
+      });
+
       await authManager.logSecurityEvent({
         userId: user.id,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'User is banned or inactive' }),
-        ipAddress: getClientIp(request),
+        ipAddress: clientIp,
         status: 'FAILED',
       });
 
@@ -83,13 +127,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 检测异常登录行为
-    const abnormalCheck = await authManager.detectAbnormalLogin(user.id, getClientIp(request));
+    console.log(`[${requestId}] 检测异常登录行为...`);
+    const abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
+
     if (abnormalCheck.isAbnormal) {
+      console.log(`[${requestId}] 检测到异常登录:`, abnormalCheck);
+
       await authManager.logSecurityEvent({
         userId: user.id,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: abnormalCheck.reason }),
-        ipAddress: getClientIp(request),
+        ipAddress: clientIp,
         status: 'FAILED',
       });
 
@@ -98,6 +146,8 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
+
+    console.log(`[${requestId}] 登录检查通过，生成token...`);
 
     // 更新最后登录时间
     await userManager.updateLastLogin(user.id);
@@ -115,14 +165,18 @@ export async function POST(request: NextRequest) {
       email: user.email,
     });
 
+    console.log(`[${requestId}] Token生成成功`);
+
     // 记录成功的登录
     await authManager.logSecurityEvent({
       userId: user.id,
       action: 'LOGIN',
       details: JSON.stringify({ email }),
-      ipAddress: getClientIp(request),
+      ipAddress: clientIp,
       status: 'SUCCESS',
     });
+
+    console.log(`[${requestId}] ===== 登录成功 =====`);
 
     // 返回用户信息（不包含敏感信息）
     return NextResponse.json({
@@ -146,7 +200,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error(`[${requestId}] 登录错误:`, error);
+
     await authManager.logSecurityEvent({
       userId: null,
       action: 'LOGIN',

@@ -36,16 +36,46 @@ export default function AdminDashboardPage() {
 
 	// 检查登录状态
 	useEffect(() => {
-		const token = localStorage.getItem('admin_token');
-		const info = localStorage.getItem('admin_info');
+		const checkLogin = () => {
+			try {
+				const token = localStorage.getItem('admin_token');
+				const info = localStorage.getItem('admin_info');
 
-		if (!token || !info) {
-			router.push('/admin/login');
-			return;
-		}
+				console.log('[Dashboard] 检查登录状态:', {
+					hasToken: !!token,
+					hasInfo: !!info,
+				});
 
-		setAdminInfo(JSON.parse(info));
-		fetchTestStats();
+				if (!token || !info) {
+					console.log('[Dashboard] 未登录，跳转到登录页');
+					router.push('/admin/login');
+					return;
+				}
+
+				try {
+					const parsedInfo = JSON.parse(info);
+					console.log('[Dashboard] 解析admin信息成功:', {
+						id: parsedInfo.id,
+						email: parsedInfo.email,
+						username: parsedInfo.username,
+					});
+					setAdminInfo(parsedInfo);
+				} catch (parseError) {
+					console.error('[Dashboard] 解析admin信息失败:', parseError);
+					localStorage.removeItem('admin_token');
+					localStorage.removeItem('admin_info');
+					router.push('/admin/login');
+					return;
+				}
+
+				fetchTestStats();
+			} catch (error) {
+				console.error('[Dashboard] 检查登录状态出错:', error);
+				router.push('/admin/login');
+			}
+		};
+
+		checkLogin();
 	}, [router]);
 
 	const fetchTestStats = async () => {
