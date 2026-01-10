@@ -243,6 +243,326 @@ export const materials = pgTable("materials", {
 ]);
 
 // ============================================================================
+// 双视角评分表
+// ============================================================================
+
+export const dualPerspectiveRatings = pgTable("dual_perspective_ratings", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	chapterId: varchar("chapter_id", { length: 36 }),
+	contentType: varchar("content_type", { length: 50 }).notNull(), // novel, chapter, outline, character, world
+	contentId: varchar("content_id", { length: 36 }).notNull(),
+	// 编辑视角评分
+	editorScore: numeric("editor_score", { precision: 3, scale: 1 }).default("0.0"), // 0-10分
+	editorWriting: integer("editor_writing").default(0), // 文笔 (0-15)
+	editorStructure: integer("editor_structure").default(0), // 结构 (0-20)
+	editorCharacter: integer("editor_character").default(0), // 人物 (0-15)
+	editorPlot: integer("editor_plot").default(0), // 情节 (0-20)
+	editorInnovation: integer("editor_innovation").default(0), // 创新 (0-10)
+	editorCommercial: integer("editor_commercial").default(0), // 商业 (0-20)
+	editorFeedback: text("editor_feedback"),
+	// 读者视角评分
+	readerScore: numeric("reader_score", { precision: 3, scale: 1 }).default("0.0"), // 0-10分
+	readerSatisfaction: integer("reader_satisfaction").default(0), // 爽感 (0-25)
+	readerImmersion: integer("reader_immersion").default(0), // 代入 (0-20)
+	readerPacing: integer("reader_pacing").default(0), // 节奏 (0-15)
+	readerSuspense: integer("reader_suspense").default(0), // 悬念 (0-15)
+	readerCharacter: integer("reader_character").default(0), // 人物 (0-10)
+	readerEnding: integer("reader_ending").default(0), // 结局 (0-15)
+	readerFeedback: text("reader_feedback"),
+	// 整体评估
+	overallScore: numeric("overall_score", { precision: 3, scale: 1 }).default("0.0"), // 0-10分
+	targetMet: boolean("target_met").default(false), // 是否达到9.8分+目标
+	recommendations: jsonb("recommendations"), // 优化建议
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("dual_perspective_ratings_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("dual_perspective_ratings_content_type_idx").using("btree", table.contentType.asc().nullsLast().op("text_ops")),
+	index("dual_perspective_ratings_content_id_idx").using("btree", table.contentId.asc().nullsLast().op("text_ops")),
+	index("dual_perspective_ratings_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("dual_perspective_ratings_chapter_id_idx").using("btree", table.chapterId.asc().nullsLast().op("text_ops")),
+	index("dual_perspective_ratings_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 测试结果表
+// ============================================================================
+
+export const testResults = pgTable("test_results", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	testType: varchar("test_type", { length: 50 }).notNull(), // new-features, comprehensive, performance
+	testConfig: jsonb("test_config").notNull(), // 测试配置（功能模块、测试用例数等）
+	totalTests: integer("total_tests").notNull(),
+	successCount: integer("success_count").notNull(),
+	failureCount: integer("failure_count").notNull(),
+	successRate: numeric("success_rate", { precision: 5, scale: 2 }), // 成功率
+	averageQualityScore: numeric("average_quality_score", { precision: 5, scale: 2 }), // 平均质量分
+	averageCompletionRate: numeric("average_completion_rate", { precision: 5, scale: 2 }), // 平均完读率
+	averageResponseTime: numeric("average_response_time", { precision: 5, scale: 2 }), // 平均响应时间（ms）
+	details: jsonb("details").notNull(), // 详细测试结果
+	startedAt: timestamp("started_at", { withTimezone: true, mode: 'string' }).notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+	duration: integer("duration"), // 测试持续时间（秒）
+	summary: text("summary"), // 测试总结
+}, (table) => [
+	index("test_results_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("test_results_test_type_idx").using("btree", table.testType.asc().nullsLast().op("text_ops")),
+	index("test_results_created_at_idx").using("btree", table.completedAt.asc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 世界观设定表
+// ============================================================================
+
+export const worldBuildingSettings = pgTable("world_building_settings", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	name: varchar("name", { length: 255 }).notNull(),
+	worldType: varchar("world_type", { length: 50 }).notNull(), // fantasy, scifi, wuxia, xianxia, urban, apocalyptic
+	theme: text("theme"),
+	storyContext: text("story_context"),
+	magicSystem: text("magic_system"), // 魔法/力量体系
+	geography: jsonb("geography"), // 地理环境
+	culture: jsonb("culture"), // 文化特色
+	history: text("history"), // 历史背景
+	factions: jsonb("factions"), // 势力
+	rules: jsonb("rules"), // 规则
+	conflicts: jsonb("conflicts"), // 冲突
+	metadata: jsonb("metadata"), // 其他元数据
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isDeleted: boolean("is_deleted").default(false).notNull(),
+}, (table) => [
+	index("world_building_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("world_building_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("world_building_type_idx").using("btree", table.worldType.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 关系图谱表
+// ============================================================================
+
+export const relationshipGraphs = pgTable("relationship_graphs", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	name: varchar("name", { length: 255 }),
+	characters: jsonb("characters").notNull(), // 角色列表
+	relationships: jsonb("relationships").notNull(), // 关系列表
+	conflicts: jsonb("conflicts"), // 冲突分析
+	centrality: jsonb("centrality"), // 网络中心性
+	metadata: jsonb("metadata"), // 其他元数据
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isDeleted: boolean("is_deleted").default(false).notNull(),
+}, (table) => [
+	index("relationship_graphs_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("relationship_graphs_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 卡文分析表
+// ============================================================================
+
+export const writerBlockAnalysis = pgTable("writer_block_analysis", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	chapterId: varchar("chapter_id", { length: 36 }),
+	blockType: varchar("block_type", { length: 50 }).notNull(), // no-idea, writer-block, plot-stuck, etc.
+	severity: varchar("severity", { length: 20 }).notNull(), // mild, moderate, severe
+	content: text("content"),
+	chapterNumber: integer("chapter_number"),
+	novelContext: text("novel_context"),
+	causes: jsonb("causes"), // 主要原因
+	solutions: jsonb("solutions"), // 解决方案
+	alternativePlots: jsonb("alternative_plots"), // 替代情节思路
+	estimatedRecoveryTime: integer("estimated_recovery_time"), // 预计恢复时间（小时）
+	isResolved: boolean("is_resolved").default(false).notNull(),
+	resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: 'string' }),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("writer_block_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("writer_block_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("writer_block_chapter_id_idx").using("btree", table.chapterId.asc().nullsLast().op("text_ops")),
+	index("writer_block_type_idx").using("btree", table.blockType.asc().nullsLast().op("text_ops")),
+	index("writer_block_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 爽点分析表
+// ============================================================================
+
+export const satisfactionAnalysis = pgTable("satisfaction_analysis", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	chapterId: varchar("chapter_id", { length: 36 }),
+	chapterNumber: integer("chapter_number"),
+	content: text("content").notNull(),
+	satisfactionScore: numeric("satisfaction_score", { precision: 5, scale: 2 }), // 爽点评分
+	satisfactionPoints: jsonb("satisfaction_points"), // 爽点列表
+	climaxPoints: jsonb("climax_points"), // 高潮点
+	tensionCurve: jsonb("tension_curve"), // 紧张度曲线
+	readerExpectations: jsonb("reader_expectations"), // 读者期待
+	suggestions: jsonb("suggestions"), // 优化建议
+	improvementPotential: integer("improvement_potential"), // 提升空间
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("satisfaction_analysis_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("satisfaction_analysis_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("satisfaction_analysis_chapter_id_idx").using("btree", table.chapterId.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 风格分析表
+// ============================================================================
+
+export const styleAnalysis = pgTable("style_analysis", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	content: text("content").notNull(),
+	genre: varchar("genre", { length: 50 }),
+	sentenceFeatures: jsonb("sentence_features"), // 句子特征
+	vocabularyFeatures: jsonb("vocabulary_features"), // 词汇特征
+	narrativeFeatures: jsonb("narrative_features"), // 叙事特征
+	emotionalFeatures: jsonb("emotional_features"), // 情感特征
+	themeFeatures: jsonb("theme_features"), // 主题特征
+	targetStyle: varchar("target_style", { length: 100 }), // 目标风格
+	similarityScore: numeric("similarity_score", { precision: 5, scale: 2 }), // 相似度评分
+	improvements: jsonb("improvements"), // 改进建议
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("style_analysis_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("style_analysis_target_style_idx").using("btree", table.targetStyle.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 情节反转表
+// ============================================================================
+
+export const plotTwistIdeas = pgTable("plot_twist_ideas", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	currentPlot: text("current_plot").notNull(),
+	twistType: varchar("twist_type", { length: 50 }), // identity, time, causality, etc.
+	novelContext: text("novel_context"),
+	ideas: jsonb("ideas").notNull(), // 反转建议列表
+	selectedIdea: jsonb("selected_idea"), // 选中的反转
+	foreshadowing: jsonb("foreshadowing"), // 伏笔建议
+	difficulty: varchar("difficulty", { length: 20 }), // 实施难度
+	readerReaction: varchar("reader_reaction", { length: 100 }), // 读者预期反应
+	riskLevel: varchar("risk_level", { length: 20 }), // 风险等级
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("plot_twist_ideas_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("plot_twist_ideas_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("plot_twist_ideas_type_idx").using("btree", table.twistType.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 结局提案表
+// ============================================================================
+
+export const endingProposals = pgTable("ending_proposals", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }).notNull(),
+	novelTitle: varchar("novel_title", { length: 255 }).notNull(),
+	storyGenre: varchar("story_genre", { length: 50 }).notNull(),
+	storyTheme: text("story_theme"),
+	mainCharacters: jsonb("main_characters"),
+	currentPlot: text("current_plot"),
+	preferredEndingType: varchar("preferred_ending_type", { length: 50 }),
+	proposals: jsonb("proposals").notNull(), // 结局方案列表
+	selectedProposal: jsonb("selected_proposal"), // 选中的结局
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("ending_proposals_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("ending_proposals_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 书名选项表
+// ============================================================================
+
+export const titleOptions = pgTable("title_options", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	genre: varchar("genre", { length: 50 }).notNull(),
+	theme: text("theme").notNull(),
+	mainCharacter: varchar("main_character", { length: 255 }),
+	keyElements: jsonb("key_elements"),
+	setting: text("setting"),
+	titles: jsonb("titles").notNull(), // 书名列表
+	selectedTitle: varchar("selected_title", { length: 255 }),
+	analysis: jsonb("analysis"), // 详细分析
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("title_options_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("title_options_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("title_options_genre_idx").using("btree", table.genre.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 封面描述表
+// ============================================================================
+
+export const coverDescriptions = pgTable("cover_descriptions", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	novelId: varchar("novel_id", { length: 36 }),
+	novelTitle: varchar("novel_title", { length: 255 }).notNull(),
+	genre: varchar("genre", { length: 50 }).notNull(),
+	mainCharacters: jsonb("main_characters"),
+	keyElements: jsonb("key_elements"),
+	theme: text("theme"),
+	mood: varchar("mood", { length: 100 }),
+	preferredStyle: varchar("preferred_style", { length: 50 }),
+	targetAudience: text("target_audience"),
+	description: text("description").notNull(), // 详细描述
+	aiPrompts: jsonb("ai_prompts"), // AI绘画提示词
+	alternatives: jsonb("alternatives"), // 替代方案
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("cover_descriptions_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("cover_descriptions_novel_id_idx").using("btree", table.novelId.asc().nullsLast().op("text_ops")),
+	index("cover_descriptions_genre_idx").using("btree", table.genre.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 性能指标表
+// ============================================================================
+
+export const performanceMetrics = pgTable("performance_metrics", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }),
+	apiEndpoint: varchar("api_endpoint", { length: 255 }).notNull(),
+	requestCount: integer("request_count").default(0).notNull(),
+	successCount: integer("success_count").default(0).notNull(),
+	failureCount: integer("failure_count").default(0).notNull(),
+	averageResponseTime: numeric("average_response_time", { precision: 10, scale: 2 }), // 平均响应时间（ms）
+	minResponseTime: numeric("min_response_time", { precision: 10, scale: 2 }), // 最小响应时间（ms）
+	maxResponseTime: numeric("max_response_time", { precision: 10, scale: 2 }), // 最大响应时间（ms）
+	p50ResponseTime: numeric("p50_response_time", { precision: 10, scale: 2 }), // P50响应时间（ms）
+	p95ResponseTime: numeric("p95_response_time", { precision: 10, scale: 2 }), // P95响应时间（ms）
+	p99ResponseTime: numeric("p99_response_time", { precision: 10, scale: 2 }), // P99响应时间（ms）
+	cacheHitRate: numeric("cache_hit_rate", { precision: 5, scale: 2 }), // 缓存命中率
+	errorRate: numeric("error_rate", { precision: 5, scale: 2 }), // 错误率
+	metricsDate: timestamp("metrics_date", { withTimezone: true, mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("performance_metrics_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("performance_metrics_api_endpoint_idx").using("btree", table.apiEndpoint.asc().nullsLast().op("text_ops")),
+	index("performance_metrics_metrics_date_idx").using("btree", table.metricsDate.asc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
 // Zod Validation Schemas
 // ============================================================================
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SatisfactionAnalysis, analyzeSatisfactionPoints, analyzeClimaxPoints, generateTensionCurve, analyzeReaderExpectations, generateSatisfactionSuggestions, calculateSatisfactionScore, generateOptimizationPrompt, calculateSatisfactionDensity } from '@/lib/satisfactionEngine';
 import { LLMClient } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // POST /api/satisfaction-engine/analyze - 分析爽点
 export async function analyzeSatisfaction(request: NextRequest) {
@@ -71,14 +72,14 @@ export async function optimizeContent(request: NextRequest) {
     const prompt = generateOptimizationPrompt(analysis);
     const llmClient = new LLMClient();
 
-    // 流式输出
+    // 流式输出（番茄小说风格）
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const generator = llmClient.generateTextStream(
-            '你是一个专业的小说爽点优化助手，擅长提升番茄小说作品的爽点密度和读者期待。',
+            getSystemPromptForFeature('satisfaction-engine'),
             prompt
           );
 

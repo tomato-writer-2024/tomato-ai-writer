@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WorldSetting, generateWorldDescription, GENRE_TEMPLATES } from '@/lib/worldBuilding';
 import { LLMClient } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/world-building - 获取用户的世界观列表
 export async function GET(request: NextRequest) {
@@ -31,10 +32,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 使用LLM生成世界观设定
+    // 使用LLM生成世界观设定（番茄小说风格）
     const llmClient = new LLMClient();
 
-    const systemPrompt = '你是一个专业的世界观设定创作助手。请根据提供的信息，构建宏大完整、逻辑严谨的世界观设定。';
+    const systemPrompt = getSystemPromptForFeature('world-building');
 
     const typeLabels: Record<string, string> = {
       fantasy: '奇幻',
@@ -45,30 +46,41 @@ export async function POST(request: NextRequest) {
       apocalyptic: '末世'
     };
 
-    const userPrompt = `请为以下世界观生成完整设定：
+    const userPrompt = `请为以下番茄小说世界观生成完整设定（符合Top3爆款标准）：
 
 世界名称：${body.worldName}
 世界类型：${typeLabels[body.worldType] || body.worldType}
 主题风格：${body.theme || '无特定主题'}
 故事背景：${body.storyContext || '无额外背景'}
 
+【创作要求】
+- 确保世界观符合${typeLabels[body.worldType] || body.worldType}题材的爽文特征
+- 逻辑严谨，细节丰富，能支撑100-300万字的长篇小说
+- 为主角成长提供足够空间和挑战
+- 力量体系有规则、限制和代价，避免过于容易突破
+- 势力设置要有层次感，从底层到顶层完整
+
 请生成以下内容（以JSON格式返回）：
 {
   "name": "世界名称",
   "type": "世界类型",
-  "magicSystem": "魔法/力量体系的详细描述",
-  "geography": ["地理特征1", "地理特征2", "地理特征3"],
+  "magicSystem": "魔法/力量体系的详细描述（包含规则、限制、代价）",
+  "geography": ["地理特征1（适合主角冒险）", "地理特征2（隐藏秘境）", "地理特征3（危险禁区）"],
   "culture": ["文化特色1", "文化特色2", "文化特色3"],
-  "history": "世界历史背景的详细描述（200-500字）",
+  "history": "世界历史背景的详细描述（300-500字，包含重大事件和传说）",
   "factions": [
-    {"name": "势力名称1", "description": "势力描述"},
-    {"name": "势力名称2", "description": "势力描述"}
+    {"name": "势力名称1", "description": "势力描述（包含实力层级、核心利益）"},
+    {"name": "势力名称2", "description": "势力描述（包含实力层级、核心利益）"}
   ],
   "rules": ["规则1", "规则2", "规则3"],
-  "conflicts": ["核心冲突1", "核心冲突2", "核心冲突3"]
+  "conflicts": ["核心冲突1（驱动主线）", "核心冲突2（制造矛盾）", "核心冲突3（提供成长机会）"]
 }
 
-确保世界观设定符合${typeLabels[body.worldType] || body.worldType}类型的特点，逻辑严谨，细节丰富。`;
+【质量目标】
+- 编辑视角评分：9.8分+（逻辑严谨、创新性、完整性）
+- 读者视角评分：9.8分+（代入感、期待感、追读动力）
+- 完读率预期：90%+
+`;
 
     const response = await llmClient.generateText(systemPrompt, userPrompt);
 
@@ -138,19 +150,32 @@ export async function generateWorldDetails(request: NextRequest) {
 
     const description = generateWorldDescription(world);
 
-    // 使用LLM生成详细描述
-    const systemPrompt = '你是一个专业的世界观设定创作助手。请根据提供的世界观基础信息，生成详细、完整的世界观设定。';
-    const userPrompt = `请为以下世界观生成详细设定，包括：
-1. 力量体系的详细规则和限制
-2. 地理环境的详细描述
-3. 社会结构和政治体系
-4. 历史事件和文化传统
-5. 各势力的关系和冲突
+    // 使用LLM生成详细描述（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('world-building');
+    const userPrompt = `请为以下番茄小说世界观生成详细设定（符合Top3爆款标准），包括：
+
+1. 力量体系的详细规则和限制（为主角成长提供清晰路径）
+2. 地理环境的详细描述（标注适合冒险、隐藏秘境、危险禁区）
+3. 社会结构和政治体系（有层次感，主角可逐步攀爬）
+4. 历史事件和文化传统（包含重大事件和传说，可推动情节）
+5. 各势力的关系和冲突（为主角提供对手和盟友）
 
 世界观基础信息：
 ${description}
 
-请以Markdown格式输出，确保逻辑严谨、细节丰富。`;
+【创作要求】
+- 确保符合番茄小说快节奏、强代入感的特征
+- 每个设定都要考虑如何服务爽文情节（打脸、突破、装逼）
+- 为主角成长提供清晰的晋升路径和挑战
+- 势力关系要有动态变化，可推动情节发展
+- 细节丰富但主线清晰，避免过于复杂
+
+【质量目标】
+- 编辑视角评分：9.8分+（逻辑严谨、完整性、商业价值）
+- 读者视角评分：9.8分+（期待感、追读动力、爽感）
+- 完读率预期：90%+
+
+请以Markdown格式输出，结构清晰，易于实施。`;
 
     const encoder = new TextEncoder();
 

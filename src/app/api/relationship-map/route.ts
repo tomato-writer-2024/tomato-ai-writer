@@ -6,6 +6,7 @@ import {
   calculateNetworkCentrality
 } from '@/lib/relationshipMap';
 import { generateCreativeWritingStream, generateReasoningStream } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/relationship-map - 获取用户的关系图谱
 export async function GET(request: NextRequest) {
@@ -172,19 +173,31 @@ export async function generateRelationshipStoryline(request: NextRequest) {
       );
     }
 
-    // 使用LLM生成故事线
-    const systemPrompt = '你是一个专业的小说情节创作助手。请根据人物关系图谱，生成详细的情节故事线。';
-    const userPrompt = `请为以下人物关系图谱生成情节故事线，涵盖第${chapterRange?.start || 1}章到第${chapterRange?.end || 50}章：
+    // 使用LLM生成故事线（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('relationship-map');
+    const userPrompt = `请为以下番茄小说人物关系图谱生成情节故事线（符合Top3爆款标准），涵盖第${chapterRange?.start || 1}章到第${chapterRange?.end || 50}章：
 
 关系图谱信息：
 ${JSON.stringify(graph, null, 2)}
 
+【创作要求】
+- 确保关系变化推动情节发展，每章都有关系进展
+- 关系变化要服务于爽文情节（打脸、装逼、情感升温）
+- 动态变化：关系随情节发展而变化，制造期待
+- 有意义：每个关系都有作用，避免无效关系
+
 请以Markdown格式输出，包含：
-1. 主要关系的演变阶段
-2. 关键冲突点
-3. 情感转折点
-4. 高潮时刻
-5. 每个阶段的章节建议`;
+1. 主要关系的演变阶段（每10-20章一个大阶段）
+2. 关键冲突点（制造爽点）
+3. 情感转折点（增强代入感）
+4. 高潮时刻（震撼读者）
+5. 每个阶段的章节建议（具体到章数）
+
+【质量目标】
+- 编辑视角评分：9.8分+（情节编排、人物塑造、商业价值）
+- 读者视角评分：9.8分+（爽感、代入、追读动力）
+- 完读率预期：90%+
+`;
 
     const encoder = new TextEncoder();
 

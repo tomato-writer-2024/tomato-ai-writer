@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CoverStyle } from '@/lib/coverDescriptionGenerator';
 import { generateCreativeWritingStream } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/cover-generator/styles - 获取所有封面风格
 export async function GET() {
@@ -46,8 +47,8 @@ export async function POST(request: NextRequest) {
       targetAudience
     } = body;
 
-    const systemPrompt = '你是一个专业的小说封面设计助手，擅长创作吸引眼球的封面视觉描述。';
-    const userPrompt = `请为以下小说设计封面视觉描述：
+    const systemPrompt = getSystemPromptForFeature('cover-generator');
+    const userPrompt = `请为以下番茄小说设计封面视觉描述（符合Top3爆款标准）：
 
 小说标题：${novelTitle}
 题材：${genre}
@@ -58,14 +59,30 @@ export async function POST(request: NextRequest) {
 偏好风格：${preferredStyle || '未指定'}
 目标读者：${targetAudience || '未提供'}
 
+【创作要求】
+- 确保封面符合番茄小说Top3爆款小说封面的特征
+- 视觉冲击力强，黄金3秒内抓住读者注意力
+- 体现核心元素（主角、金手指、爽点类型）
+- 符合题材特点，吸引目标读者
+- 适合AI绘画工具生成（Midjourney/Stable Diffusion）
+
 请生成包含以下内容的封面描述：
 
-1. 整体风格定义
-2. 核心视觉元素（3-5个主要元素）
-3. 配色方案
-4. 构图设计
-5. 画面氛围
-6. 视觉亮点
+1. 整体风格定义（符合题材特征）
+2. 核心视觉元素（3-5个主要元素，体现卖点）
+3. 配色方案（主色+辅色+点缀色，符合题材氛围）
+4. 构图设计（布局、视角、焦点，黄金比例）
+5. 画面氛围（情绪、基调，体现爽文特征）
+6. 视觉亮点（最吸引眼球的地方，增强点击率）
+7. AI绘画提示词（适合Midjourney/Stable Diffusion，详细精准）
+8. 替代方案（2-3个可选风格）
+
+【质量目标】
+- 视觉冲击力：90分+
+- 卖点传达度：95%+
+- 目标读者吸引力：9.8分+
+- 预期点击率：提升30%+
+- AI绘画成功率：95%+
 
 确保封面符合题材、吸引目标读者、传达核心主题、具有视觉冲击力。请以Markdown格式输出，结构清晰。`;
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NovelOutline, generateThreeActOutline, analyzeOutline, generateChapterOutline, generateOutlinePrompt, calculateSatisfactionPoints, optimizeOutline } from '@/lib/outlineGenerator';
 import { LLMClient } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // POST /api/outline-generator/generate - 生成大纲
 export async function generateOutline(request: NextRequest) {
@@ -150,14 +151,14 @@ export async function aiGenerateOutline(request: NextRequest) {
     const prompt = generateOutlinePrompt(params);
     const llmClient = new LLMClient();
 
-    // 流式输出
+    // 流式输出（番茄小说风格）
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const generator = llmClient.generateTextStream(
-            '你是一个专业的小说大纲创作助手，擅长构建番茄小说风格的爽文大纲。',
+            getSystemPromptForFeature('outline-generator'),
             prompt
           );
 

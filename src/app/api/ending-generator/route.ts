@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ENDING_TYPES } from '@/lib/endingGenerator';
 import { generateCreativeWritingStream } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/ending-generator/types - 获取所有结局类型
 export async function GET() {
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
       preferredEndingType
     } = body;
 
-    const systemPrompt = '你是一个专业的小说结局创作助手，擅长设计令人满意又难忘的结局。';
-    const userPrompt = `请为以下小说设计结局方案：
+    const systemPrompt = getSystemPromptForFeature('ending-generator');
+    const userPrompt = `请为以下番茄小说设计结局方案（符合Top3爆款标准）：
 
 小说标题：${novelTitle}
 题材：${storyGenre}
@@ -41,17 +42,29 @@ export async function POST(request: NextRequest) {
 当前情节进度：${currentPlot || '未提供'}
 偏好结局类型：${preferredEndingType || '未指定'}
 
+【创作要求】
+- 确保结局符合番茄小说快节奏、强代入感的特征
+- 结局要有强烈的情感冲击力，让读者意犹未尽
+- 主题升华，体现番茄小说爽文的核心价值
+- 伏笔回收完整，避免逻辑漏洞
+- 为读者留下追读动力（推荐其他作品或期待续作）
+
 请生成3-5个不同类型的结局方案，每个方案包含：
 1. 结局类型和简要描述
-2. 核心事件清单（按时间顺序）
-3. 主要角色的最终命运
-4. 主题的升华和表达
-5. 情感冲击力评分
-6. 读者满意度预测
-7. 创新性评分
+2. 核心事件清单（按时间顺序，节奏紧凑）
+3. 主要角色的最终命运（符合人物成长线）
+4. 主题的升华和表达（体现爽文价值）
+5. 情感冲击力评分（目标：90分+）
+6. 读者满意度预测（目标：9.8分+）
+7. 创新性评分（目标：85分+）
 8. 实施难度评估
 9. 需要提前埋设的伏笔
-10. 读者预期反应
+10. 读者预期反应（完读率、推荐、付费）
+
+【质量目标】
+- 编辑视角评分：9.8分+（主题升华、情感冲击、完整性）
+- 读者视角评分：9.8分+（爽感、代入、追读动力）
+- 完读率：90%+
 
 确保结局逻辑合理、情感真挚、主题深刻、符合人物性格。请以Markdown格式输出，结构清晰。`;
 

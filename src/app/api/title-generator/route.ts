@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TitleOption, generateTitleOptions, analyzeTitle, generateABTestSuggestions, generateMarketComparison, generateTitlePrompt, optimizeTitle } from '@/lib/titleGenerator';
 import { LLMClient } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // POST /api/title-generator/generate - 生成书名选项（AI生成）
 export async function generateTitles(request: NextRequest) {
@@ -15,11 +16,11 @@ export async function generateTitles(request: NextRequest) {
       );
     }
 
-    // 使用LLM生成书名
+    // 使用LLM生成书名（番茄小说风格）
     const llmClient = new LLMClient();
 
-    const systemPrompt = '你是一个专业的小说书名创作助手，擅长创作吸引眼球的小说书名。';
-    const userPrompt = `请为以下小说生成5-20个高质量书名：
+    const systemPrompt = getSystemPromptForFeature('title-generator');
+    const userPrompt = `请为以下番茄小说生成5-20个高质量书名（符合Top3爆款标准）：
 
 题材：${genre}
 主题：${theme}
@@ -27,19 +28,37 @@ export async function generateTitles(request: NextRequest) {
 关键元素：${keyElements?.join('、') || '未提供'}
 背景设定：${setting || '未提供'}
 
+【创作要求】
+- 确保书名符合番茄小说平台Top3爆款书名的特征
+- 吸引眼球，快速抓住读者注意力（黄金3秒原则）
+- 体现核心卖点（主角身份、金手指、爽点类型）
+- 易于记忆，朗朗上口
+- 具备爆款属性（市场契合度、独特性、记忆度都达到90分+）
+
 请生成包含以下信息的书名列表（以JSON格式返回）：
 {
   "titles": [
     {
       "title": "书名1",
-      "style": "书名风格",
-      "marketFit": "市场契合度评分（0-100）",
-      "uniqueness": "独特性评分（0-100）",
-      "memorability": "记忆度评分（0-100）",
-      "advantages": ["优势1", "优势2"]
+      "style": "书名风格（霸气型/悬念型/数据型/身份型/系统型等）",
+      "marketFit": "市场契合度评分（目标：90分+）",
+      "uniqueness": "独特性评分（目标：90分+）",
+      "memorability": "记忆度评分（目标：90分+）",
+      "attractiveness": "吸引力评分（目标：90分+）",
+      "explosivePotential": "爆款潜力评分（目标：90分+）",
+      "advantages": ["优势1", "优势2"],
+      "reason": "推荐理由"
     }
   ]
 }
+
+【质量目标】
+- 市场契合度：90分+
+- 独特性：90分+
+- 记忆度：90分+
+- 吸引力：90分+
+- 爆款潜力：90分+
+- 预期点击率：提升30%+
 
 确保书名符合题材特点、具有吸引力、易于记忆、符合市场趋势。`;
 

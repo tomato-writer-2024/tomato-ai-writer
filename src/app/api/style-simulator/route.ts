@@ -5,6 +5,7 @@ import {
   FAMOUS_AUTHOR_STYLES
 } from '@/lib/styleSimulator';
 import { generateCreativeWritingStream, generateReasoningStream } from '@/lib/llmClient';
+import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/style-simulator/styles - 获取所有可用风格
 export async function getStyles() {
@@ -35,20 +36,31 @@ export async function analyzeTextStyle(request: NextRequest) {
       );
     }
 
-    // 使用LLM分析风格
-    const systemPrompt = '你是一个专业的文本风格分析助手。请分析提供文本的风格特征。';
-    const userPrompt = `请分析以下文本的风格特征：
+    // 使用LLM分析风格（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('style-simulator');
+    const userPrompt = `请分析以下番茄小说文本的风格特征（符合Top3爆款标准）：
 
 ${content}
 
+【分析要求】
+- 从番茄小说快节奏、强代入感的角度分析风格特征
+- 考虑爽文常用词（震惊、碾压、轰爆、恐怖、逆天、绝世、无敌、至尊、巅峰、惊人）
+- 评估是否符合番茄小说读者的阅读习惯
+
 请分析：
-1. 句子特征（长度、结构）
-2. 词汇特征（词汇水平、修辞手法）
+1. 句子特征（长度、结构、流畅度）
+2. 词汇特征（词汇水平、修辞手法、网感）
 3. 叙事特征（视角、节奏、描写水平）
 4. 情感特征（基调、幽默度、严肃度）
 5. 主题特征（主题、象征）
+6. 爽文特征（爽点密度、悬念设置、代入感）
 
-请以JSON格式输出。`;
+【质量目标】
+- 准确率：95%+
+- 番茄小说风格匹配度：90%+
+- 读者喜好度：9.8分+
+
+请以JSON格式输出，结构清晰，易于理解。`;
 
     const encoder = new TextEncoder();
 
@@ -100,20 +112,30 @@ export async function matchBestStyle(request: NextRequest) {
       );
     }
 
-    // 使用LLM匹配风格
-    const systemPrompt = '你是一个专业的风格匹配助手。请将用户文本与知名作者风格匹配。';
-    const userPrompt = `请将以下文本与知名作者风格匹配：
+    // 使用LLM匹配风格（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('style-simulator');
+    const userPrompt = `请将以下番茄小说文本与知名作者风格匹配（符合Top3爆款标准）：
 
 内容：${content}
 题材：${genre}
 
-请分析：
-1. 最匹配的3个作者风格
-2. 每个风格的相似度评分
-3. 匹配的特征说明
-4. 风格建议
+【匹配要求】
+- 从番茄小说平台Top3爆款小说作者角度匹配
+- 考虑爽文风格、快节奏、强代入感等特征
+- 评估是否符合番茄小说读者的阅读习惯
 
-请以JSON格式输出。`;
+请分析：
+1. 最匹配的3个番茄小说Top3爆款作者风格
+2. 每个风格的相似度评分（0-100分）
+3. 匹配的特征说明（句子、词汇、叙事、情感等维度）
+4. 风格建议（如何优化以达到Top3爆款标准）
+
+【质量目标】
+- 匹配准确率：95%+
+- 番茄小说风格匹配度：90%+
+- 读者喜好度：9.8分+
+
+请以JSON格式输出，结构清晰，易于参考。`;
 
     const encoder = new TextEncoder();
 
@@ -165,20 +187,32 @@ export async function suggestImprovements(request: NextRequest) {
       );
     }
 
-    // 使用LLM生成改进建议
-    const systemPrompt = '你是一个专业的风格改进助手。请为文本提供风格改进建议。';
-    const userPrompt = `请为以下文本提供风格改进建议：
+    // 使用LLM生成改进建议（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('style-simulator');
+    const userPrompt = `请为以下番茄小说文本提供风格改进建议（符合Top3爆款标准）：
 
 内容：${content}
 目标风格：${targetStyle}
 
-请提供：
-1. 当前风格特征
-2. 改进建议（3-5个）
-3. 具体修改示例
-4. 改进原因
+【改进要求】
+- 以番茄小说Top3爆款小说为标杆提供改进建议
+- 增强爽点密度、悬念设置、代入感等关键要素
+- 优化语言风格，使其更符合番茄小说读者的阅读习惯
+- 融入爽文常用词（震惊、碾压、轰爆、恐怖、逆天、绝世、无敌、至尊、巅峰、惊人）
 
-请以JSON格式输出。`;
+请提供：
+1. 当前风格特征（与Top3爆款标准的差距）
+2. 改进建议（3-5个，针对爽点密度、悬念、代入感等）
+3. 具体修改示例（修改前 vs 修改后）
+4. 改进原因（说明如何提升读者体验和完读率）
+
+【质量目标】
+- 改进成功率：95%+
+- 爽点密度提升：每1000字至少1个爽点
+- 读者喜好度：9.8分+
+- 完读率：90%+
+
+请以JSON格式输出，结构清晰，易于实施。`;
 
     const encoder = new TextEncoder();
 
