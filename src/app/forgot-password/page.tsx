@@ -29,10 +29,15 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
+      // 获取当前页面的实际域名（确保生产环境外网访问正确）
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+      console.log('[忘记密码前端] 请求参数:', { email, baseUrl });
+
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, baseUrl }),
       });
 
       const data = await response.json();

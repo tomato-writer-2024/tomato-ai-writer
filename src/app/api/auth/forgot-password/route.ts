@@ -10,9 +10,9 @@ import { emailService, EmailTemplate } from '@/lib/emailService';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { email, baseUrl } = await request.json();
 
-    console.log('[忘记密码] 收到请求:', { email });
+    console.log('[忘记密码] 收到请求:', { email, baseUrl });
 
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,10 +46,12 @@ export async function POST(request: NextRequest) {
     });
 
     // 构建重置链接
-    // 优先使用请求的实际域名，确保生产环境外网访问正常
-    const requestUrl = new URL(request.url);
-    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
-    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
+    // 优先使用前端传递的实际域名，其次使用环境变量，最后使用请求URL（开发环境）
+    const finalBaseUrl = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || `${new URL(request.url).protocol}//${new URL(request.url).host}`;
+
+    console.log('[忘记密码] 使用的Base URL:', finalBaseUrl);
+
+    const resetUrl = `${finalBaseUrl}/reset-password?token=${resetToken}`;
 
     // 在开发环境，打印重置链接到控制台（方便调试）
     console.log('\n========================================');

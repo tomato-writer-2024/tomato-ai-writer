@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
   try {
     const { token, password } = await request.json();
 
+    console.log('[重置密码] 收到请求:', { token: token?.substring(0, 20) + '...', passwordLength: password?.length });
+
     // 验证参数
     if (!token || !password) {
       return NextResponse.json(
@@ -32,9 +34,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 验证并解码token
+    console.log('[重置密码] 验证token...');
     const decoded = verifyResetToken(token);
 
     if (!decoded) {
+      console.log('[重置密码] Token验证失败');
       await authManager.logSecurityEvent({
         userId: null,
         action: 'PASSWORD_RESET',
@@ -49,18 +53,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('[重置密码] Token验证成功，用户ID:', decoded.userId, '邮箱:', decoded.email);
+
     // 获取用户信息
     const user = await userManager.getUserById(decoded.userId);
 
     if (!user) {
+      console.log('[重置密码] 用户不存在，ID:', decoded.userId);
       return NextResponse.json(
         { success: false, error: '用户不存在' },
         { status: 404 }
       );
     }
 
+    console.log('[重置密码] 找到用户:', { id: user.id, email: user.email, username: user.username });
+
     // 验证邮箱是否匹配
+    console.log('[重置密码] 验证邮箱:', { user_email: user.email, decoded_email: decoded.email });
     if (user.email !== decoded.email) {
+      console.log('[重置密码] 邮箱不匹配');
       return NextResponse.json(
         { success: false, error: '邮箱不匹配' },
         { status: 400 }
@@ -70,14 +81,19 @@ export async function POST(request: NextRequest) {
     // 哈希新密码
     const passwordHash = await hashPassword(password);
 
+    console.log('[重置密码] 开始更新用户密码，用户ID:', user.id);
+
     // 直接使用SQL更新密码（updateUserSchema不允许更新passwordHash）
     const db = await getDb();
-    await db.update(users)
-      .set({ 
+    const result = await db.update(users)
+      .set({
         passwordHash,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, user.id))
+      .returning();
+
+    console.log('[重置密码] 密码更新成功，影响行数:', result.length);
 
     // 记录安全事件
     await authManager.logSecurityEvent({
