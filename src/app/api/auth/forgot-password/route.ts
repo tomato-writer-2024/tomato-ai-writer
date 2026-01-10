@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
     });
 
     // 构建重置链接
-    // 优先使用请求的Origin，其次是环境变量，最后是localhost
+    // 优先使用请求的实际域名，确保生产环境外网访问正常
     const requestUrl = new URL(request.url);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${requestUrl.protocol}//${requestUrl.host}`;
+    const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
     // 在开发环境，打印重置链接到控制台（方便调试）

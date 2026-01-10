@@ -360,7 +360,7 @@ export const POST = withMiddleware(handler, {
 export async function GET(request: NextRequest) {
   try {
     const appId = process.env.WECHAT_APPID;
-    const redirectUri = process.env.WECHAT_REDIRECT_URI || 'http://localhost:5000/auth/wechat/callback';
+    const redirectUri = process.env.WECHAT_REDIRECT_URI || 'https://p75463bk4t.coze.site/auth/wechat/callback';
 
     if (!appId) {
       return NextResponse.json(
