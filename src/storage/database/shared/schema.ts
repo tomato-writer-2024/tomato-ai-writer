@@ -101,10 +101,12 @@ export const users = pgTable("users", {
 	isActive: boolean("is_active").default(true).notNull(),
 	isBanned: boolean("is_banned").default(false).notNull(),
 	banReason: text("ban_reason"),
+	isSuperAdmin: boolean("is_super_admin").default(false).notNull(), // 超级管理员标识
 }, (table) => [
 	index("users_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("users_membership_idx").using("btree", table.membershipLevel.asc().nullsLast().op("text_ops")),
 	index("users_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
+	index("users_super_admin_idx").using("btree", table.isSuperAdmin.asc().nullsLast().op("bool_ops")),
 	unique("users_email_unique").on(table.email),
 ]);
 
@@ -595,6 +597,7 @@ export const updateUserSchema = createCoercedInsertSchema(users)
 		isActive: true,
 		isBanned: true,
 		banReason: true,
+		isSuperAdmin: true,
 	})
 	.partial();
 
