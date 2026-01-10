@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         EmailTemplate.FORGOT_PASSWORD,
         {
           resetLink: resetUrl,
-          username: user.username,
+          username: user.username || undefined,
           expiresIn: 30,
         },
         user.email
