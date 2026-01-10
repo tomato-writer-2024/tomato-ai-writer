@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle, XCircle, User, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, User, Mail, Shield } from 'lucide-react';
 
 export default function WechatAuthPage() {
   const router = useRouter();
@@ -10,13 +10,7 @@ export default function WechatAuthPage() {
   const redirectUri = searchParams.get('redirect_uri') || '/workspace';
 
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // 模拟微信授权页面的加载
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const [showDetail, setShowDetail] = useState(false);
 
   const handleAuth = async (authorized: boolean) => {
     if (!authorized) {
@@ -25,36 +19,18 @@ export default function WechatAuthPage() {
       return;
     }
 
-    // 模拟授权成功
+    // 同意授权，跳转到回调页面
     setIsLoading(true);
 
     try {
-      // 调用微信登录API
-      const response = await fetch('/api/auth/wechat-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: 'mock_wechat_code',
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // 保存token到localStorage
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('refreshToken', data.data.refreshToken);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-
-        // 跳转到目标页面
-        router.push(redirectUri);
-      } else {
-        alert('微信登录失败: ' + data.error);
-        router.push('/login');
-      }
+      // 模拟授权成功，跳转到回调页面
+      setTimeout(() => {
+        const callbackUrl = `/auth/wechat/callback?code=${encodeURIComponent('mock_wechat_code')}&state=${encodeURIComponent(redirectUri)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+        router.push(callbackUrl);
+      }, 500);
     } catch (error) {
-      console.error('微信登录失败:', error);
-      alert('微信登录失败，请稍后重试');
+      console.error('微信授权失败:', error);
+      alert('微信授权失败，请稍后重试');
       router.push('/login');
     }
   };
@@ -75,11 +51,11 @@ export default function WechatAuthPage() {
       </div>
 
       {/* 模拟微信授权页面 */}
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
           <div className="flex items-start gap-4 mb-6">
             <div className="flex-shrink-0">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-md">
                 <CheckCircle className="text-white" size={32} />
               </div>
             </div>
@@ -101,9 +77,9 @@ export default function WechatAuthPage() {
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                  <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+                  <Shield className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
                   <div>
-                    <div className="font-medium text-gray-900">获得你的手机号</div>
+                    <div className="font-medium text-gray-900">账号安全保护</div>
                     <div className="text-sm text-gray-600">用于账号安全和找回</div>
                   </div>
                 </div>
@@ -114,7 +90,7 @@ export default function WechatAuthPage() {
           {/* 模拟用户信息展示 */}
           <div className="border-t border-gray-200 pt-6 mt-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
                 微
               </div>
               <div className="flex-1">
@@ -134,16 +110,33 @@ export default function WechatAuthPage() {
         </div>
 
         {/* 模拟应用信息 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-4">关于番茄AI写作助手</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            专为番茄小说平台打造的AI辅助写作工具，提供50+细分生成器、百万级素材库、多平台适配等功能，帮助小说创作者快速生成符合平台风格的爆款爽文内容。
-          </p>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span>类型：工具类应用</span>
-            <span>•</span>
-            <span>开发者：番茄AI团队</span>
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-900">关于番茄AI写作助手</h3>
+            <button
+              onClick={() => setShowDetail(!showDetail)}
+              className="text-sm text-green-600 hover:text-green-700 font-medium"
+            >
+              {showDetail ? '收起' : '展开'}
+            </button>
           </div>
+          {showDetail && (
+            <>
+              <p className="text-gray-600 text-sm mb-4">
+                专为番茄小说平台打造的AI辅助写作工具，提供50+细分生成器、百万级素材库、多平台适配等功能，帮助小说创作者快速生成符合平台风格的爆款爽文内容。
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+                <span className="bg-gray-100 px-2 py-1 rounded">工具类应用</span>
+                <span className="bg-gray-100 px-2 py-1 rounded">番茄AI团队</span>
+                <span className="bg-gray-100 px-2 py-1 rounded">v1.0.0</span>
+              </div>
+            </>
+          )}
+          {!showDetail && (
+            <p className="text-gray-600 text-sm">
+              专为番茄小说平台打造的AI辅助写作工具
+            </p>
+          )}
         </div>
 
         {/* 底部操作按钮 */}

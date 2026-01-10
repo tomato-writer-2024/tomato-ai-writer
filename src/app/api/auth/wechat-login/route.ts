@@ -19,11 +19,12 @@ import { getDb } from 'coze-coding-dev-sdk';
  * 配置环境变量：
  * - WECHAT_APPID: 微信开放平台AppID
  * - WECHAT_SECRET: 微信开放平台AppSecret
+ * - WECHAT_MOCK_MODE: 是否使用mock模式（测试用，默认为true）
  *
  * 流程：
  * 1. 前端跳转到微信授权页面
  * 2. 用户授权后，微信返回code
- * 3. 后端使用code换取access_token和用户信息
+ * 3. 后端使用code换取access_token和用户信息（或使用mock数据）
  * 4. 根据unionid查找或创建用户
  * 5. 返回token
  */
@@ -38,66 +39,87 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 从环境变量获取微信配置
-    const appId = process.env.WECHAT_APPID;
-    const secret = process.env.WECHAT_SECRET;
+    // 检查是否使用mock模式
+    const mockMode = process.env.WECHAT_MOCK_MODE !== 'false'; // 默认启用mock模式
 
-    if (!appId || !secret) {
-      console.error('[微信登录] 未配置微信AppID或Secret');
-      return NextResponse.json(
-        { success: false, error: '微信登录未配置' },
-        { status: 500 }
+    console.log('[微信登录] 请求参数', { code, mockMode });
+
+    let wechatOpenId: string;
+    let wechatUnionId: string | undefined;
+    let nickname: string;
+    let avatar: string;
+
+    if (mockMode) {
+      // Mock模式：使用模拟数据
+      console.log('[微信登录] 使用Mock模式');
+      wechatOpenId = `mock_openid_${code}`;
+      wechatUnionId = `mock_unionid_${code}`;
+      nickname = '微信用户';
+      avatar = 'https://thirdwx.qlogo.cn/mmopen/vi_32/default_avatar.jpg';
+    } else {
+      // 真实模式：调用微信API
+      const appId = process.env.WECHAT_APPID;
+      const secret = process.env.WECHAT_SECRET;
+
+      if (!appId || !secret) {
+        console.error('[微信登录] 未配置微信AppID或Secret');
+        return NextResponse.json(
+          { success: false, error: '微信登录未配置，请使用邮箱密码登录' },
+          { status: 500 }
+        );
+      }
+
+      // 1. 使用code换取access_token
+      const tokenResponse = await fetch(
+        `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${appId}&secret=${secret}&code=${code}&grant_type=authorization_code`
       );
+
+      const tokenData = await tokenResponse.json();
+
+      // 检查微信API响应
+      if (tokenData.errcode) {
+        console.error('[微信登录] 获取access_token失败:', tokenData);
+        return NextResponse.json(
+          {
+            success: false,
+            error: `微信授权失败: ${tokenData.errmsg || '未知错误'}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      wechatOpenId = tokenData.openid;
+      wechatUnionId = tokenData.unionid;
+      const wechatAccessToken = tokenData.access_token;
+
+      // 2. 使用access_token获取用户信息
+      const userResponse = await fetch(
+        `https://api.weixin.qq.com/sns/userinfo?access_token=${wechatAccessToken}&openid=${wechatOpenId}`
+      );
+
+      const userData = await userResponse.json();
+
+      // 检查用户信息响应
+      if (userData.errcode) {
+        console.error('[微信登录] 获取用户信息失败:', userData);
+        return NextResponse.json(
+          {
+            success: false,
+            error: `获取用户信息失败: ${userData.errmsg || '未知错误'}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      nickname = userData.nickname;
+      avatar = userData.headimgurl;
     }
 
-    // 1. 使用code换取access_token
-    const tokenResponse = await fetch(
-      `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${appId}&secret=${secret}&code=${code}&grant_type=authorization_code`
-    );
-
-    const tokenData = await tokenResponse.json();
-
-    // 检查微信API响应
-    if (tokenData.errcode) {
-      console.error('[微信登录] 获取access_token失败:', tokenData);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `微信授权失败: ${tokenData.errmsg || '未知错误'}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const wechatOpenId = tokenData.openid;
-    const wechatUnionId = tokenData.unionid;
-    const wechatAccessToken = tokenData.access_token;
-
-    // 2. 使用access_token获取用户信息
-    const userResponse = await fetch(
-      `https://api.weixin.qq.com/sns/userinfo?access_token=${wechatAccessToken}&openid=${wechatOpenId}`
-    );
-
-    const userData = await userResponse.json();
-
-    // 检查用户信息响应
-    if (userData.errcode) {
-      console.error('[微信登录] 获取用户信息失败:', userData);
-      return NextResponse.json(
-        {
-          success: false,
-          error: `获取用户信息失败: ${userData.errmsg || '未知错误'}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const nickname = userData.nickname;
-    const avatar = userData.headimgurl;
-    const sex = userData.sex; // 性别：1男性，2女性，0未知
-    const province = userData.province;
-    const city = userData.city;
-    const country = userData.country;
+    console.log('[微信登录] 用户信息:', {
+      openId: wechatOpenId,
+      unionId: wechatUnionId,
+      nickname,
+    });
 
     console.log('[微信登录] 用户信息:', {
       openId: wechatOpenId,
