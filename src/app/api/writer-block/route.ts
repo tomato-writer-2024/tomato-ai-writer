@@ -9,10 +9,43 @@ import { generateCreativeWritingStream, generateReasoningStream } from '@/lib/ll
 import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // POST /api/writer-block/diagnose - 诊断卡文问题
-export async function diagnoseBlock(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content, chapterNumber, novelContext } = body;
+    const { action, ...params } = body;
+
+    if (!action) {
+      return NextResponse.json(
+        { success: false, error: '缺少action参数' },
+        { status: 400 }
+      );
+    }
+
+    switch (action) {
+      case 'diagnose':
+        return handleDiagnose(params);
+      case 'solutions':
+        return handleSolutions(params);
+      case 'plot-gaps':
+        return handleGaps(params);
+      default:
+        return NextResponse.json(
+          { success: false, error: '未知的action' },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error('API错误:', error);
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleDiagnose(params: any) {
+  try {
+    const { content, chapterNumber, novelContext } = params;
 
     if (!content) {
       return NextResponse.json(
@@ -86,10 +119,9 @@ export async function diagnoseBlock(request: NextRequest) {
 }
 
 // POST /api/writer-block/solutions - 生成破局建议
-export async function generateBlockSolutions(request: NextRequest) {
+async function handleSolutions(params: any) {
   try {
-    const body = await request.json();
-    const { blockType, currentContent, novelContext } = body;
+    const { blockType, currentContent, novelContext } = params;
 
     if (!blockType) {
       return NextResponse.json(
@@ -165,10 +197,9 @@ export async function generateBlockSolutions(request: NextRequest) {
 }
 
 // POST /api/writer-block/plot-gaps - 识别剧情漏洞
-export async function identifyGaps(request: NextRequest) {
+async function handleGaps(params: any) {
   try {
-    const body = await request.json();
-    const { content, chapterContext } = body;
+    const { content, chapterContext } = params;
 
     if (!content) {
       return NextResponse.json(

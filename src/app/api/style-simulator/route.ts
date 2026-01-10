@@ -8,7 +8,7 @@ import { generateCreativeWritingStream, generateReasoningStream } from '@/lib/ll
 import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/style-simulator/styles - 获取所有可用风格
-export async function getStyles() {
+export async function GET(request: NextRequest) {
   try {
     return NextResponse.json({
       success: true,
@@ -23,11 +23,46 @@ export async function getStyles() {
   }
 }
 
-// POST /api/style-simulator/analyze - 分析文本风格
-export async function analyzeTextStyle(request: NextRequest) {
+// POST /api/style-simulator - 处理所有POST请求
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content } = body;
+    const { action, ...params } = body;
+
+    if (!action) {
+      return NextResponse.json(
+        { success: false, error: '缺少action参数' },
+        { status: 400 }
+      );
+    }
+
+    switch (action) {
+      case 'analyze':
+        return handleAnalyze(params);
+      case 'match':
+        return handleMatch(params);
+      case 'suggest':
+        return handleSuggest(params);
+      case 'generate':
+        return handleGenerate(params);
+      default:
+        return NextResponse.json(
+          { success: false, error: '未知的action' },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error('API错误:', error);
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleAnalyze(params: any) {
+  try {
+    const { content } = params;
 
     if (!content) {
       return NextResponse.json(
@@ -99,11 +134,9 @@ ${content}
   }
 }
 
-// POST /api/style-simulator/match - 匹配最佳风格
-export async function matchBestStyle(request: NextRequest) {
+async function handleMatch(params: any) {
   try {
-    const body = await request.json();
-    const { content, genre } = body;
+    const { content, genre } = params;
 
     if (!content) {
       return NextResponse.json(
@@ -174,11 +207,9 @@ export async function matchBestStyle(request: NextRequest) {
   }
 }
 
-// POST /api/style-simulator/suggest - 风格改进建议
-export async function suggestImprovements(request: NextRequest) {
+async function handleSuggest(params: any) {
   try {
-    const body = await request.json();
-    const { content, targetStyle } = body;
+    const { content, targetStyle } = params;
 
     if (!content) {
       return NextResponse.json(
@@ -198,21 +229,14 @@ export async function suggestImprovements(request: NextRequest) {
 - 以番茄小说Top3爆款小说为标杆提供改进建议
 - 增强爽点密度、悬念设置、代入感等关键要素
 - 优化语言风格，使其更符合番茄小说读者的阅读习惯
-- 融入爽文常用词（震惊、碾压、轰爆、恐怖、逆天、绝世、无敌、至尊、巅峰、惊人）
-
-请提供：
-1. 当前风格特征（与Top3爆款标准的差距）
-2. 改进建议（3-5个，针对爽点密度、悬念、代入感等）
-3. 具体修改示例（修改前 vs 修改后）
-4. 改进原因（说明如何提升读者体验和完读率）
+- 具体到句子层面，提供修改前后的对比示例
 
 【质量目标】
-- 改进成功率：95%+
-- 爽点密度提升：每1000字至少1个爽点
+- 改进建议的准确率：95%+
+- 番茄小说风格匹配度：90%+
 - 读者喜好度：9.8分+
-- 完读率：90%+
 
-请以JSON格式输出，结构清晰，易于实施。`;
+请以JSON格式输出，结构清晰，易于操作。`;
 
     const encoder = new TextEncoder();
 
@@ -229,7 +253,7 @@ export async function suggestImprovements(request: NextRequest) {
           controller.enqueue(encoder.encode('[DONE]'));
           controller.close();
         } catch (error) {
-          console.error('生成风格改进建议失败:', error);
+          console.error('生成改进建议失败:', error);
           controller.error(error);
         }
       }
@@ -243,64 +267,52 @@ export async function suggestImprovements(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('生成风格改进建议失败:', error);
+    console.error('生成改进建议失败:', error);
     return NextResponse.json(
-      { success: false, error: '生成风格改进建议失败' },
+      { success: false, error: '生成改进建议失败' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/style-simulator/apply - 应用作者风格
-export async function applyStyle(request: NextRequest) {
+async function handleGenerate(params: any) {
   try {
-    const body = await request.json();
-    const { content, authorStyle, intensity } = body;
+    const { content, authorStyle, intensity } = params;
 
     if (!content || !authorStyle) {
       return NextResponse.json(
-        { success: false, error: '缺少内容或风格' },
+        { success: false, error: '缺少内容或风格参数' },
         { status: 400 }
       );
     }
 
-    // 使用LLM应用风格
-    const style = FAMOUS_AUTHOR_STYLES.find(s => s.id === authorStyle);
+    // 使用LLM生成风格化文本（番茄小说风格）
+    const systemPrompt = getSystemPromptForFeature('style-simulator');
+    const userPrompt = `请将以下番茄小说文本改写为${authorStyle}风格（符合Top3爆款标准）：
 
-    if (!style) {
-      return NextResponse.json(
-        { success: false, error: '未找到指定风格' },
-        { status: 404 }
-      );
-    }
+原文：${content}
+风格强度：${intensity || '中等'}
 
-    const systemPrompt = `你是一个专业的文风模拟助手。请按照以下作者的风格改写用户提供的文本：
-作者：${style.name}
-时代：${style.era}
-题材：${style.genre}
-风格特征：${JSON.stringify(style.characteristics, null, 2)}
+【改写要求】
+- 以番茄小说Top3爆款小说为目标风格进行改写
+- 保持原文核心爽点和情节
+- 增强爽点密度、悬念设置、代入感
+- 优化语言风格，使其更符合番茄小说读者的阅读习惯
+- 保持节奏明快，不拖沓
 
-改写时请注意：
-1. 句子长度和结构
-2. 词汇选择和修辞手法
-3. 叙事视角和节奏
-4. 情感基调和主题表达
-5. 保持原意和情节不变
+【质量目标】
+- 改写准确率：95%+
+- 番茄小说风格匹配度：90%+
+- 读者喜好度：9.8分+
 
-应用强度：${intensity || 80}%（100%为完全模仿，50%为适度借鉴）`;
-
-    const userPrompt = `请按照${style.name}的风格改写以下文本：
-
-${content}
-
-请直接输出改写后的文本，不要添加任何解释。`;
+请流式输出改写后的文本，保持原有的情节和爽点。`;
 
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = generateReasoningStream(systemPrompt, userPrompt);
+          const generator = generateCreativeWritingStream(systemPrompt, userPrompt);
 
           for await (const chunk of generator) {
             const text = chunk || '';
@@ -327,131 +339,6 @@ ${content}
     console.error('应用风格失败:', error);
     return NextResponse.json(
       { success: false, error: '应用风格失败' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/style-simulator/custom - 自定义风格
-export async function createCustomStyle(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { name, sampleText, preferences } = body;
-
-    if (!name || !sampleText) {
-      return NextResponse.json(
-        { success: false, error: '缺少风格名称或示例文本' },
-        { status: 400 }
-      );
-    }
-
-    // 使用LLM分析示例文本提取风格特征
-    const systemPrompt = '你是一个专业的风格分析助手。请分析示例文本的风格特征。';
-    const userPrompt = `请分析以下文本的风格特征：
-
-示例文本：${sampleText}
-
-请输出JSON格式的风格特征分析。`;
-
-    const encoder = new TextEncoder();
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const generator = generateReasoningStream(systemPrompt, userPrompt);
-
-          for await (const chunk of generator) {
-            const text = chunk || '';
-            controller.enqueue(encoder.encode(text));
-          }
-
-          controller.enqueue(encoder.encode('[DONE]'));
-          controller.close();
-        } catch (error) {
-          console.error('创建自定义风格失败:', error);
-          controller.error(error);
-        }
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      }
-    });
-  } catch (error) {
-    console.error('创建自定义风格失败:', error);
-    return NextResponse.json(
-      { success: false, error: '创建自定义风格失败' },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/style-simulator/compare - 风格对比
-export async function compareStyles(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { content, styleA, styleB } = body;
-
-    if (!content || !styleA || !styleB) {
-      return NextResponse.json(
-        { success: false, error: '缺少参数' },
-        { status: 400 }
-      );
-    }
-
-    const systemPrompt = '你是一个专业的文风分析助手。请对比两种不同风格在同一内容上的表现。';
-    const userPrompt = `请对比以下两种风格对同一内容的改写效果：
-
-原文：
-${content}
-
-风格A：${styleA}
-风格B：${styleB}
-
-请分析：
-1. 两种风格的主要差异（句子、词汇、节奏、情感等）
-2. 各自的优缺点
-3. 适用场景建议
-4. 改进建议
-
-请以结构化的Markdown格式输出。`;
-
-    const encoder = new TextEncoder();
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          const generator = generateReasoningStream(systemPrompt, userPrompt);
-
-          for await (const chunk of generator) {
-            const text = chunk || '';
-            controller.enqueue(encoder.encode(text));
-          }
-
-          controller.enqueue(encoder.encode('[DONE]'));
-          controller.close();
-        } catch (error) {
-          console.error('对比风格失败:', error);
-          controller.error(error);
-        }
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      }
-    });
-  } catch (error) {
-    console.error('对比风格失败:', error);
-    return NextResponse.json(
-      { success: false, error: '对比风格失败' },
       { status: 500 }
     );
   }

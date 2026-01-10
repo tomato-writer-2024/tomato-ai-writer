@@ -671,3 +671,35 @@ export function getGeneratorStats() {
     categories: Object.keys(GENERATOR_CATEGORIES).length,
   };
 }
+
+/**
+ * 搜索生成器（按名称、描述、标签）
+ */
+export function searchGenerators(query: string): GeneratorMetadata[] {
+  const lowerQuery = query.toLowerCase();
+  return GENERATORS.filter(
+    (g) =>
+      g.name.toLowerCase().includes(lowerQuery) ||
+      g.description.toLowerCase().includes(lowerQuery) ||
+      g.tags.some((t) => t.toLowerCase().includes(lowerQuery))
+  );
+}
+
+/**
+ * 获取所有分类
+ */
+export function getGeneratorCategories(): Record<string, { name: string; count: number }> {
+  const categories: Record<string, { name: string; count: number }> = {};
+
+  GENERATORS.forEach((g) => {
+    if (!categories[g.category]) {
+      categories[g.category] = {
+        name: g.category,
+        count: 0,
+      };
+    }
+    categories[g.category].count++;
+  });
+
+  return categories;
+}

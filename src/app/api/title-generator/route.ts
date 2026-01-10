@@ -4,10 +4,47 @@ import { LLMClient } from '@/lib/llmClient';
 import { getSystemPromptForFeature } from '@/lib/tomatoNovelPrompts';
 
 // POST /api/title-generator/generate - 生成书名选项（AI生成）
-export async function generateTitles(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { genre, theme, mainCharacter, keyElements, setting } = body;
+    const { action, ...params } = body;
+
+    if (!action) {
+      return NextResponse.json(
+        { success: false, error: '缺少action参数' },
+        { status: 400 }
+      );
+    }
+
+    switch (action) {
+      case 'generate':
+        return handleGenerate(params);
+      case 'analyze':
+        return handleAnalyze(params);
+      case 'optimize':
+        return handleOptimize(params);
+      case 'ab-test':
+        return handleABTest(params);
+      case 'market-comparison':
+        return handleMarketComparison(params);
+      default:
+        return NextResponse.json(
+          { success: false, error: '未知的action' },
+          { status: 400 }
+        );
+    }
+  } catch (error) {
+    console.error('API错误:', error);
+    return NextResponse.json(
+      { success: false, error: '服务器错误' },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleGenerate(params: any) {
+  try {
+    const { genre, theme, mainCharacter, keyElements, setting } = params;
 
     if (!genre || !theme) {
       return NextResponse.json(
@@ -97,10 +134,9 @@ export async function generateTitles(request: NextRequest) {
 }
 
 // POST /api/title-generator/analyze - 分析标题
-export async function analyzeTitleOption(request: NextRequest) {
+async function handleAnalyze(params: any) {
   try {
-    const body = await request.json();
-    const { title, genre } = body;
+    const { title, genre } = params;
 
     if (!title || !genre) {
       return NextResponse.json(
@@ -122,10 +158,9 @@ export async function analyzeTitleOption(request: NextRequest) {
 }
 
 // POST /api/title-generator/optimize - 优化标题
-export async function optimizeTitleOption(request: NextRequest) {
+async function handleOptimize(params: any) {
   try {
-    const body = await request.json();
-    const { originalTitle, genre, feedback } = body;
+    const { originalTitle, genre, feedback } = params;
 
     if (!originalTitle || !genre) {
       return NextResponse.json(
@@ -147,10 +182,9 @@ export async function optimizeTitleOption(request: NextRequest) {
 }
 
 // POST /api/title-generator/ab-test - 生成A/B测试建议
-export async function generateABTest(request: NextRequest) {
+async function handleABTest(params: any) {
   try {
-    const body = await request.json();
-    const { topTitles } = body;
+    const { topTitles } = params;
 
     if (!topTitles || topTitles.length < 2) {
       return NextResponse.json(
@@ -172,10 +206,9 @@ export async function generateABTest(request: NextRequest) {
 }
 
 // POST /api/title-generator/market-comparison - 市场对比
-export async function marketComparison(request: NextRequest) {
+async function handleMarketComparison(params: any) {
   try {
-    const body = await request.json();
-    const { title, genre } = body;
+    const { title, genre } = params;
 
     if (!title || !genre) {
       return NextResponse.json(
