@@ -151,7 +151,7 @@ export default function UsersPage() {
 				<div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
 					<div className="p-6 border-b border-white/10 flex justify-between items-center">
 						<h2 className="text-xl font-bold text-white">用户列表</h2>
-						span className="text-gray-400 text-sm">
+						<span className="text-gray-400 text-sm">
 							共 {total} 个用户
 						</span>
 					</div>

@@ -85,14 +85,12 @@ export class UserManager {
 	}
 
 	/**
-	 * 根据微信OpenID获取用户（MVP版本：使用email作为标识）
-	 * 生产环境需要添加wechatOpenId字段到schema
+	 * 根据微信OpenID获取用户
 	 */
 	async getUserByWechatOpenId(openId: string): Promise<User | null> {
-		// MVP版本：使用模拟的email来查找
-		// 格式：wx_user_<timestamp>@example.com
-		const email = openId.replace('mock_wechat_openid_', 'wx_user_') + '@example.com';
-		return this.getUserByEmail(email);
+		const db = await getDb();
+		const [user] = await db.select().from(users).where(eq(users.wechatOpenId, openId));
+		return user || null;
 	}
 
 	/**

@@ -216,7 +216,7 @@ export default function TestResultPage() {
 					<div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
 						<p className="text-gray-400 text-sm mb-1">平均响应时间</p>
 						<p className="text-3xl font-bold text-white">{testResult.averageResponseTime.toFixed(0)}ms</p>
-						<p className="text-gray-400 text-xs mt-1">目标：<1000ms</p>
+						<p className="text-gray-400 text-xs mt-1">目标：&lt;1000ms</p>
 					</div>
 				</div>
 

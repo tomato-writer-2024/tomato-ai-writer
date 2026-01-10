@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
 import { users } from '@/storage/database/shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * 删除用户
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 		const [admin] = await db
 			.select()
 			.from(users)
-			.where((u) => u.id === payload.userId && u.isSuperAdmin === true)
+			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
 			.limit(1);
 
 		if (!admin) {

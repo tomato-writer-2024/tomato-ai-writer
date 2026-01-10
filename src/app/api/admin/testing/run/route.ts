@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
 import { users, testResults } from '@/storage/database/shared/schema';
+import { eq, and } from 'drizzle-orm';
 import { llmClient } from '@/lib/llmClient';
 import type { LLMMessage } from '@/lib/llmClient';
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 		const [admin] = await db
 			.select()
 			.from(users)
-			.where((u) => u.id === payload.userId && u.isSuperAdmin === true)
+			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
 			.limit(1);
 
 		if (!admin) {
@@ -200,7 +201,15 @@ async function runTest(
  * 测试单个模块
  */
 async function testModule(module: string, testUsers: any[]) {
-	const result = {
+	const result: {
+		total: number;
+		success: number;
+		failure: number;
+		responseTimes: number[];
+		qualityScores: number[];
+		completionRates: number[];
+		errors: { module: string; userId: any; error: string }[];
+	} = {
 		total: 0,
 		success: 0,
 		failure: 0,
@@ -235,7 +244,7 @@ async function testModule(module: string, testUsers: any[]) {
 				result.errors.push({
 					module,
 					userId: user.id,
-					error: testResult.error,
+					error: testResult.error || '未知错误',
 				});
 			}
 		} catch (error) {

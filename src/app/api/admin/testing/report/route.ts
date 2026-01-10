@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
 import { users, testResults } from '@/storage/database/shared/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, and } from 'drizzle-orm';
 
 /**
  * 获取测试报告
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 		const [admin] = await db
 			.select()
 			.from(users)
-			.where((u) => u.id === payload.userId && u.isSuperAdmin === true)
+			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
 			.limit(1);
 
 		if (!admin) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 		const [admin] = await db
 			.select()
 			.from(users)
-			.where((u) => u.id === payload.userId && u.isSuperAdmin === true)
+			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
 			.limit(1);
 
 		if (!admin) {

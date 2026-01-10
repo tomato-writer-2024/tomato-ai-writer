@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
 import { users } from '@/storage/database/shared/schema';
+import { eq, and } from 'drizzle-orm';
+import { userManager } from '@/storage/database';
 
 /**
  * 获取用户列表
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
 		const [user] = await db
 			.select()
 			.from(users)
-			.where((u) => u.id === payload.userId && u.isSuperAdmin === true)
+			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
 			.limit(1);
 
 		if (!user) {
@@ -50,20 +52,13 @@ export async function GET(request: NextRequest) {
 		const limit = parseInt(searchParams.get('limit') || '50');
 		const searchQuery = searchParams.get('searchQuery') || '';
 
-		// 构建查询
-		let query = db.select().from(users);
+		// 使用userManager获取用户列表
+		const allUsers = await userManager.getUsers({
+			skip,
+			limit: limit + 100, // 获取更多数据以支持分页
+			searchQuery,
+		});
 
-		if (searchQuery) {
-			// 模糊搜索用户名和邮箱
-			const { sql } = await import('drizzle-orm');
-			const { like } = await import('drizzle-orm');
-			query = query.where(
-				sql`(${like(users.username, `%${searchQuery}%`)} OR ${like(users.email, `%${searchQuery}%`)})`
-			);
-		}
-
-		// 执行查询
-		const allUsers = await query;
 		const userList = allUsers.slice(skip, skip + limit);
 
 		// 返回结果（不包含密码）

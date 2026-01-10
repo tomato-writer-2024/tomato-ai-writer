@@ -102,11 +102,15 @@ export const users = pgTable("users", {
 	isBanned: boolean("is_banned").default(false).notNull(),
 	banReason: text("ban_reason"),
 	isSuperAdmin: boolean("is_super_admin").default(false).notNull(), // 超级管理员标识
+	wechatOpenId: varchar("wechat_open_id", { length: 255 }), // 微信OpenID
+	wechatUnionId: varchar("wechat_union_id", { length: 255 }), // 微信UnionID
 }, (table) => [
 	index("users_email_idx").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("users_membership_idx").using("btree", table.membershipLevel.asc().nullsLast().op("text_ops")),
 	index("users_role_idx").using("btree", table.role.asc().nullsLast().op("text_ops")),
 	index("users_super_admin_idx").using("btree", table.isSuperAdmin.asc().nullsLast().op("bool_ops")),
+	index("users_wechat_openid_idx").using("btree", table.wechatOpenId.asc().nullsLast().op("text_ops")),
+	index("users_wechat_unionid_idx").using("btree", table.wechatUnionId.asc().nullsLast().op("text_ops")),
 	unique("users_email_unique").on(table.email),
 ]);
 
@@ -583,6 +587,8 @@ export const insertUserSchema = createCoercedInsertSchema(users).pick({
 	phone: true,
 	location: true,
 	avatarUrl: true,
+	wechatOpenId: true,
+	wechatUnionId: true,
 });
 
 export const updateUserSchema = createCoercedInsertSchema(users)
@@ -594,10 +600,14 @@ export const updateUserSchema = createCoercedInsertSchema(users)
 		role: true,
 		membershipLevel: true,
 		membershipExpireAt: true,
+		passwordHash: true,
+		lastLoginAt: true,
 		isActive: true,
 		isBanned: true,
 		banReason: true,
 		isSuperAdmin: true,
+		wechatOpenId: true,
+		wechatUnionId: true,
 	})
 	.partial();
 
