@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CharacterProfile, generateCharacterBackstory, analyzeCharacterConsistency, createCharacterFromArchetype, predictCharacterGrowth, generateCharacterDialogue } from '@/lib/characterSystem';
 import { LLMClient } from '@/lib/llmClient';
+import { getSystemPromptForFeature, GENRE_SHUANGDIAN_FEATURES } from '@/lib/tomatoNovelPrompts';
 
 // GET /api/characters - 获取用户的角色列表
 export async function GET(request: NextRequest) {
@@ -34,7 +35,8 @@ export async function POST(request: NextRequest) {
     // 使用LLM生成角色设定
     const llmClient = new LLMClient();
 
-    const systemPrompt = '你是一个专业的小说角色设定创作助手。请根据提供的信息，生成立体饱满、独特鲜明的角色设定。';
+    // 使用番茄小说风格的系统提示词
+    const systemPrompt = getSystemPromptForFeature('characters');
 
     const roleLabels: Record<string, string> = {
       protagonist: '主角',
@@ -54,26 +56,46 @@ export async function POST(request: NextRequest) {
       lingyi: '灵异'
     };
 
-    const userPrompt = `请为以下角色生成完整设定：
+    const genre = genreLabels[body.genre] || body.genre;
+    const role = roleLabels[body.role] || body.role;
 
+    // 获取该题材的爽点特征
+    const genreFeatures = GENRE_SHUANGDIAN_FEATURES[genre as keyof typeof GENRE_SHUANGDIAN_FEATURES] || GENRE_SHUANGDIAN_FEATURES.玄幻;
+
+    const userPrompt = `请为以下角色生成符合番茄小说风格的完整设定：
+
+【角色信息】
 角色名称：${body.characterName}
-角色定位：${roleLabels[body.role] || body.role}
-小说题材：${genreLabels[body.genre] || body.genre}
+角色定位：${role}
+小说题材：${genre}
 故事背景：${body.storyContext || '无额外背景'}
 
+【题材爽点特征】
+核心关键词：${genreFeatures.core.keywords.join('、')}
+节奏特点：${genreFeatures.core.pacing}
+爽点类型：
+${Object.entries(genreFeatures.shuangdian).map(([type, desc]: [string, any]) => `  - ${type}：${desc}`).join('\n')}
+
+【生成要求】
 请生成以下内容（以JSON格式返回）：
 {
   "name": "角色名称",
-  "role": "角色定位的详细描述",
-  "personality": "性格特点的详细描述",
-  "backstory": "角色背景故事的详细描述（200-500字）",
-  "motivations": ["动机1", "动机2", "动机3"],
-  "abilities": ["能力1", "能力2", "能力3"],
-  "traits": ["性格特质1", "性格特质2", "性格特质3"],
-  "relationships": {"角色名": "关系描述"}
+  "role": "角色定位的详细描述（100-200字）",
+  "personality": "性格特点的详细描述（200-300字），用具体事件展现，避免空洞描述",
+  "backstory": "角色背景故事的详细描述（300-500字），有血有肉，有遗憾有追求，引发读者共鸣",
+  "motivations": ["动机1（驱动情节的核心目标）", "动机2", "动机3"],
+  "abilities": ["能力1（有成长空间的独特能力）", "能力2", "能力3"],
+  "traits": ["性格特质1（关键词）", "性格特质2", "性格特质3"],
+  "relationships": {"角色名": "关系描述（驱动情节发展）"}
 }
 
-确保角色设定符合${genreLabels[body.genre] || body.genre}题材的特点，逻辑严谨，细节丰富。`;
+【质量要求】
+- 双视角评分目标：编辑视角9.8分+，读者视角9.8分+
+- 完读率目标：60%+
+- 爽文常用词使用：适当使用"震惊、碾压、轰爆、恐怖、逆天、绝世、无敌、至尊、巅峰、惊人"等词汇
+- 确保角色设定符合${genre}题材特点，逻辑严谨，细节丰富
+- 主角需要具备天赋异禀但出身低微的特质，性格坚韧不服输
+- 背景故事要有遗憾和追求，能引发读者共鸣`;
 
     const response = await llmClient.generateText(systemPrompt, userPrompt);
 

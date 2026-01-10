@@ -8,6 +8,7 @@ interface CardProps {
   hover?: boolean;
   gradient?: boolean;
   border?: boolean;
+  onClick?: () => void;
 }
 
 export function Card({
@@ -16,6 +17,7 @@ export function Card({
   hover = true,
   gradient = false,
   border = false,
+  onClick,
 }: CardProps) {
   const baseStyles = 'rounded-2xl bg-white';
 
@@ -37,10 +39,11 @@ export function Card({
     gradientStyles,
     borderStyles,
     'overflow-hidden',
+    onClick ? 'cursor-pointer' : '',
     className,
   ].filter(Boolean).join(' ');
 
-  return <div className={classes}>{children}</div>;
+  return <div className={classes} onClick={onClick}>{children}</div>;
 }
 
 // Card Header
