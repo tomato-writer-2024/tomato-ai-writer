@@ -10,6 +10,8 @@ import { UserRole, MembershipLevel } from '@/lib/types/user';
 import { users } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
 import { getDb } from 'coze-coding-dev-sdk';
+import { withMiddleware, errorResponse, successResponse } from '@/lib/apiMiddleware';
+import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 
 /**
  * 微信登录API
@@ -28,7 +30,7 @@ import { getDb } from 'coze-coding-dev-sdk';
  * 4. 根据unionid查找或创建用户
  * 5. 返回token
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   console.log('[微信登录] ===== 开始处理请求 =====');
 
   try {
@@ -131,13 +133,13 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('[微信登录] 开始查询数据库...');
-    // 3. 查找是否已存在该微信用户（使用原生SQL避免Drizzle问题）
+    // 3. 查找是否已存在该微信用户（使用参数化查询）
     const db = await getDb();
     console.log('[微信登录] 数据库连接成功');
 
     const existingUserResult = await db.execute(
-      `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level
-       FROM users WHERE wechat_open_id = '${wechatOpenId}'`
+      'SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level FROM users WHERE wechat_open_id = $1',
+      [wechatOpenId]
     );
 
     console.log('[微信登录] 查询结果:', existingUserResult.rows.length);
@@ -149,15 +151,21 @@ export async function POST(request: NextRequest) {
       const existingUser = existingUserResult.rows[0];
       user = existingUser;
 
-      // 更新用户信息
+      // 更新用户信息（使用参数化查询）
       await db.execute(
         `UPDATE users SET
-          wechat_union_id = '${wechatUnionId || existingUser.wechat_union_id}',
-          username = '${nickname || existingUser.username}',
-          avatar_url = '${avatar || existingUser.avatar_url}',
+          wechat_union_id = $1,
+          username = $2,
+          avatar_url = $3,
           last_login_at = NOW(),
           updated_at = NOW()
-        WHERE id = '${existingUser.id}'`
+        WHERE id = $4`,
+        [
+          wechatUnionId || existingUser.wechat_union_id,
+          nickname || existingUser.username,
+          avatar || existingUser.avatar_url,
+          existingUser.id,
+        ]
       );
 
       console.log('[微信登录] 用户已存在:', existingUser.id);
@@ -172,7 +180,7 @@ export async function POST(request: NextRequest) {
       const bcrypt = require('bcryptjs');
       const passwordHash = await bcrypt.hash(randomPassword, 12);
 
-      // 使用原生SQL创建用户
+      // 使用参数化查询创建用户
       await db.execute(
         `INSERT INTO users (
           id, email, password_hash, username, role, membership_level,
@@ -180,33 +188,33 @@ export async function POST(request: NextRequest) {
           is_active, is_banned, is_super_admin, wechat_open_id, wechat_union_id, avatar_url,
           created_at, updated_at
         )
-        VALUES (
-          '${userId}',
-          'wx_${wechatOpenId}@wechat.user',
-          '${passwordHash}',
-          '${nickname || '微信用户'}',
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+        [
+          userId,
+          `wx_${wechatOpenId}@wechat.user`,
+          passwordHash,
+          nickname || '微信用户',
           'FREE',
           'FREE',
-          NULL,
+          null,
           0,
           0,
           0,
           true,
           false,
           false,
-          '${wechatOpenId}',
-          '${wechatUnionId || ''}',
-          '${avatar || ''}',
-          '${now}',
-          '${now}'
-        )`
+          wechatOpenId,
+          wechatUnionId || '',
+          avatar || '',
+          now,
+          now,
+        ]
       );
 
-      // 查询新创建的用户
+      // 查询新创建的用户（使用参数化查询）
       const newUserResult = await db.execute(
-        `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level,
-                membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at
-         FROM users WHERE id = '${userId}'`
+        'SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level, membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at FROM users WHERE id = $1',
+        [userId]
       );
 
       if (newUserResult.rows.length === 0) {
@@ -304,19 +312,19 @@ export async function POST(request: NextRequest) {
     const isDev = process.env.NODE_ENV === 'development';
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: isDev ? `微信登录失败: ${errorMessage}` : '微信登录失败，请稍后重试',
-        details: isDev ? {
-          message: error instanceof Error ? error.message : String(error),
-          name: error instanceof Error ? error.name : undefined,
-        } : undefined,
-      },
-      { status: 500 }
+    return errorResponse(
+      isDev ? `微信登录失败: ${errorMessage}` : '微信登录失败，请稍后重试',
+      500,
+      500
     );
   }
 }
+
+// 使用中间件包装：标准限流 + CSRF保护
+export const POST = withMiddleware(handler, {
+	rateLimit: RATE_LIMIT_CONFIGS.STANDARD,
+	enableCsrf: true,
+});
 
 /**
  * GET - 获取微信授权URL

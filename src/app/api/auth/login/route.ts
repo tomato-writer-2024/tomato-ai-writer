@@ -13,11 +13,13 @@ import {
   getUserAgent,
 } from '@/lib/auth';
 import { UserRole, MembershipLevel } from '@/lib/types/user';
+import { withMiddleware, errorResponse, successResponse } from '@/lib/apiMiddleware';
+import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 
 /**
  * 用户登录API
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
   console.log(`[${requestId}] ===== 登录请求开始 =====`);
 
@@ -51,11 +53,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 查找用户（使用原生SQL避免Drizzle查询问题）
+    // 查找用户（使用参数化查询）
     console.log(`[${requestId}] 查找用户: ${email}`);
     const db = await getDb();
     const userResult = await db.execute(
-      `SELECT * FROM users WHERE email = '${email}'`
+      'SELECT * FROM users WHERE email = $1',
+      [email]
     );
 
     if (userResult.rows.length === 0) {
@@ -243,9 +246,16 @@ export async function POST(request: NextRequest) {
       console.error(`[${requestId}] 记录安全日志失败:`, logError);
     }
 
-    return NextResponse.json(
-      { success: false, error: '登录失败，请稍后重试: ' + (error instanceof Error ? error.message : String(error)) },
-      { status: 500 }
+    return errorResponse(
+      '登录失败，请稍后重试: ' + (error instanceof Error ? error.message : String(error)),
+      500,
+      500
     );
   }
 }
+
+// 使用中间件包装：严格限流 + CSRF保护
+export const POST = withMiddleware(handler, {
+	rateLimit: RATE_LIMIT_CONFIGS.STRICT,
+	enableCsrf: true,
+});
