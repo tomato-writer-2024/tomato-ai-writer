@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TitleOption, generateTitleOptions, analyzeTitle, generateABTestSuggestions, generateMarketComparison, generateTitlePrompt, optimizeTitle } from '@/lib/titleGenerator';
+import { LLMClient } from '@/lib/llmClient';
 
-// POST /api/title-generator/generate - 生成书名选项
+// POST /api/title-generator/generate - 生成书名选项（AI生成）
 export async function generateTitles(request: NextRequest) {
   try {
     const body = await request.json();
@@ -14,13 +15,57 @@ export async function generateTitles(request: NextRequest) {
       );
     }
 
-    const titles = generateTitleOptions(
-      genre,
-      theme,
-      mainCharacter,
-      keyElements,
-      setting
-    );
+    // 使用LLM生成书名
+    const llmClient = new LLMClient();
+
+    const systemPrompt = '你是一个专业的小说书名创作助手，擅长创作吸引眼球的小说书名。';
+    const userPrompt = `请为以下小说生成5-20个高质量书名：
+
+题材：${genre}
+主题：${theme}
+主角：${mainCharacter || '未提供'}
+关键元素：${keyElements?.join('、') || '未提供'}
+背景设定：${setting || '未提供'}
+
+请生成包含以下信息的书名列表（以JSON格式返回）：
+{
+  "titles": [
+    {
+      "title": "书名1",
+      "style": "书名风格",
+      "marketFit": "市场契合度评分（0-100）",
+      "uniqueness": "独特性评分（0-100）",
+      "memorability": "记忆度评分（0-100）",
+      "advantages": ["优势1", "优势2"]
+    }
+  ]
+}
+
+确保书名符合题材特点、具有吸引力、易于记忆、符合市场趋势。`;
+
+    const response = await llmClient.generateText(systemPrompt, userPrompt);
+
+    // 尝试解析JSON响应
+    let titles: any[];
+    try {
+      // 尝试提取JSON部分
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        titles = data.titles || [];
+      } else {
+        throw new Error('无法解析JSON');
+      }
+    } catch (error) {
+      // 如果解析失败，使用本地生成器
+      titles = generateTitleOptions(
+        genre,
+        theme,
+        mainCharacter,
+        keyElements,
+        setting
+      );
+    }
 
     return NextResponse.json({ success: true, data: titles });
   } catch (error) {

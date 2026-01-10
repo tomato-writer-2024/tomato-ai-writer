@@ -18,51 +18,101 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/characters - 创建新角色
+// POST /api/characters - 创建新角色（AI生成）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // 验证必填字段
-    if (!body.name || !body.gender || !body.age) {
+    if (!body.characterName || !body.genre) {
       return NextResponse.json(
         { success: false, error: '缺少必填字段' },
         { status: 400 }
       );
     }
 
+    // 使用LLM生成角色设定
+    const llmClient = new LLMClient();
+
+    const systemPrompt = '你是一个专业的小说角色设定创作助手。请根据提供的信息，生成立体饱满、独特鲜明的角色设定。';
+
+    const roleLabels: Record<string, string> = {
+      protagonist: '主角',
+      secondary: '配角',
+      antagonist: '反派',
+      supporting: '辅助角色'
+    };
+
+    const genreLabels: Record<string, string> = {
+      xuanhuan: '玄幻',
+      wuxia: '武侠',
+      xianxia: '仙侠',
+      dushi: '都市',
+      lishi: '历史',
+      junshi: '军事',
+      kehuan: '科幻',
+      lingyi: '灵异'
+    };
+
+    const userPrompt = `请为以下角色生成完整设定：
+
+角色名称：${body.characterName}
+角色定位：${roleLabels[body.role] || body.role}
+小说题材：${genreLabels[body.genre] || body.genre}
+故事背景：${body.storyContext || '无额外背景'}
+
+请生成以下内容（以JSON格式返回）：
+{
+  "name": "角色名称",
+  "role": "角色定位的详细描述",
+  "personality": "性格特点的详细描述",
+  "backstory": "角色背景故事的详细描述（200-500字）",
+  "motivations": ["动机1", "动机2", "动机3"],
+  "abilities": ["能力1", "能力2", "能力3"],
+  "traits": ["性格特质1", "性格特质2", "性格特质3"],
+  "relationships": {"角色名": "关系描述"}
+}
+
+确保角色设定符合${genreLabels[body.genre] || body.genre}题材的特点，逻辑严谨，细节丰富。`;
+
+    const response = await llmClient.generateText(systemPrompt, userPrompt);
+
+    // 尝试解析JSON响应
+    let characterData;
+    try {
+      // 尝试提取JSON部分
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        characterData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('无法解析JSON');
+      }
+    } catch (error) {
+      // 如果解析失败，创建一个基础的角色设定
+      characterData = {
+        name: body.characterName,
+        role: roleLabels[body.role] || '未设定',
+        personality: '性格鲜明，富有个性',
+        backstory: response.substring(0, 500),
+        motivations: ['追求成长', '实现目标'],
+        abilities: ['智慧', '勇气'],
+        traits: ['坚韧', '正义'],
+        relationships: {}
+      };
+    }
+
     // 创建角色
-    const character: CharacterProfile = {
+    const character = {
       id: `char-${Date.now()}`,
-      userId: body.userId || '',
-      name: body.name,
-      nickname: body.nickname,
-      age: body.age,
-      gender: body.gender,
-      appearance: body.appearance || '请填写外貌描述',
-      personality: body.personality || {
-        openness: 50,
-        conscientiousness: 50,
-        extraversion: 50,
-        agreeableness: 50,
-        neuroticism: 50,
-        humor: 50,
-        loyalty: 50,
-        ambition: 50,
-        courage: 50,
-        empathy: 50
-      },
-      background: body.background || '',
-      motivation: body.motivation || '',
-      skills: body.skills || [],
-      flaws: body.flaws || [],
-      strengths: body.strengths || [],
-      backstory: body.backstory || '',
-      growthArc: body.growthArc || 'growth',
-      role: body.role || 'supporting',
-      relationships: body.relationships || [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      name: characterData.name || body.characterName,
+      role: characterData.role || roleLabels[body.role] || '未设定',
+      personality: characterData.personality || '性格鲜明，富有个性',
+      backstory: characterData.backstory || '待补充',
+      motivations: Array.isArray(characterData.motivations) ? characterData.motivations : ['追求成长', '实现目标'],
+      abilities: Array.isArray(characterData.abilities) ? characterData.abilities : [],
+      traits: Array.isArray(characterData.traits) ? characterData.traits : [],
+      relationships: characterData.relationships || {},
+      arcProgress: 0
     };
 
     // TODO: 保存到数据库

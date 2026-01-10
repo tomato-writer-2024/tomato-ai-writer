@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WorldSetting, generateWorldDescription, GENRE_TEMPLATES } from '@/lib/worldBuilding';
-import { generateCreativeWritingStream, generateReasoningStream } from '@/lib/llmClient';
+import { LLMClient } from '@/lib/llmClient';
 
 // GET /api/world-building - 获取用户的世界观列表
 export async function GET(request: NextRequest) {
@@ -18,50 +18,97 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/world-building - 创建新世界观
+// POST /api/world-building - 创建新世界观（AI生成）
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     // 验证必填字段
-    if (!body.name || !body.genre) {
+    if (!body.worldName || !body.worldType) {
       return NextResponse.json(
         { success: false, error: '缺少必填字段' },
         { status: 400 }
       );
     }
 
-    // 获取题材模板
-    const template = GENRE_TEMPLATES[body.genre] || {};
+    // 使用LLM生成世界观设定
+    const llmClient = new LLMClient();
+
+    const systemPrompt = '你是一个专业的世界观设定创作助手。请根据提供的信息，构建宏大完整、逻辑严谨的世界观设定。';
+
+    const typeLabels: Record<string, string> = {
+      fantasy: '奇幻',
+      scifi: '科幻',
+      wuxia: '武侠',
+      xianxia: '仙侠',
+      urban: '都市',
+      apocalyptic: '末世'
+    };
+
+    const userPrompt = `请为以下世界观生成完整设定：
+
+世界名称：${body.worldName}
+世界类型：${typeLabels[body.worldType] || body.worldType}
+主题风格：${body.theme || '无特定主题'}
+故事背景：${body.storyContext || '无额外背景'}
+
+请生成以下内容（以JSON格式返回）：
+{
+  "name": "世界名称",
+  "type": "世界类型",
+  "magicSystem": "魔法/力量体系的详细描述",
+  "geography": ["地理特征1", "地理特征2", "地理特征3"],
+  "culture": ["文化特色1", "文化特色2", "文化特色3"],
+  "history": "世界历史背景的详细描述（200-500字）",
+  "factions": [
+    {"name": "势力名称1", "description": "势力描述"},
+    {"name": "势力名称2", "description": "势力描述"}
+  ],
+  "rules": ["规则1", "规则2", "规则3"],
+  "conflicts": ["核心冲突1", "核心冲突2", "核心冲突3"]
+}
+
+确保世界观设定符合${typeLabels[body.worldType] || body.worldType}类型的特点，逻辑严谨，细节丰富。`;
+
+    const response = await llmClient.generateText(systemPrompt, userPrompt);
+
+    // 尝试解析JSON响应
+    let worldData;
+    try {
+      // 尝试提取JSON部分
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        worldData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('无法解析JSON');
+      }
+    } catch (error) {
+      // 如果解析失败，创建一个基础的世界观设定
+      worldData = {
+        name: body.worldName,
+        type: typeLabels[body.worldType] || body.worldType,
+        magicSystem: '完善的力量体系',
+        geography: ['多样的地理环境'],
+        culture: ['丰富的文化特色'],
+        history: response.substring(0, 500),
+        factions: [{ name: '主要势力', description: '势力描述' }],
+        rules: ['核心规则'],
+        conflicts: ['核心冲突']
+      };
+    }
 
     // 创建世界观
-    const world: WorldSetting = {
+    const world = {
       id: `world-${Date.now()}`,
-      userId: body.userId || '',
-      name: body.name,
-      genre: body.genre,
-      timePeriod: body.timePeriod || '现代',
-      technologyLevel: body.technologyLevel || template.technologyLevel || 50,
-      magicSystem: body.magicSystem || template.magicSystem,
-      geography: body.geography || {
-        continents: [],
-        landmarks: [],
-        climate: '温带',
-        naturalResources: []
-      },
-      society: body.society || template.society || {
-        politicalSystem: '君主制',
-        economicSystem: '农业经济',
-        socialClasses: [],
-        laws: [],
-        customs: [],
-        religions: [],
-        languages: []
-      },
-      history: body.history || [],
-      cultures: body.cultures || [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      name: worldData.name || body.worldName,
+      type: worldData.type || typeLabels[body.worldType] || body.worldType,
+      magicSystem: worldData.magicSystem || '待补充',
+      geography: Array.isArray(worldData.geography) ? worldData.geography : [],
+      culture: Array.isArray(worldData.culture) ? worldData.culture : [],
+      history: worldData.history || '待补充',
+      factions: Array.isArray(worldData.factions) ? worldData.factions : [],
+      rules: Array.isArray(worldData.rules) ? worldData.rules : [],
+      conflicts: Array.isArray(worldData.conflicts) ? worldData.conflicts : []
     };
 
     // TODO: 保存到数据库
@@ -110,7 +157,8 @@ ${description}
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = generateCreativeWritingStream(systemPrompt, userPrompt);
+          const llmClient = new LLMClient();
+          const generator = llmClient.generateTextStream(systemPrompt, userPrompt);
 
           for await (const chunk of generator) {
             const text = chunk || '';
@@ -206,7 +254,8 @@ ${JSON.stringify(world, null, 2)}
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const generator = generateReasoningStream(systemPrompt, userPrompt);
+          const llmClient = new LLMClient();
+          const generator = llmClient.generateTextStream(systemPrompt, userPrompt);
 
           for await (const chunk of generator) {
             const text = chunk || '';
