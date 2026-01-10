@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
-import { users } from '@/storage/database/shared/schema';
 import { hashPassword } from '@/lib/auth';
-import { eq, and } from 'drizzle-orm';
 
 // 生成UUID的辅助函数
 function generateUUID(): string {
@@ -36,16 +34,27 @@ export async function POST(request: NextRequest) {
 		}
 
 		const db = await getDb();
-		const [admin] = await db
-			.select()
-			.from(users)
-			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
-			.limit(1);
 
-		if (!admin) {
+		// 验证超级管理员身份
+		try {
+			const userIdEscaped = payload.userId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT id, is_super_admin FROM users
+				WHERE id = '${userIdEscaped}' AND is_super_admin = true
+				LIMIT 1
+			`);
+
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '无权访问此资源' },
+					{ status: 403 }
+				);
+			}
+		} catch (e) {
+			console.error('验证管理员身份失败:', e);
 			return NextResponse.json(
-				{ error: '无权访问此资源' },
-				{ status: 403 }
+				{ error: '验证管理员身份失败' },
+				{ status: 500 }
 			);
 		}
 
@@ -63,37 +72,49 @@ export async function POST(request: NextRequest) {
 		// 批量生成用户
 		const createdUsers = [];
 		const passwordHash = await hashPassword('Test123456'); // 统一测试密码
+		const now = new Date().toISOString();
+		const timestamp = Date.now();
 
 		for (let i = 0; i < count; i++) {
 			const userId = generateUUID();
-			const email = `test_user_${Date.now()}_${i}@test.com`;
-			const username = `测试用户${Date.now()}_${i}`;
+			const email = `test_user_${timestamp}_${i}@test.com`;
+			const username = `测试用户${timestamp}_${i}`;
 
 			try {
-				const [user] = await db
-					.insert(users)
-					.values({
-						id: userId,
-						email,
-						username,
-						passwordHash,
-						role: 'FREE',
-						membershipLevel: i % 5 === 0 ? 'VIP' : (i % 10 === 0 ? 'PREMIUM' : 'FREE'),
-						dailyUsageCount: 0,
-						monthlyUsageCount: 0,
-						storageUsed: 0,
-						isActive: true,
-						isBanned: false,
-						isSuperAdmin: false,
-					})
-					.returning();
+				// 根据索引分配会员等级
+				let membershipLevel = 'FREE';
+				if (i % 10 === 0) {
+					membershipLevel = 'PREMIUM';
+				} else if (i % 5 === 0) {
+					membershipLevel = 'VIP';
+				}
 
-				createdUsers.push({
-					id: user.id,
-					email: user.email,
-					username: user.username,
-					membershipLevel: user.membershipLevel,
-				});
+				const userIdEscaped = userId.replace(/'/g, "''");
+				const emailEscaped = email.replace(/'/g, "''");
+				const usernameEscaped = username.replace(/'/g, "''");
+				const passwordHashEscaped = passwordHash.replace(/'/g, "''");
+
+				const result = await db.execute(`
+					INSERT INTO users (
+						id, email, username, password_hash, role, membership_level,
+						is_super_admin, is_active, is_banned, daily_usage_count,
+						monthly_usage_count, storage_used, created_at, updated_at
+					) VALUES (
+						'${userIdEscaped}', '${emailEscaped}', '${usernameEscaped}', '${passwordHashEscaped}',
+						'${membershipLevel}', '${membershipLevel}', false, true, false, 0, 0, 0,
+						'${now}', '${now}'
+					)
+					RETURNING id, email, username, membership_level
+				`);
+
+				if (result && result.rows && result.rows.length > 0) {
+					createdUsers.push({
+						id: result.rows[0].id,
+						email: result.rows[0].email,
+						username: result.rows[0].username,
+						membershipLevel: result.rows[0].membership_level,
+					});
+				}
 
 				// 每100个提交一次进度
 				if (createdUsers.length % 100 === 0) {
@@ -146,45 +167,105 @@ export async function GET(request: NextRequest) {
 		}
 
 		const db = await getDb();
-		const [admin] = await db
-			.select()
-			.from(users)
-			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
-			.limit(1);
 
-		if (!admin) {
+		// 验证超级管理员身份
+		try {
+			const userIdEscaped = payload.userId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT id, is_super_admin FROM users
+				WHERE id = '${userIdEscaped}' AND is_super_admin = true
+				LIMIT 1
+			`);
+
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '无权访问此资源' },
+					{ status: 403 }
+				);
+			}
+		} catch (e) {
+			console.error('验证管理员身份失败:', e);
 			return NextResponse.json(
-				{ error: '无权访问此资源' },
-				{ status: 403 }
+				{ error: '验证管理员身份失败' },
+				{ status: 500 }
 			);
 		}
 
-		// 统计测试用户
-		const allUsers = await db.select().from(users);
-		const testUsers = allUsers.filter(u => u.email.includes('@test.com'));
+		// 统计所有用户
+		try {
+			const allUsersResult = await db.execute(`
+				SELECT COUNT(*) as total FROM users
+			`);
 
-		const stats = {
-			totalUsers: allUsers.length,
-			testUsers: testUsers.length,
-			byMembership: {
-				FREE: testUsers.filter(u => u.membershipLevel === 'FREE').length,
-				VIP: testUsers.filter(u => u.membershipLevel === 'VIP').length,
-				PREMIUM: testUsers.filter(u => u.membershipLevel === 'PREMIUM').length,
-			},
-			byStatus: {
-				active: testUsers.filter(u => u.isActive).length,
-				banned: testUsers.filter(u => u.isBanned).length,
-			},
-		};
+			// 统计测试用户
+			const testUsersResult = await db.execute(`
+				SELECT COUNT(*) as total FROM users WHERE email LIKE '%@test.com'
+			`);
 
-		return NextResponse.json({
-			success: true,
-			stats,
-		});
+			// 按会员等级统计测试用户
+			const membershipStatsResult = await db.execute(`
+				SELECT membership_level, COUNT(*) as count
+				FROM users
+				WHERE email LIKE '%@test.com'
+				GROUP BY membership_level
+			`);
+
+			// 按状态统计测试用户
+			const statusStatsResult = await db.execute(`
+				SELECT is_active, is_banned, COUNT(*) as count
+				FROM users
+				WHERE email LIKE '%@test.com'
+				GROUP BY is_active, is_banned
+			`);
+
+			const allUsersCount = allUsersResult.rows[0]?.total || 0;
+			const testUsersCount = testUsersResult.rows[0]?.total || 0;
+
+			const stats = {
+				totalUsers: allUsersCount,
+				testUsers: testUsersCount,
+				byMembership: {
+					FREE: 0,
+					VIP: 0,
+					PREMIUM: 0,
+				},
+				byStatus: {
+					active: 0,
+					banned: 0,
+				},
+			};
+
+			// 填充会员等级统计
+			for (const row of membershipStatsResult.rows || []) {
+				if (stats.byMembership[row.membership_level] !== undefined) {
+					stats.byMembership[row.membership_level] = row.count;
+				}
+			}
+
+			// 填充状态统计
+			for (const row of statusStatsResult.rows || []) {
+				if (row.is_banned) {
+					stats.byStatus.banned += row.count;
+				} else if (row.is_active) {
+					stats.byStatus.active += row.count;
+				}
+			}
+
+			return NextResponse.json({
+				success: true,
+				stats,
+			});
+		} catch (e) {
+			console.error('获取用户统计失败:', e);
+			return NextResponse.json(
+				{ error: '获取用户统计失败' },
+				{ status: 500 }
+			);
+		}
 	} catch (error) {
 		console.error('获取测试用户统计失败:', error);
 		return NextResponse.json(
-			{ error: '获取统计失败' },
+			{ error: '获取测试用户统计失败' },
 			{ status: 500 }
 		);
 	}

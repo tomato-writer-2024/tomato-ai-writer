@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
-import { users, testResults } from '@/storage/database/shared/schema';
-import { eq, and } from 'drizzle-orm';
 import { llmClient } from '@/lib/llmClient';
 import type { LLMMessage } from '@/lib/llmClient';
 
@@ -37,16 +35,27 @@ export async function POST(request: NextRequest) {
 		}
 
 		const db = await getDb();
-		const [admin] = await db
-			.select()
-			.from(users)
-			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
-			.limit(1);
 
-		if (!admin) {
+		// 验证超级管理员身份
+		try {
+			const userIdEscaped = payload.userId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT id, is_super_admin FROM users
+				WHERE id = '${userIdEscaped}' AND is_super_admin = true
+				LIMIT 1
+			`);
+
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '无权访问此资源' },
+					{ status: 403 }
+				);
+			}
+		} catch (e) {
+			console.error('验证管理员身份失败:', e);
 			return NextResponse.json(
-				{ error: '无权访问此资源' },
-				{ status: 403 }
+				{ error: '验证管理员身份失败' },
+				{ status: 500 }
 			);
 		}
 
@@ -107,11 +116,13 @@ async function runTest(
 
 	try {
 		// 获取测试用户
-		const testUsers = await db
-			.select()
-			.from(users)
-			.where((u: any) => u.email.includes('@test.com'))
-			.limit(userCount);
+		const testUsersResult = await db.execute(`
+			SELECT id, email FROM users
+			WHERE email LIKE '%@test.com'
+			LIMIT ${userCount}
+		`);
+
+		const testUsers = testUsersResult.rows || [];
 
 		console.log(`开始测试，共 ${modules.length} 个模块，${testUsers.length} 个用户`);
 
@@ -151,49 +162,69 @@ async function runTest(
 			? (results.successCount / results.totalTests) * 100
 			: 0;
 
-		// 保存测试结果
-		await db.insert(testResults).values({
-			id: testId,
+		// 保存测试结果（使用原生SQL）
+		await db.execute(`
+			INSERT INTO test_results (
+				id, user_id, test_type, test_config, total_tests,
+				success_count, failure_count, success_rate,
+				average_quality_score, average_completion_rate,
+				average_response_time, details, started_at, completed_at,
+				duration, summary
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		`, [
+			testId,
 			userId,
-			testType: 'comprehensive',
-			testConfig: { userCount, modules },
-			totalTests: results.totalTests,
-			successCount: results.successCount,
-			failureCount: results.failureCount,
-			successRate: successRate,
-			averageQualityScore: averageQualityScore,
-			averageCompletionRate: averageCompletionRate,
-			averageResponseTime: averageResponseTime,
-			details: results,
+			'comprehensive',
+			JSON.stringify({ userCount, modules }),
+			results.totalTests,
+			results.successCount,
+			results.failureCount,
+			successRate,
+			averageQualityScore,
+			averageCompletionRate,
+			averageResponseTime,
+			JSON.stringify(results),
 			startedAt,
 			completedAt,
 			duration,
-			summary: generateSummary(results),
-		});
+			generateSummary(results),
+		]);
 
 		console.log(`测试完成: 总计 ${results.totalTests} 个测试，成功率 ${successRate.toFixed(2)}%`);
 	} catch (error) {
 		console.error('测试执行失败:', error);
 
 		// 保存失败结果
-		await db.insert(testResults).values({
-			id: testId,
-			userId,
-			testType: 'comprehensive',
-			testConfig: { userCount, modules },
-			totalTests: results.totalTests,
-			successCount: results.successCount,
-			failureCount: results.failureCount,
-			successRate: 0,
-			averageQualityScore: 0,
-			averageCompletionRate: 0,
-			averageResponseTime: 0,
-			details: results,
-			startedAt,
-			completedAt: new Date().toISOString(),
-			duration: 0,
-			summary: `测试失败: ${error}`,
-		});
+		try {
+			await db.execute(`
+				INSERT INTO test_results (
+					id, user_id, test_type, test_config, total_tests,
+					success_count, failure_count, success_rate,
+					average_quality_score, average_completion_rate,
+					average_response_time, details, started_at, completed_at,
+					duration, summary
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+			`, [
+				testId,
+				userId,
+				'comprehensive',
+				JSON.stringify({ userCount, modules }),
+				results.totalTests,
+				results.successCount,
+				results.failureCount,
+				0,
+				0,
+				0,
+				0,
+				JSON.stringify(results),
+				startedAt,
+				new Date().toISOString(),
+				0,
+				`测试失败: ${error}`,
+			]);
+		} catch (saveError) {
+			console.error('保存失败结果也出错:', saveError);
+		}
 	}
 }
 

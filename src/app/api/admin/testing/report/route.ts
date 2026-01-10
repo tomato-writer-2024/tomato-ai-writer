@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
-import { users, testResults } from '@/storage/database/shared/schema';
-import { desc, eq, and } from 'drizzle-orm';
 
 /**
  * 获取测试报告
@@ -30,16 +28,27 @@ export async function GET(request: NextRequest) {
 		}
 
 		const db = await getDb();
-		const [admin] = await db
-			.select()
-			.from(users)
-			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
-			.limit(1);
 
-		if (!admin) {
+		// 验证超级管理员身份
+		try {
+			const userIdEscaped = payload.userId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT id, is_super_admin FROM users
+				WHERE id = '${userIdEscaped}' AND is_super_admin = true
+				LIMIT 1
+			`);
+
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '无权访问此资源' },
+					{ status: 403 }
+				);
+			}
+		} catch (e) {
+			console.error('验证管理员身份失败:', e);
 			return NextResponse.json(
-				{ error: '无权访问此资源' },
-				{ status: 403 }
+				{ error: '验证管理员身份失败' },
+				{ status: 500 }
 			);
 		}
 
@@ -47,38 +56,45 @@ export async function GET(request: NextRequest) {
 		const { searchParams } = new URL(request.url);
 		const testId = searchParams.get('testId');
 
-		if (testId) {
-			// 获取指定测试报告
-			const [testResult] = await db
-				.select()
-				.from(testResults)
-				.where(eq(testResults.id, testId))
-				.limit(1);
+		try {
+			if (testId) {
+				// 获取指定测试报告
+				const testIdEscaped = testId.replace(/'/g, "''");
+				const result = await db.execute(`
+					SELECT * FROM test_results WHERE id = '${testIdEscaped}' LIMIT 1
+				`);
 
-			if (!testResult) {
-				return NextResponse.json(
-					{ error: '测试报告不存在' },
-					{ status: 404 }
-				);
+				if (!result || !result.rows || result.rows.length === 0) {
+					return NextResponse.json(
+						{ error: '测试报告不存在' },
+						{ status: 404 }
+					);
+				}
+
+				return NextResponse.json({
+					success: true,
+					report: result.rows[0],
+				});
+			} else {
+				// 获取所有测试报告列表
+				const result = await db.execute(`
+					SELECT * FROM test_results
+					ORDER BY completed_at DESC
+					LIMIT 50
+				`);
+
+				return NextResponse.json({
+					success: true,
+					reports: result.rows || [],
+					total: result.rows?.length || 0,
+				});
 			}
-
-			return NextResponse.json({
-				success: true,
-				report: testResult,
-			});
-		} else {
-			// 获取所有测试报告列表
-			const reports = await db
-				.select()
-				.from(testResults)
-				.orderBy(desc(testResults.completedAt))
-				.limit(50);
-
-			return NextResponse.json({
-				success: true,
-				reports,
-				total: reports.length,
-			});
+		} catch (e) {
+			console.error('获取测试报告失败:', e);
+			return NextResponse.json(
+				{ error: '获取测试报告失败' },
+				{ status: 500 }
+			);
 		}
 	} catch (error) {
 		console.error('获取测试报告失败:', error);
@@ -115,16 +131,27 @@ export async function POST(request: NextRequest) {
 		}
 
 		const db = await getDb();
-		const [admin] = await db
-			.select()
-			.from(users)
-			.where(and(eq(users.id, payload.userId), eq(users.isSuperAdmin, true)))
-			.limit(1);
 
-		if (!admin) {
+		// 验证超级管理员身份
+		try {
+			const userIdEscaped = payload.userId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT id, is_super_admin FROM users
+				WHERE id = '${userIdEscaped}' AND is_super_admin = true
+				LIMIT 1
+			`);
+
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '无权访问此资源' },
+					{ status: 403 }
+				);
+			}
+		} catch (e) {
+			console.error('验证管理员身份失败:', e);
 			return NextResponse.json(
-				{ error: '无权访问此资源' },
-				{ status: 403 }
+				{ error: '验证管理员身份失败' },
+				{ status: 500 }
 			);
 		}
 
@@ -140,27 +167,34 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 获取测试结果
-		const [testResult] = await db
-			.select()
-			.from(testResults)
-			.where(eq(testResults.id, testId))
-			.limit(1);
+		try {
+			const testIdEscaped = testId.replace(/'/g, "''");
+			const result = await db.execute(`
+				SELECT * FROM test_results WHERE id = '${testIdEscaped}' LIMIT 1
+			`);
 
-		if (!testResult) {
+			if (!result || !result.rows || result.rows.length === 0) {
+				return NextResponse.json(
+					{ error: '测试报告不存在' },
+					{ status: 404 }
+				);
+			}
+
+			// 生成HTML报告
+			const html = generateHTMLReport(result.rows[0]);
+
+			return NextResponse.json({
+				success: true,
+				html,
+				testId,
+			});
+		} catch (e) {
+			console.error('获取测试报告失败:', e);
 			return NextResponse.json(
-				{ error: '测试报告不存在' },
-				{ status: 404 }
+				{ error: '获取测试报告失败' },
+				{ status: 500 }
 			);
 		}
-
-		// 生成HTML报告
-		const html = generateHTMLReport(testResult);
-
-		return NextResponse.json({
-			success: true,
-			html,
-			testId,
-		});
 	} catch (error) {
 		console.error('生成测试报告失败:', error);
 		return NextResponse.json(
