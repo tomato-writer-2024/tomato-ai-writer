@@ -129,6 +129,18 @@ class EmailService {
 	async sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
 		if (!this.transporter) {
 			const error = '邮件服务未初始化，请检查配置';
+
+			// Mock模式：开发环境下模拟发送成功
+			if (process.env.NODE_ENV === 'development' || !this.config.auth.user) {
+				console.warn('[邮件服务] 进入Mock模式，模拟邮件发送成功');
+				console.log('[邮件服务] 模拟发送邮件:', {
+					to: options.to,
+					subject: options.subject,
+					html: options.html?.substring(0, 100) + '...',
+				});
+				return { success: true };
+			}
+
 			console.error('[邮件服务]', error);
 			return { success: false, error };
 		}

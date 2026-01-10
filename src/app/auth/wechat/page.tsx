@@ -42,44 +42,44 @@ export default function WechatAuthPage() {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
             onClick={() => router.back()}
-            className="text-gray-600 hover:text-gray-900 transition-colors"
+            className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">申请获取你的公开信息（昵称、头像）</h1>
+          <h1 className="text-lg font-semibold text-gray-900 truncate">申请获取你的公开信息（昵称、头像）</h1>
         </div>
       </div>
 
       {/* 模拟微信授权页面 */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-4">
+        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4">
           <div className="flex items-start gap-4 mb-6">
             <div className="flex-shrink-0">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-md">
                 <CheckCircle className="text-white" size={32} />
               </div>
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold text-gray-900 mb-2 break-words">
                 番茄AI写作助手 申请获得
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-4 text-sm sm:text-base">
                 登录后可使用AI辅助创作、智能续写、精修润色等功能
               </p>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
                   <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
-                  <div>
-                    <div className="font-medium text-gray-900">获得你的公开信息（昵称、头像）</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 text-sm sm:text-base break-words">获得你的公开信息（昵称、头像）</div>
                     <div className="text-sm text-gray-600">用于展示用户信息</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
                   <Shield className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
-                  <div>
-                    <div className="font-medium text-gray-900">账号安全保护</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 text-sm sm:text-base break-words">账号安全保护</div>
                     <div className="text-sm text-gray-600">用于账号安全和找回</div>
                   </div>
                 </div>
@@ -90,12 +90,12 @@ export default function WechatAuthPage() {
           {/* 模拟用户信息展示 */}
           <div className="border-t border-gray-200 pt-6 mt-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold shadow-md flex-shrink-0">
                 微
               </div>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900">微信用户</div>
-                <div className="text-sm text-gray-500">wx_user_123456</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-gray-900 break-words">微信用户</div>
+                <div className="text-sm text-gray-500 break-words">wx_user_123456</div>
               </div>
             </div>
 
@@ -104,7 +104,7 @@ export default function WechatAuthPage() {
                 <Mail size={16} />
                 <span>邮箱</span>
               </div>
-              <div className="text-gray-900 font-medium">wx_user@example.com</div>
+              <div className="text-gray-900 font-medium break-words">wx_user@example.com</div>
             </div>
           </div>
         </div>
@@ -140,27 +140,27 @@ export default function WechatAuthPage() {
         </div>
 
         {/* 底部操作按钮 */}
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4">
           <button
             onClick={() => handleAuth(false)}
             disabled={isLoading}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-6 py-4 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-4 sm:px-6 py-3 sm:py-4 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
           >
-            <XCircle size={20} />
+            <XCircle size={18} />
             拒绝
           </button>
           <button
             onClick={() => handleAuth(true)}
             disabled={isLoading}
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-500 px-6 py-4 font-medium text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-500 px-4 sm:px-6 py-3 sm:py-4 font-medium text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg text-sm sm:text-base"
           >
-            <CheckCircle size={20} />
+            <CheckCircle size={18} />
             {isLoading ? '授权中...' : '同意'}
           </button>
         </div>
 
         {/* 底部提示 */}
-        <div className="mt-6 text-center text-xs text-gray-500">
+        <div className="mt-6 text-center text-xs text-gray-500 px-2">
           授权即表示你同意《用户协议》和《隐私政策》
         </div>
       </div>

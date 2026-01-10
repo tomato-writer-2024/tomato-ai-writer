@@ -54,7 +54,7 @@ export default function WechatCallbackPage() {
 
         if (data.success && data.data) {
           setStatus('success');
-          setMessage('微信登录成功！正在跳转...');
+          setMessage('微信登录成功！正在跳转到工作台...');
 
           try {
             // 保存token和用户信息
@@ -66,8 +66,9 @@ export default function WechatCallbackPage() {
 
             // 跳转到目标页面（增加时间让用户看到成功状态）
             setTimeout(() => {
+              console.log('[微信登录回调] 开始跳转到', redirectUri);
               router.push(redirectUri);
-            }, 2000);
+            }, 3000);
           } catch (storageError) {
             console.error('[微信登录回调] 保存token失败:', storageError);
             setStatus('error');

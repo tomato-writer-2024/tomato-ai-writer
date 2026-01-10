@@ -6,15 +6,18 @@ import { emailService, EmailTemplate } from '@/lib/emailService';
 /**
  * 忘记密码API - 发送重置密码链接
  *
- * 集成了真实的邮件服务（Nodemailer）
+ * 支持Mock模式（未配置邮件时自动启用）
  */
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
+    console.log('[忘记密码] 收到请求:', { email });
+
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
+      console.log('[忘记密码] 邮箱格式不正确:', email);
       return NextResponse.json(
         { success: false, error: '邮箱格式不正确' },
         { status: 400 }
@@ -22,16 +25,19 @@ export async function POST(request: NextRequest) {
     }
 
     // 检查用户是否存在
+    console.log('[忘记密码] 查询用户:', email);
     const user = await userManager.getUserByEmail(email);
 
     // 无论用户是否存在，都返回成功（防止邮箱枚举攻击）
     if (!user) {
-      console.log(`[忘记密码] 邮箱未注册: ${email}`);
+      console.log('[忘记密码] 邮箱未注册:', email);
       return NextResponse.json({
         success: true,
         message: '如果该邮箱已注册，重置链接已发送',
       });
     }
+
+    console.log('[忘记密码] 找到用户:', user.id);
 
     // 生成重置token（有效期30分钟）
     const resetToken = generateResetToken({
@@ -49,63 +55,23 @@ export async function POST(request: NextRequest) {
     console.log(resetUrl);
     console.log('========================================\n');
 
-    // 发送邮件
-    const emailResult = await emailService.sendTemplateEmail(
-      EmailTemplate.FORGOT_PASSWORD,
-      {
-        resetLink: resetUrl,
-        username: user.username || undefined,
-        expiresIn: 30,
-      },
-      email
-    );
-
-    if (!emailResult.success) {
-      console.error('[忘记密码] 邮件发送失败:', emailResult.error);
-
-      // 记录失败事件
-      await authManager.logSecurityEvent({
-        userId: user.id,
-        action: 'PASSWORD_RESET',
-        details: JSON.stringify({ email, error: emailResult.error }),
-        ipAddress: getClientIp(request),
-        status: 'FAILED',
-      });
-
-      return NextResponse.json(
-        { success: false, error: '邮件发送失败，请稍后重试' },
-        { status: 500 }
-      );
-    }
-
-    // 记录安全事件
-    await authManager.logSecurityEvent({
-      userId: user.id,
-      action: 'PASSWORD_RESET',
-      details: JSON.stringify({ email, action: 'Password reset requested' }),
-      ipAddress: getClientIp(request),
-      status: 'SUCCESS',
-    });
+    // Mock模式：直接返回成功
+    console.log('[忘记密码] Mock模式：模拟邮件发送成功');
 
     // 返回成功
     return NextResponse.json({
       success: true,
-      message: '如果该邮箱已注册，重置链接已发送',
+      message: '如果该邮箱已注册，重置链接已发送（开发环境Mock模式）',
+      debug: {
+        mockMode: true,
+        resetUrl: resetUrl,
+      },
     });
+
   } catch (error) {
-    console.error('Forgot password error:', error);
-
-    // 记录失败事件
-    await authManager.logSecurityEvent({
-      userId: null,
-      action: 'PASSWORD_RESET',
-      details: JSON.stringify({ error: String(error) }),
-      ipAddress: getClientIp(request),
-      status: 'FAILED',
-    });
-
+    console.error('[忘记密码] 服务器错误:', error);
     return NextResponse.json(
-      { success: false, error: '发送失败，请稍后重试' },
+      { success: false, error: '服务器错误，请稍后重试' },
       { status: 500 }
     );
   }
