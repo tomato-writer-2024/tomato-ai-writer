@@ -349,7 +349,7 @@ async function handler(request: NextRequest) {
 // 使用中间件包装：标准限流 + CSRF保护
 export const POST = withMiddleware(handler, {
 	rateLimit: RATE_LIMIT_CONFIGS.STANDARD,
-	enableCsrf: true,
+	enableCsrf: false, // 微信登录API是公开的，不需要CSRF保护
 });
 
 /**

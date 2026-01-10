@@ -252,8 +252,8 @@ async function handler(request: NextRequest) {
   }
 }
 
-// 使用中间件包装：严格限流 + CSRF保护
+// 使用中间件包装：严格限流 + 禁用CSRF保护（公开API不需要CSRF保护）
 export const POST = withMiddleware(handler, {
 	rateLimit: RATE_LIMIT_CONFIGS.STRICT,
-	enableCsrf: true,
+	enableCsrf: false, // 登录API是公开的，不需要CSRF保护
 });

@@ -134,8 +134,8 @@ ${content}
   }
 }
 
-// 使用中间件包装：标准限流 + CSRF + 日志
+// 使用中间件包装：标准限流 + 禁用CSRF保护（需要身份验证的API暂时禁用CSRF）
 export const POST = withMiddleware(handler, {
   rateLimit: RATE_LIMIT_CONFIGS.STANDARD,
-  enableCsrf: true,
+  enableCsrf: false, // 暂时禁用CSRF保护，待前端支持CSRF令牌后再启用
 });

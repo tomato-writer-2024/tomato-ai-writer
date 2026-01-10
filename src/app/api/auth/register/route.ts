@@ -10,6 +10,8 @@ import {
   checkUserQuota,
 } from '@/lib/auth';
 import { UserRole, MembershipLevel } from '@/lib/types/user';
+import { withMiddleware } from '@/lib/apiMiddleware';
+import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 
 // 在服务端使用crypto
 let crypto: any;
@@ -20,7 +22,7 @@ if (typeof window === 'undefined') {
 /**
  * 用户注册API
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { username, email, password, confirmPassword } = await request.json();
 
@@ -192,3 +194,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// 使用中间件包装：严格限流 + 禁用CSRF保护（公开API不需要CSRF保护）
+export const POST = withMiddleware(handler, {
+	rateLimit: RATE_LIMIT_CONFIGS.STRICT,
+	enableCsrf: false, // 注册API是公开的，不需要CSRF保护
+});
