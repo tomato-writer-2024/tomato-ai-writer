@@ -24,7 +24,7 @@ kill_port_if_listening() {
 start_service() {
     cd "${COZE_WORKSPACE_PATH}"
     echo "Starting HTTP service on port ${DEPLOY_RUN_PORT} for dev..."
-    pnpm run dev --port ${DEPLOY_RUN_PORT}
+    pnpm run dev --port ${DEPLOY_RUN_PORT} --hostname 0.0.0.0
 }
 
 echo "Clearing port ${DEPLOY_RUN_PORT} before start."
