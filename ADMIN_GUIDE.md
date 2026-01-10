@@ -1,5 +1,84 @@
 # 番茄小说AI写作工具 - 超级管理员使用文档
 
+## 📋 重要说明（部署前必读）
+
+### 环境配置要求
+
+在部署到外网之前，请务必配置环境变量。系统支持两种运行模式：
+
+#### 模式一：Mock模式（开发和测试）
+
+适合开发和测试环境，不需要真实的邮件和微信配置。
+
+**配置**：
+```env
+# 必需配置
+DATABASE_URL=postgresql://username:password@host:5432/database_name
+JWT_SECRET=your-super-secret-jwt-key
+DOUBAO_API_KEY=your-doubao-api-key
+NEXT_PUBLIC_BASE_URL=http://localhost:5000
+NODE_ENV=development
+
+# Mock模式（默认）
+EMAIL_MOCK_MODE=true
+WECHAT_MOCK_MODE=true
+PAYMENT_MOCK_MODE=true
+```
+
+**特点**：
+- 邮件：模拟发送成功，控制台输出内容
+- 微信：模拟登录成功，使用模拟数据
+- 支付：模拟支付成功，无需真实付款
+
+#### 模式二：真实模式（生产环境）
+
+适合生产环境，需要真实的邮件和微信配置。
+
+**配置**：
+```env
+# 必需配置
+DATABASE_URL=postgresql://username:password@host:5432/database_name
+JWT_SECRET=your-super-secret-jwt-key
+DOUBAO_API_KEY=your-doubao-api-key
+NEXT_PUBLIC_BASE_URL=https://yourdomain.com
+NODE_ENV=production
+
+# 真实邮件发送（配置163邮箱示例）
+EMAIL_HOST=smtp.163.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=your-email@163.com
+EMAIL_PASS=your-authorization-code
+EMAIL_FROM=your-email@163.com
+EMAIL_MOCK_MODE=false
+
+# 真实微信登录
+WECHAT_APPID=wx1234567890abcdef
+WECHAT_SECRET=your-wechat-app-secret
+WECHAT_MOCK_MODE=false
+WECHAT_REDIRECT_URI=https://yourdomain.com/auth/wechat/callback
+```
+
+**获取方式**：
+- 163邮箱授权码：设置 → POP3/SMTP → 开启服务 → 获取授权码
+- 微信AppID/Secret：微信开放平台 → 创建应用 → 审核通过
+
+### 配置文件
+
+1. 复制模板：
+```bash
+cp .env.example .env.local
+```
+
+2. 编辑配置：
+```bash
+vim .env.local
+```
+
+3. 详细配置指南：查看 [CONFIGURATION_GUIDE.md](./CONFIGURATION_GUIDE.md)
+
+---
+
 ## 📋 基本信息
 
 **项目名称**：番茄小说AI辅助写作工具  

@@ -1,5 +1,108 @@
 # 番茄小说AI辅助写作工具 - 部署和快速开始指南
 
+## 📦 环境配置（部署前必读）
+
+### 配置说明
+
+本系统支持**Mock模式**和**真实模式**两种运行方式：
+
+- **Mock模式（默认）**：适合开发和测试，不需要真实的邮件和微信配置
+- **真实模式（生产）**：适合生产环境，需要配置真实的邮件和微信服务
+
+### 环境变量配置文件
+
+1. **复制配置模板**：
+```bash
+cp .env.example .env.local
+```
+
+2. **编辑配置文件**：
+```bash
+vim .env.local
+```
+
+### 必需配置（所有模式）
+
+```env
+# 数据库配置（必需）
+DATABASE_URL=postgresql://username:password@host:5432/database_name
+
+# JWT密钥（必需）
+JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
+
+# 豆包API密钥（必需）
+DOUBAO_API_KEY=your-doubao-api-key-here
+
+# 应用域名（必需）
+NEXT_PUBLIC_BASE_URL=https://yourdomain.com
+
+# 环境变量（开发：development，生产：production）
+NODE_ENV=production
+```
+
+### 可选配置（真实邮件发送）
+
+如果需要真实邮件发送功能，请配置以下环境变量：
+
+```env
+# 邮件服务配置
+EMAIL_HOST=smtp.163.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=your-email@163.com
+EMAIL_PASS=your-email-password-or-authorization-code
+EMAIL_FROM=your-email@163.com
+
+# 禁用邮件Mock模式（启用真实邮件发送）
+EMAIL_MOCK_MODE=false
+```
+
+**推荐配置**：
+- **163邮箱**：smtp.163.com，端口465
+- **QQ邮箱**：smtp.qq.com，端口587
+- **Gmail**：smtp.gmail.com，端口587
+
+### 可选配置（真实微信登录）
+
+如果需要真实微信登录功能，请配置以下环境变量：
+
+```env
+# 微信登录配置
+WECHAT_APPID=wx1234567890abcdef
+WECHAT_SECRET=your-wechat-app-secret-here
+WECHAT_MOCK_MODE=false
+WECHAT_REDIRECT_URI=https://yourdomain.com/auth/wechat/callback
+```
+
+**获取方式**：
+1. 注册[微信开放平台](https://open.weixin.qq.com)账号
+2. 创建网站应用并审核通过
+3. 获取AppID和AppSecret
+
+### Mock模式配置（开发和测试）
+
+如果只想快速测试，不需要真实配置：
+
+```env
+# 启用Mock模式（默认）
+EMAIL_MOCK_MODE=true
+WECHAT_MOCK_MODE=true
+PAYMENT_MOCK_MODE=true
+```
+
+Mock模式特点：
+- 邮件：模拟发送成功，控制台输出邮件内容
+- 微信：模拟登录成功，使用模拟用户数据
+- 支付：模拟支付成功，点击"确认支付"即可
+
+### 详细配置文档
+
+更多配置说明请查看：
+- **完整配置指南**：[CONFIGURATION_GUIDE.md](./CONFIGURATION_GUIDE.md)
+- **环境变量模板**：[.env.example](./.env.example)
+
+---
+
 ## 🚀 快速开始
 
 ### 1. 访问网站
