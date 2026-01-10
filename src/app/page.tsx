@@ -211,10 +211,10 @@ export default function Home() {
         <div className="mb-16">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-              全新功能
+              特色功能
             </h3>
             <p className="text-lg text-slate-600 dark:text-slate-400">
-              对标竞品，全面升级
+              智能化创作工具链
             </p>
           </div>
 
@@ -252,13 +252,6 @@ export default function Home() {
               title="原创性检测"
               description="版权检测、敏感词过滤、抄袭风险分析，确保内容原创合规"
               link="/workspace/compliance"
-              isNew
-            />
-            <FeatureCard
-              icon={<Palette size={36} />}
-              title="全新UI设计"
-              description="现代化界面、玻璃态设计、渐变配色、流畅动画，提升创作体验"
-              link="/workspace"
               isNew
             />
           </div>
