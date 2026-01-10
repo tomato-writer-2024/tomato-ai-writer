@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import BrandIcons, { BRAND_COLORS } from '@/lib/brandIcons';
+import { BrandIcons, BRAND_COLORS } from '@/lib/brandIcons';
 import { Menu, X, User, FileText, BarChart3, Settings, LogOut } from 'lucide-react';
 
 interface NavItem {

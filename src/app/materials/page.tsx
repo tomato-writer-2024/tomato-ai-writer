@@ -24,7 +24,7 @@ import {
   X,
   Check,
 } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 
 interface Material {
   id: string;

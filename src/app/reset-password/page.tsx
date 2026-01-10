@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, ArrowLeft, Zap, CheckCircle, AlertCircle } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();

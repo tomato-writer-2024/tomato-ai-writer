@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Sparkles, Loader2, FileText, Clock, Star, Target, Flame, Eye, Copy, Download, Trash2, CheckCircle, AlertCircle, BarChart3, Zap } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';

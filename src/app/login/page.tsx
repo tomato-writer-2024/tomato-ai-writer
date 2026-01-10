@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogIn, Mail, Lock, Sparkles, Zap, Eye, EyeOff } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 
 export default function LoginPage() {
   const router = useRouter();

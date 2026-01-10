@@ -8,7 +8,7 @@ import {
   exportAsWord,
   exportAsTxt,
 } from '@/lib/fileUtils';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';

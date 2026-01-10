@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 
 export default function Error({

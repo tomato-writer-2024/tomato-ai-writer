@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, Clock, XCircle, ArrowLeft, RefreshCw, Download } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import Navigation from '@/components/Navigation';

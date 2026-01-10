@@ -1,603 +1,304 @@
 import React from 'react';
 
-// 品牌色系配置
+export const Logo = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+  </svg>
+);
+
+export const Writing = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+export const AI = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+    <path d="M12 2v10h10a10 10 0 0 1-10-10z" />
+    <path d="M12 22a10 10 0 0 0-10-10h10v10z" />
+    <path d="M12 22v-10H2a10 10 0 0 0 10 10z" />
+  </svg>
+);
+
+export const Star = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);
+
+export const Award = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="12" cy="8" r="7" />
+    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+  </svg>
+);
+
+export const Crown = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+  </svg>
+);
+
+export const Sparkle = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 3l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6z" />
+  </svg>
+);
+
+export const Zap = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+export const Rocket = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+    <path d="M12 15l-3-3a22 22 0 0 1 2-9.6A21.7 21.7 0 0 1 21 6c-2.4 0-4.5 2.5-6 6l-3 3z" />
+    <path d="M12 15a6 6 0 0 1-6 6" />
+  </svg>
+);
+
+export const User = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
+export const Stats = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <line x1="12" y1="20" x2="12" y2="10" />
+    <line x1="18" y1="20" x2="18" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="16" />
+  </svg>
+);
+
+export const Sparkles = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 3l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6z" />
+    <path d="M19.5 12l-1.5-3-3-1.5 3-1.5 1.5-3 1.5 3 3 1.5-3 1.5z" />
+    <path d="M4.5 12l1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
+  </svg>
+);
+
+export const Membership = ({ size = 24, className = '', level }: { size?: number; className?: string; level?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
+export const Quality = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+);
+
+export const Export = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+export const Book = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+  </svg>
+);
+
 export const BRAND_COLORS = {
-  primary: '#0891B2',      // Cyan-600
-  secondary: '#2563EB',    // Blue-600
-  accent: '#6366F1',       // Indigo-500
-  success: '#10B981',      // Emerald-500
-  warning: '#F59E0B',      // Amber-500
-  gradient: 'linear-gradient(135deg, #0891B2 0%, #2563EB 50%, #6366F1 100%)',
-  gradientLight: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 50%, #818CF8 100%)',
-  gradientDark: 'linear-gradient(135deg, #0E7490 0%, #1D4ED8 50%, #4F46E5 100%)',
-} as const;
-
-// 品牌Logo图标 - 主Logo
-export const LogoIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="50%" stopColor="#2563EB" />
-        <stop offset="100%" stopColor="#6366F1" />
-      </linearGradient>
-    </defs>
-    {/* 书本形状 */}
-    <path
-      d="M8 12 L32 8 L56 12 L56 52 L32 48 L8 52 Z"
-      fill="url(#logoGradient)"
-      opacity="0.9"
-    />
-    {/* 书脊线条 */}
-    <path
-      d="M32 8 L32 48"
-      stroke="white"
-      strokeWidth="2"
-      opacity="0.3"
-    />
-    {/* 页面线条 */}
-    <path
-      d="M16 20 L28 19 M16 26 L28 25 M16 32 L28 31"
-      stroke="white"
-      strokeWidth="2"
-      opacity="0.4"
-      strokeLinecap="round"
-    />
-    <path
-      d="M36 19 L48 20 M36 25 L48 26 M36 31 L48 32"
-      stroke="white"
-      strokeWidth="2"
-      opacity="0.4"
-      strokeLinecap="round"
-    />
-    {/* 火花装饰 */}
-    <path
-      d="M44 36 C44 36 46 32 48 32 C50 32 52 36 52 36 C52 36 50 38 48 38 C46 38 44 36 44 36"
-      fill="white"
-      opacity="0.8"
-    />
-  </svg>
-);
-
-// AI智能图标
-export const AIIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="aiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="100%" stopColor="#2563EB" />
-      </linearGradient>
-    </defs>
-    {/* 脑部轮廓 */}
-    <path
-      d="M32 8 C48 8 56 20 56 32 C56 44 48 56 32 56 C16 56 8 44 8 32 C8 20 16 8 32 8 Z"
-      fill="url(#aiGradient)"
-      opacity="0.9"
-    />
-    {/* 神经网络连接 */}
-    <circle cx="32" cy="32" r="4" fill="white" opacity="0.9" />
-    <circle cx="20" cy="24" r="3" fill="white" opacity="0.7" />
-    <circle cx="44" cy="24" r="3" fill="white" opacity="0.7" />
-    <circle cx="20" cy="40" r="3" fill="white" opacity="0.7" />
-    <circle cx="44" cy="40" r="3" fill="white" opacity="0.7" />
-    <line x1="32" y1="32" x2="20" y2="24" stroke="white" strokeWidth="1.5" opacity="0.5" />
-    <line x1="32" y1="32" x2="44" y2="24" stroke="white" strokeWidth="1.5" opacity="0.5" />
-    <line x1="32" y1="32" x2="20" y2="40" stroke="white" strokeWidth="1.5" opacity="0.5" />
-    <line x1="32" y1="32" x2="44" y2="40" stroke="white" strokeWidth="1.5" opacity="0.5" />
-    {/* 闪光点 */}
-    <circle cx="52" cy="16" r="2" fill="#6366F1" opacity="0.8" />
-  </svg>
-);
-
-// 写作图标
-export const WritingIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="writingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#2563EB" />
-        <stop offset="100%" stopColor="#6366F1" />
-      </linearGradient>
-    </defs>
-    {/* 钢笔主体 */}
-    <path
-      d="M48 16 L52 20 L24 48 L12 56 L20 44 Z"
-      fill="url(#writingGradient)"
-      opacity="0.9"
-    />
-    {/* 钢笔笔尖 */}
-    <path
-      d="M12 56 L20 44 L24 48 Z"
-      fill="#0891B2"
-      opacity="0.7"
-    />
-    {/* 笔尖高光 */}
-    <path
-      d="M14 52 L18 48"
-      stroke="white"
-      strokeWidth="1"
-      opacity="0.5"
-      strokeLinecap="round"
-    />
-    {/* 文档线条 */}
-    <path
-      d="M12 20 L36 20 M12 28 L40 28 M12 36 L32 36 M12 44 L20 44"
-      stroke="#0891B2"
-      strokeWidth="2"
-      opacity="0.3"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-// 爽点图标（番茄小说特色）
-export const ShuangdianIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="shuangdianGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#6366F1" />
-        <stop offset="100%" stopColor="#F59E0B" />
-      </linearGradient>
-    </defs>
-    {/* 火焰形状 */}
-    <path
-      d="M32 8 C32 8 44 20 44 36 C44 48 40 56 32 56 C24 56 20 48 20 36 C20 20 32 8 32 8 Z"
-      fill="url(#shuangdianGradient)"
-      opacity="0.9"
-    />
-    {/* 火焰内部高光 */}
-    <path
-      d="M32 16 C32 16 40 28 40 36 C40 44 36 48 32 48 C28 48 24 44 24 36 C24 28 32 16 32 16 Z"
-      fill="white"
-      opacity="0.3"
-    />
-    {/* 星星装饰 */}
-    <circle cx="44" cy="24" r="3" fill="#0891B2" opacity="0.6" />
-    <circle cx="20" cy="28" r="2" fill="#2563EB" opacity="0.5" />
-  </svg>
-);
-
-// 会员图标
-export const MembershipIcon: React.FC<{ level?: 'FREE' | 'BASIC' | 'PREMIUM' | 'ENTERPRISE'; size?: number; className?: string }> = ({ level = 'BASIC', size = 32, className = '' }) => {
-  const gradients = {
-    FREE: ['#9CA3AF', '#6B7280'],        // 灰色
-    BASIC: ['#0891B2', '#2563EB'],       // Cyan -> Blue
-    PREMIUM: ['#6366F1', '#F59E0B'],     // Indigo -> Amber
-    ENTERPRISE: ['#0891B2', '#10B981'],   // Cyan -> Emerald
-  };
-
-  const [start, end] = gradients[level];
-
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-      <defs>
-        <linearGradient id={`membershipGradient-${level}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={start} />
-          <stop offset="100%" stopColor={end} />
-        </linearGradient>
-      </defs>
-      {/* 皇冠底部 */}
-      <path
-        d="M8 48 L8 56 L56 56 L56 48 Z"
-        fill={`url(#membershipGradient-${level})`}
-        opacity="0.8"
-      />
-      {/* 皇冠主体 */}
-      <path
-        d="M8 48 L8 32 L16 40 L24 20 L32 40 L40 20 L48 40 L56 32 L56 48 Z"
-        fill={`url(#membershipGradient-${level})`}
-        opacity="0.9"
-      />
-      {/* 皇冠宝石 */}
-      {level !== 'FREE' && (
-        <>
-          <circle cx="32" cy="28" r="4" fill="white" opacity="0.8" />
-          <circle cx="16" cy="36" r="2" fill="white" opacity="0.6" />
-          <circle cx="48" cy="36" r="2" fill="white" opacity="0.6" />
-        </>
-      )}
-      {/* 星星装饰（PREMIUM和ENTERPRISE） */}
-      {(level === 'PREMIUM' || level === 'ENTERPRISE') && (
-        <>
-          <circle cx="32" cy="16" r="2" fill="#FBBF24" opacity="0.9" />
-          <circle cx="20" cy="20" r="1.5" fill="#FBBF24" opacity="0.7" />
-          <circle cx="44" cy="20" r="1.5" fill="#FBBF24" opacity="0.7" />
-        </>
-      )}
-    </svg>
-  );
+  primary: 'from-cyan-500 to-blue-600',
+  secondary: 'from-purple-500 to-pink-600',
+  accent: 'from-orange-500 to-red-600',
+  success: 'from-green-500 to-teal-600',
+  warning: 'from-yellow-400 to-orange-500',
+  danger: 'from-red-500 to-pink-600',
+  gradient: 'from-cyan-500 to-blue-600',
 };
 
-// 效率图标
-export const EfficiencyIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="efficiencyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="100%" stopColor="#06B6D4" />
-      </linearGradient>
-    </defs>
-    {/* 闪电形状 */}
-    <path
-      d="M36 8 L24 32 L36 32 L32 56 L44 28 L32 28 Z"
-      fill="url(#efficiencyGradient)"
-      opacity="0.9"
-    />
-    {/* 闪光线条 */}
-    <path
-      d="M20 16 L16 20 M48 16 L52 20 M16 36 L12 40 M52 36 L56 40"
-      stroke="#0891B2"
-      strokeWidth="2"
-      opacity="0.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-// 质量图标
-export const QualityIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="qualityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#10B981" />
-        <stop offset="100%" stopColor="#059669" />
-      </linearGradient>
-    </defs>
-    {/* 盾牌形状 */}
-    <path
-      d="M32 8 L56 20 L56 32 C56 48 48 56 32 60 C16 56 8 48 8 32 L8 20 Z"
-      fill="url(#qualityGradient)"
-      opacity="0.9"
-    />
-    {/* 对勾 */}
-    <path
-      d="M20 32 L28 40 L44 24"
-      stroke="white"
-      strokeWidth="4"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      opacity="0.9"
-    />
-  </svg>
-);
-
-// 导出/导入图标
-export const ExportIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="exportGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#2563EB" />
-        <stop offset="100%" stopColor="#6366F1" />
-      </linearGradient>
-    </defs>
-    {/* 文档形状 */}
-    <rect x="12" y="8" width="32" height="48" rx="4" fill="url(#exportGradient)" opacity="0.2" />
-    <rect x="16" y="12" width="24" height="40" rx="2" fill="url(#exportGradient)" opacity="0.9" />
-    {/* 箭头 */}
-    <path
-      d="M40 32 L52 32 L46 26 M52 32 L46 38"
-      stroke="url(#exportGradient)"
-      strokeWidth="3"
-      fill="none"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* 文档线条 */}
-    <line x1="24" y1="24" x2="32" y2="24" stroke="white" strokeWidth="2" opacity="0.7" />
-    <line x1="24" y1="32" x2="32" y2="32" stroke="white" strokeWidth="2" opacity="0.7" />
-    <line x1="24" y1="40" x2="28" y2="40" stroke="white" strokeWidth="2" opacity="0.7" />
-  </svg>
-);
-
-// Zap/闪电图标（用于快速操作）
-export const ZapIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="zapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#6366F1" />
-      </linearGradient>
-    </defs>
-    {/* 闪电 */}
-    <path
-      d="M36 8 L20 32 L36 32 L28 56 L44 28 L28 28 Z"
-      fill="url(#zapGradient)"
-      opacity="0.9"
-    />
-    {/* 光芒 */}
-    <circle cx="48" cy="20" r="2" fill="#F59E0B" opacity="0.8" />
-    <circle cx="12" cy="36" r="1.5" fill="#F59E0B" opacity="0.6" />
-  </svg>
-);
-
-// Book/作品图标
-export const BookIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="100%" stopColor="#2563EB" />
-      </linearGradient>
-    </defs>
-    {/* 书本左侧 */}
-    <path
-      d="M32 12 L8 16 L8 52 L32 48 Z"
-      fill="url(#bookGradient)"
-      opacity="0.8"
-    />
-    {/* 书本右侧 */}
-    <path
-      d="M32 12 L56 16 L56 52 L32 48 Z"
-      fill="url(#bookGradient)"
-      opacity="0.9"
-    />
-    {/* 书脊 */}
-    <path
-      d="M32 12 L32 48"
-      stroke="white"
-      strokeWidth="1"
-      opacity="0.3"
-    />
-    {/* 页面线条 */}
-    <path
-      d="M16 24 L28 22 M16 32 L28 30 M16 40 L28 38"
-      stroke="white"
-      strokeWidth="1.5"
-      opacity="0.5"
-      strokeLinecap="round"
-    />
-    <path
-      d="M36 22 L48 24 M36 30 L48 32 M36 38 L48 40"
-      stroke="white"
-      strokeWidth="1.5"
-      opacity="0.5"
-      strokeLinecap="round"
-    />
-    {/* 书签 */}
-    <path
-      d="M44 8 L44 28 L48 24 L52 28 L52 8 Z"
-      fill="#6366F1"
-      opacity="0.9"
-    />
-  </svg>
-);
-
-// Stats/统计图标
-export const StatsIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="statsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="100%" stopColor="#6366F1" />
-      </linearGradient>
-    </defs>
-    {/* 柱状图 */}
-    <rect x="8" y="40" width="12" height="16" rx="2" fill="url(#statsGradient)" opacity="0.5" />
-    <rect x="24" y="28" width="12" height="28" rx="2" fill="url(#statsGradient)" opacity="0.7" />
-    <rect x="40" y="16" width="12" height="40" rx="2" fill="url(#statsGradient)" opacity="0.9" />
-    {/* 趋势线 */}
-    <path
-      d="M8 48 L26 32 L44 20 L56 12"
-      stroke="#F59E0B"
-      strokeWidth="2"
-      fill="none"
-      strokeLinecap="round"
-      opacity="0.8"
-    />
-    {/* 数据点 */}
-    <circle cx="26" cy="32" r="3" fill="#F59E0B" opacity="0.9" />
-    <circle cx="44" cy="20" r="3" fill="#F59E0B" opacity="0.9" />
-  </svg>
-);
-
-// Sparkles/创意图标
-export const SparklesIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="sparklesGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#6366F1" />
-        <stop offset="100%" stopColor="#F59E0B" />
-      </linearGradient>
-    </defs>
-    {/* 主星星 */}
-    <path
-      d="M32 8 L36 24 L52 28 L36 32 L32 48 L28 32 L12 28 L28 24 Z"
-      fill="url(#sparklesGradient)"
-      opacity="0.9"
-    />
-    {/* 小星星 */}
-    <circle cx="16" cy="16" r="3" fill="#7C3AED" opacity="0.7" />
-    <circle cx="52" cy="16" r="2" fill="#4F46E5" opacity="0.6" />
-    <circle cx="20" cy="52" r="2" fill="#DB2777" opacity="0.6" />
-  </svg>
-);
-
-// 皇冠/会员图标
-export const CrownIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="crownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#DB2777" />
-      </linearGradient>
-    </defs>
-    {/* 皇冠底部 */}
-    <path
-      d="M8 48 L8 56 L56 56 L56 48 Z"
-      fill="url(#crownGradient)"
-      opacity="0.8"
-    />
-    {/* 皇冠主体 */}
-    <path
-      d="M8 48 L8 32 L16 40 L24 20 L32 40 L40 20 L48 40 L56 32 L56 48 Z"
-      fill="url(#crownGradient)"
-      opacity="0.9"
-    />
-    {/* 宝石 */}
-    <circle cx="32" cy="28" r="4" fill="white" opacity="0.8" />
-    <circle cx="16" cy="36" r="2" fill="white" opacity="0.6" />
-    <circle cx="48" cy="36" r="2" fill="white" opacity="0.6" />
-  </svg>
-);
-
-// Home/首页图标
-export const HomeIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="homeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#7C3AED" />
-      </linearGradient>
-    </defs>
-    {/* 房子 */}
-    <path
-      d="M32 8 L56 28 L56 56 L40 56 L40 40 L24 40 L24 56 L8 56 L8 28 Z"
-      fill="url(#homeGradient)"
-      opacity="0.9"
-    />
-    {/* 门 */}
-    <rect x="26" y="44" width="12" height="12" fill="white" opacity="0.3" />
-    {/* 窗户 */}
-    <circle cx="20" cy="20" r="4" fill="#DB2777" opacity="0.6" />
-    <circle cx="44" cy="20" r="4" fill="#DB2777" opacity="0.6" />
-  </svg>
-);
-
-// Settings/设置图标
-export const SettingsIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="settingsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#6B7280" />
-        <stop offset="100%" stopColor="#4B5563" />
-      </linearGradient>
-    </defs>
-    {/* 外圈齿轮 */}
-    <circle cx="32" cy="32" r="20" stroke="url(#settingsGradient)" strokeWidth="6" fill="none" opacity="0.8" />
-    {/* 齿轮齿 */}
-    <rect x="30" y="4" width="4" height="12" rx="2" fill="url(#settingsGradient)" opacity="0.9" />
-    <rect x="30" y="48" width="4" height="12" rx="2" fill="url(#settingsGradient)" opacity="0.9" />
-    <rect x="4" y="30" width="12" height="4" rx="2" fill="url(#settingsGradient)" opacity="0.9" />
-    <rect x="48" y="30" width="12" height="4" rx="2" fill="url(#settingsGradient)" opacity="0.9" />
-    {/* 中心圆 */}
-    <circle cx="32" cy="32" r="8" fill="white" opacity="0.3" />
-  </svg>
-);
-
-// Calendar/日历图标
-export const CalendarIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="calendarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#4F46E5" />
-        <stop offset="100%" stopColor="#7C3AED" />
-      </linearGradient>
-    </defs>
-    {/* 日历主体 */}
-    <rect x="8" y="12" width="48" height="44" rx="4" fill="url(#calendarGradient)" opacity="0.9" />
-    {/* 日历顶部 */}
-    <rect x="8" y="12" width="48" height="12" rx="4" fill="white" opacity="0.2" />
-    {/* 日历孔 */}
-    <circle cx="16" cy="18" r="2" fill="white" opacity="0.5" />
-    <circle cx="48" cy="18" r="2" fill="white" opacity="0.5" />
-    {/* 日期格子 */}
-    <rect x="16" y="32" width="8" height="8" rx="1" fill="white" opacity="0.3" />
-    <rect x="28" y="32" width="8" height="8" rx="1" fill="white" opacity="0.5" />
-    <rect x="40" y="32" width="8" height="8" rx="1" fill="white" opacity="0.3" />
-    <rect x="16" y="44" width="8" height="8" rx="1" fill="white" opacity="0.3" />
-    <rect x="28" y="44" width="8" height="8" rx="1" fill="#DB2777" opacity="0.7" />
-    <rect x="40" y="44" width="8" height="8" rx="1" fill="white" opacity="0.3" />
-  </svg>
-);
-
-// Star/星标图标（用于爆款拆解、收藏等）
-export const StarIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#DB2777" />
-      </linearGradient>
-    </defs>
-    {/* 主星星 */}
-    <path
-      d="M32 8 L38 24 L56 28 L40 36 L36 56 L28 40 L12 40 L16 28 L32 8 Z"
-      fill="url(#starGradient)"
-      opacity="0.9"
-    />
-    {/* 星星光芒 */}
-    <circle cx="52" cy="12" r="2" fill="#F59E0B" opacity="0.8" />
-    <circle cx="12" cy="20" r="1.5" fill="#F59E0B" opacity="0.6" />
-    <circle cx="56" cy="40" r="1.5" fill="#F59E0B" opacity="0.6" />
-  </svg>
-);
-
-// Award/奖项图标（用于编辑审稿、成就系统）
-export const AwardIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="awardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#F59E0B" />
-        <stop offset="100%" stopColor="#DC2626" />
-      </linearGradient>
-    </defs>
-    {/* 奖章外圈 */}
-    <circle cx="32" cy="28" r="20" fill="url(#awardGradient)" opacity="0.9" />
-    {/* 奖章内圈 */}
-    <circle cx="32" cy="28" r="16" fill="white" opacity="0.2" />
-    {/* 星星 */}
-    <path
-      d="M32 16 L35 22 L42 22 L36 26 L38 32 L32 28 L26 32 L28 26 L22 22 L29 22 Z"
-      fill="white"
-      opacity="0.9"
-    />
-    {/* 奖章丝带 */}
-    <path d="M24 48 L32 36 L40 48 L40 60 L32 56 L24 60 Z" fill="#DC2626" opacity="0.8" />
-    <path d="M24 48 L32 36 L40 48" stroke="#F59E0B" strokeWidth="2" fill="none" opacity="0.6" />
-  </svg>
-);
-
-// User/用户图标
-export const UserIcon: React.FC<{ size?: number; className?: string }> = ({ size = 32, className = '' }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill="none" className={className}>
-    <defs>
-      <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#0891B2" />
-        <stop offset="100%" stopColor="#2563EB" />
-      </linearGradient>
-    </defs>
-    {/* 头部 */}
-    <circle cx="32" cy="24" r="14" fill="url(#userGradient)" opacity="0.9" />
-    {/* 身体 */}
-    <path
-      d="M8 60 C8 44 16 40 32 40 C48 40 56 44 56 60"
-      fill="url(#userGradient)"
-      opacity="0.9"
-    />
-  </svg>
-);
-
-// 品牌图标集合导出
 export const BrandIcons = {
-  Logo: LogoIcon,
-  AI: AIIcon,
-  Writing: WritingIcon,
-  Shuangdian: ShuangdianIcon,
-  Membership: MembershipIcon,
-  Efficiency: EfficiencyIcon,
-  Quality: QualityIcon,
-  Export: ExportIcon,
-  Zap: ZapIcon,
-  Book: BookIcon,
-  Stats: StatsIcon,
-  Sparkles: SparklesIcon,
-  Crown: CrownIcon,
-  Home: HomeIcon,
-  Settings: SettingsIcon,
-  Calendar: CalendarIcon,
-  Star: StarIcon,
-  Award: AwardIcon,
-  User: UserIcon,
-} as const;
-
-export default BrandIcons;
+  Logo,
+  Writing,
+  AI,
+  Star,
+  Award,
+  Crown,
+  Sparkle,
+  Zap,
+  Rocket,
+  User,
+  Stats,
+  Sparkles,
+  Membership,
+  Quality,
+  Export,
+  Book,
+};

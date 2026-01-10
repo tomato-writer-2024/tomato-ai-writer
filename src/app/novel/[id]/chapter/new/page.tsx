@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Sparkles, Loader2, FileText, Plus } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea } from '@/components/Input';

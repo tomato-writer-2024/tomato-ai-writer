@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Home, ArrowLeft, Search } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import Button, { GradientButton } from '@/components/Button';
 
 export default function NotFound() {

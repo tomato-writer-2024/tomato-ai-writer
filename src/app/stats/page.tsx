@@ -12,7 +12,7 @@ import {
   RefreshCw,
   ArrowUp,
 } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import { Card, CardBody, StatsCard } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge, TypeBadge } from '@/components/Badge';

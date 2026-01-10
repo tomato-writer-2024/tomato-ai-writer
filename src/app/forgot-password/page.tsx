@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { KeyRound, Mail, ArrowLeft, Zap, CheckCircle } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

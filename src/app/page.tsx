@@ -18,7 +18,7 @@ import {
   Award,
   CheckCircle,
 } from 'lucide-react';
-import BrandIcons from '@/lib/brandIcons';
+import { BrandIcons } from '@/lib/brandIcons';
 import {
   StatCard,
   FeatureCard,
