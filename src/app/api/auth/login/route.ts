@@ -3,6 +3,7 @@ import {
   userManager,
   authManager,
 } from '@/storage/database';
+import { getDb } from 'coze-coding-dev-sdk';
 import {
   hashPassword,
   verifyPassword,
@@ -50,11 +51,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 查找用户
+    // 查找用户（使用原生SQL避免Drizzle查询问题）
     console.log(`[${requestId}] 查找用户: ${email}`);
-    const user = await userManager.getUserByEmail(email);
+    const db = await getDb();
+    const userResult = await db.execute(
+      `SELECT * FROM users WHERE email = '${email}'`
+    );
 
-    if (!user) {
+    if (userResult.rows.length === 0) {
       console.log(`[${requestId}] 用户不存在: ${email}`);
 
       // 记录失败的登录尝试
@@ -72,6 +76,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const user = userResult.rows[0];
+
+    console.log(`[${requestId}] 找到用户:`, {
+      userId: user.id,
+      email: user.email,
+      allKeys: Object.keys(user),
+      passwordHashExists: 'password_hash' in user,
+      passwordHashValue: user.password_hash,
+      passwordHashCamelExists: 'passwordHash' in user,
+      passwordHashCamelValue: user.passwordHash,
+      isActive: user.isActive,
+      isBanned: user.isBanned,
+      isSuperAdmin: user.isSuperAdmin,
+    });
+
     console.log(`[${requestId}] 找到用户:`, {
       userId: user.id,
       email: user.email,
@@ -82,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // 验证密码
     console.log(`[${requestId}] 验证密码...`);
-    const isPasswordValid = await verifyPassword(password, user.passwordHash);
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
 
     if (!isPasswordValid) {
       console.log(`[${requestId}] 密码验证失败`);
@@ -105,11 +124,11 @@ export async function POST(request: NextRequest) {
     console.log(`[${requestId}] 密码验证成功`);
 
     // 检查用户状态
-    if (!user.isActive || user.isBanned) {
+    if (!user.is_active || user.is_banned) {
       console.log(`[${requestId}] 用户状态异常:`, {
-        isActive: user.isActive,
-        isBanned: user.isBanned,
-        banReason: user.banReason,
+        isActive: user.is_active,
+        isBanned: user.is_banned,
+        banReason: user.ban_reason,
       });
 
       await authManager.logSecurityEvent({
@@ -121,7 +140,7 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { success: false, error: `账号已被封禁：${user.banReason || '未知原因'}` },
+        { success: false, error: `账号已被封禁：${user.ban_reason || '未知原因'}` },
         { status: 403 }
       );
     }
@@ -201,17 +220,26 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error(`[${requestId}] 登录错误:`, error);
-
-    await authManager.logSecurityEvent({
-      userId: null,
-      action: 'LOGIN',
-      details: JSON.stringify({ error: String(error) }),
-      ipAddress: getClientIp(request),
-      status: 'FAILED',
+    console.error(`[${requestId}] 错误详情:`, {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
     });
 
+    try {
+      await authManager.logSecurityEvent({
+        userId: null,
+        action: 'LOGIN',
+        details: JSON.stringify({ error: String(error) }),
+        ipAddress: getClientIp(request),
+        status: 'FAILED',
+      });
+    } catch (logError) {
+      console.error(`[${requestId}] 记录安全日志失败:`, logError);
+    }
+
     return NextResponse.json(
-      { success: false, error: '登录失败，请稍后重试' },
+      { success: false, error: '登录失败，请稍后重试: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

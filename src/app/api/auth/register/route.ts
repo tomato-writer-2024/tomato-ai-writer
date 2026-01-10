@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { userManager, authManager } from '@/storage/database';
+import { getDb } from 'coze-coding-dev-sdk';
 import {
   hashPassword,
   generateAccessToken,
@@ -9,6 +10,12 @@ import {
   checkUserQuota,
 } from '@/lib/auth';
 import { UserRole, MembershipLevel } from '@/lib/types/user';
+
+// 在服务端使用crypto
+let crypto: any;
+if (typeof window === 'undefined') {
+  crypto = require('crypto');
+}
 
 /**
  * 用户注册API
@@ -53,9 +60,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查邮箱是否已注册
-    const existingUser = await userManager.getUserByEmail(email);
-    if (existingUser) {
+    // 检查邮箱是否已注册（使用原生SQL避免Drizzle查询问题）
+    const db = await getDb();
+    const existingUserResult = await db.execute(
+      `SELECT id, email, username FROM users WHERE email = '${email}'`
+    );
+
+    if (existingUserResult.rows.length > 0) {
       await authManager.logSecurityEvent({
         userId: null,
         action: 'LOGIN',
@@ -72,15 +83,46 @@ export async function POST(request: NextRequest) {
 
     // 哈希密码
     const passwordHash = await hashPassword(password);
+    const now = new Date().toISOString();
+    const userId = crypto.randomUUID();
 
-    // 创建用户（默认为免费用户）
-    const newUser = await userManager.createUser({
-      email,
-      passwordHash,
-      username: username || email.split('@')[0],
-      role: UserRole.FREE,
-      membershipLevel: MembershipLevel.FREE,
-    });
+    // 创建用户（使用原生SQL避免Drizzle ORM问题）
+    await db.execute(
+      `INSERT INTO users (
+        id, email, password_hash, username, role, membership_level,
+        membership_expire_at, daily_usage_count, monthly_usage_count, storage_used,
+        is_active, is_banned, is_super_admin, created_at, updated_at
+      )
+      VALUES (
+        '${userId}',
+        '${email}',
+        '${passwordHash}',
+        '${username || email.split('@')[0]}',
+        '${UserRole.FREE}',
+        '${MembershipLevel.FREE}',
+        NULL,
+        0,
+        0,
+        0,
+        true,
+        false,
+        false,
+        '${now}',
+        '${now}'
+      )`
+    );
+
+    // 查询新创建的用户
+    const newUserResult = await db.execute(
+      `SELECT id, email, username, role, membership_level, membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at
+       FROM users WHERE id = '${userId}'`
+    );
+
+    if (newUserResult.rows.length === 0) {
+      throw new Error('Failed to retrieve created user');
+    }
+
+    const newUser = newUserResult.rows[0];
 
     // 记录注册事件
     await authManager.logSecurityEvent({
@@ -126,16 +168,26 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Register error:', error);
-    await authManager.logSecurityEvent({
-      userId: null,
-      action: 'LOGIN',
-      details: JSON.stringify({ error: String(error) }),
-      ipAddress: getClientIp(request),
-      status: 'FAILED',
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
     });
 
+    try {
+      await authManager.logSecurityEvent({
+        userId: null,
+        action: 'LOGIN',
+        details: JSON.stringify({ error: String(error) }),
+        ipAddress: getClientIp(request),
+        status: 'FAILED',
+      });
+    } catch (logError) {
+      console.error('Failed to log security event:', logError);
+    }
+
     return NextResponse.json(
-      { success: false, error: '注册失败，请稍后重试' },
+      { success: false, error: '注册失败，请稍后重试: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
