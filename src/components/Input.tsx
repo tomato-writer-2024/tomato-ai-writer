@@ -198,6 +198,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   helperText?: string;
   options: Array<{ value: string; label: string }>;
   fullWidth?: boolean;
+  placeholder?: string;
 }
 
 export function Select({
@@ -241,6 +242,11 @@ export function Select({
           className={classes}
           {...props}
         >
+          {props.placeholder && (
+            <option value="" disabled>
+              {props.placeholder}
+            </option>
+          )}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

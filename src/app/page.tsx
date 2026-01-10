@@ -150,7 +150,7 @@ export default function Home() {
         {/* 功能展示 */}
         <div className="mb-16">
           <h2 className="mb-12 text-center text-4xl font-bold text-slate-900">核心功能</h2>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md:grid-cols-3 lg:grid-cols-4">
             <FeatureCard
               icon={<BrandIcons.Writing size={36} />}
               title="精修润色工坊"
@@ -187,6 +187,79 @@ export default function Home() {
               description="爆款趋势分析、质量追踪、用户画像，全方位助力内容优化"
               link="/stats"
             />
+          </div>
+
+          {/* 新增功能 */}
+          <div className="mt-16">
+            <h3 className="mb-8 text-center text-3xl font-bold text-slate-900">全新功能</h3>
+            <div className="grid gap-8 md:grid-cols-3 lg:grid-cols-4">
+              <FeatureCard
+                icon={<BrandIcons.User size={36} />}
+                title="角色设定系统"
+                description="智能生成立体饱满的角色设定，构建独特的人物魅力"
+                link="/characters"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Sparkles size={36} />}
+                title="世界观构建器"
+                description="构建宏大完整的世界观设定，为你的小说奠定坚实基础"
+                link="/world-building"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Book size={36} />}
+                title="智能大纲生成"
+                description="生成完整小说大纲和章节规划，构建精彩的故事框架"
+                link="/outline-generator"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Zap size={36} />}
+                title="人物关系图谱"
+                description="构建复杂的人物关系网络，驱动剧情发展"
+                link="/relationship-map"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Writing size={36} />}
+                title="卡文诊断助手"
+                description="AI诊断卡文原因，提供个性化解决方案，助你突破创作瓶颈"
+                link="/writer-block"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Star size={36} />}
+                title="爽点优化引擎"
+                description="智能识别和优化爽点，提升完读率和读者满意度"
+                link="/satisfaction-engine"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Book size={36} />}
+                title="文风模拟器"
+                description="模拟知名作者写作风格，为你的内容注入独特魅力"
+                link="/style-simulator"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Crown size={36} />}
+                title="情节反转建议器"
+                description="生成精彩的情节反转，为你的故事制造意外和震撼"
+                link="/plot-twist"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Award size={36} />}
+                title="智能结局生成"
+                description="生成完美的结局，为你的故事画上圆满句号"
+                link="/ending-generator"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Stats size={36} />}
+                title="书名生成器"
+                description="智能生成吸睛书名，提升作品关注度和点击率"
+                link="/title-generator"
+              />
+              <FeatureCard
+                icon={<BrandIcons.Sparkles size={36} />}
+                title="封面描述生成"
+                description="生成专业封面描述和AI绘画提示词，打造吸睛封面"
+                link="/cover-generator"
+              />
+            </div>
           </div>
         </div>
 
