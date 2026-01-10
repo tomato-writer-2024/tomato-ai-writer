@@ -195,8 +195,8 @@ export default function RegisterPage() {
 
             <button
               type="button"
-              onClick={() => alert('微信注册功能即将上线，请使用邮箱注册')}
-              className="mt-6 w-full flex items-center justify-center gap-2 rounded-lg border-2 border-gray-200 bg-white px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+              onClick={() => router.push('/auth/wechat')}
+              className="mt-6 w-full flex items-center justify-center gap-2 rounded-lg border-2 border-green-200 bg-white px-4 py-3 font-medium text-green-700 hover:bg-green-50 hover:border-green-300 transition-all"
             >
               <Sparkles size={20} />
               微信注册

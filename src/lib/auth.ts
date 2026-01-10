@@ -56,6 +56,36 @@ export function generateRefreshToken(payload: {
 }
 
 /**
+ * 生成重置密码令牌（30分钟有效）
+ */
+export function generateResetToken(payload: {
+  userId: string;
+  email: string;
+}): string {
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: '30m',
+  });
+}
+
+/**
+ * 验证重置密码令牌
+ */
+export function verifyResetToken(token: string): {
+  userId: string;
+  email: string;
+} | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * 验证JWT令牌
  */
 export function verifyToken(token: string): JwtPayload | null {
