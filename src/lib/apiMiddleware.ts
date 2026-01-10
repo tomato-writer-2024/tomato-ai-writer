@@ -171,7 +171,7 @@ export function withMiddleware<T = any>(
 
       // 如果中间件返回错误响应，直接返回
       if (middlewareResult) {
-        return middlewareResult;
+        return middlewareResult as NextResponse<ApiResult<T>>;
       }
 
       // 执行实际的API处理器

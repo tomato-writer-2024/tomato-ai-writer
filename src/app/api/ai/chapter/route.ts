@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withMiddleware, successResponse, errorResponse } from '@/lib/apiMiddleware';
+import { withMiddleware, successResponse, errorResponse, ApiResult } from '@/lib/apiMiddleware';
 import { LLMClient, getModelForTask } from '@/lib/llmClient';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 import { verifyToken, checkUserQuota } from '@/lib/auth';
@@ -44,7 +44,7 @@ const TOMATO_NOVEL_STYLE = `你是一位资深的番茄小说网文作者，精�
  *
  * 支持生成完整的小说章节
  */
-async function handler(request: NextRequest) {
+async function handler(request: NextRequest): Promise<NextResponse<ApiResult<any>>> {
   try {
     // 验证身份
     const authHeader = request.headers.get('authorization');

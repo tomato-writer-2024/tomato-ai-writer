@@ -56,10 +56,8 @@ async function handler(request: NextRequest) {
     // 查找用户（使用参数化查询）
     console.log(`[${requestId}] 查找用户: ${email}`);
     const db = await getDb();
-    const userResult = await db.execute(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const escapedEmail = email.replace(/'/g, "''");
+    const userResult = await db.execute(`SELECT * FROM users WHERE email = '${escapedEmail}'`);
 
     if (userResult.rows.length === 0) {
       console.log(`[${requestId}] 用户不存在: ${email}`);

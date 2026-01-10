@@ -237,17 +237,20 @@ export async function GET(request: NextRequest) {
 
 			// 填充会员等级统计
 			for (const row of membershipStatsResult.rows || []) {
-				if (stats.byMembership[row.membership_level] !== undefined) {
-					stats.byMembership[row.membership_level] = row.count;
+				const typedRow = row as any;
+				const membershipLevel = typedRow.membership_level as keyof typeof stats.byMembership;
+				if (stats.byMembership[membershipLevel] !== undefined) {
+					stats.byMembership[membershipLevel] = typedRow.count;
 				}
 			}
 
 			// 填充状态统计
 			for (const row of statusStatsResult.rows || []) {
-				if (row.is_banned) {
-					stats.byStatus.banned += row.count;
-				} else if (row.is_active) {
-					stats.byStatus.active += row.count;
+				const typedRow = row as any;
+				if (typedRow.is_banned) {
+					stats.byStatus.banned += typedRow.count;
+				} else if (typedRow.is_active) {
+					stats.byStatus.active += typedRow.count;
 				}
 			}
 

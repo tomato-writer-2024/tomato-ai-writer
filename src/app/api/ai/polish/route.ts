@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withMiddleware, successResponse, errorResponse } from '@/lib/apiMiddleware';
+import { withMiddleware, successResponse, errorResponse, ApiResult } from '@/lib/apiMiddleware';
 import { LLMClient, getModelForTask } from '@/lib/llmClient';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 import { verifyToken, checkUserQuota } from '@/lib/auth';
@@ -33,7 +33,7 @@ const POLISH_PROMPT = `你是一位专业网文编辑，精通番茄小说平台
  *
  * 对现有章节内容进行精修润色
  */
-async function handler(request: NextRequest) {
+async function handler(request: NextRequest): Promise<NextResponse<ApiResult<any>>> {
   try {
     // 验证身份
     const authHeader = request.headers.get('authorization');

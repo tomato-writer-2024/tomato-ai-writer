@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from 'coze-coding-dev-sdk';
 import { hashPassword } from '@/lib/auth';
-import { buildInsertQuery, escapeSqlString, buildParameterizedQuery } from '@/lib/sqlHelper';
+import { buildInsertQuery, escapeSqlString } from '@/lib/sqlHelper';
 import { withMiddleware, successResponse, errorResponse } from '@/lib/apiMiddleware';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 
@@ -53,9 +53,11 @@ async function handler(request: NextRequest) {
 
 		// 检查邮箱是否已被使用（使用参数化查询）
 		try {
-			const escapedEmail = escapeSqlString(email);
-			const sql = `SELECT id FROM users WHERE email = '${escapedEmail}' LIMIT 1`;
-			const result = await db.execute(sql);
+			const { sql, values } = buildParameterizedQuery(
+				'SELECT id FROM users WHERE email = ? LIMIT 1',
+				[email]
+			);
+			const result = await db.execute(sql, values);
 			console.log('邮箱检查结果:', result);
 
 			if (result && result.rows && result.rows.length > 0) {
@@ -76,29 +78,30 @@ async function handler(request: NextRequest) {
 			const userId = crypto.randomUUID();
 			const now = new Date().toISOString();
 
-			// 使用字符串拼接和转义来构建安全的INSERT语句
-			const sql = `INSERT INTO users (
-				id, email, username, password_hash, role, membership_level,
-				is_super_admin, is_active, is_banned, daily_usage_count,
-				monthly_usage_count, storage_used, created_at, updated_at
-			) VALUES (
-				'${userId}',
-				'${escapeSqlString(email)}',
-				'${escapeSqlString(username)}',
-				'${passwordHash}',
-				'ADMIN',
-				'PREMIUM',
-				true,
-				true,
-				false,
-				0,
-				0,
-				0,
-				'${now}',
-				'${now}'
-			) RETURNING id, email, username, role, membership_level, is_super_admin`;
-
-			const result = await db.execute(sql);
+			const result = await db.execute({
+				sql: `INSERT INTO users (
+					id, email, username, password_hash, role, membership_level,
+					is_super_admin, is_active, is_banned, daily_usage_count,
+					monthly_usage_count, storage_used, created_at, updated_at
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+				RETURNING id, email, username, role, membership_level, is_super_admin`,
+				params: [
+					userId,
+					email,
+					username,
+					passwordHash,
+					'ADMIN',
+					'PREMIUM',
+					true,
+					true,
+					false,
+					0,
+					0,
+					0,
+					now,
+					now,
+				]
+			);
 
 			const admin = result.rows[0];
 

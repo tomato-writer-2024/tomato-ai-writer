@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 				RETURNING 1 as row_count
 			`);
 
-			if (updateResult.rows && updateResult.rows.length > 0 && updateResult.rows[0].row_count > 0) {
+			if (updateResult.rows && updateResult.rows.length > 0 && (updateResult.rows[0] as any).row_count > 0) {
 				return NextResponse.json({
 					success: true,
 					message: '用户已删除',

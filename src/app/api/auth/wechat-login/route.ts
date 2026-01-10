@@ -12,6 +12,11 @@ import { eq } from 'drizzle-orm';
 import { getDb } from 'coze-coding-dev-sdk';
 import { withMiddleware, errorResponse, successResponse } from '@/lib/apiMiddleware';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
+import {
+  getWeChatConfig,
+  validateWeChatConfig,
+  isWeChatMockMode,
+} from '@/lib/wechatConfig';
 
 /**
  * 微信登录API
@@ -21,6 +26,7 @@ import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
  * 配置环境变量：
  * - WECHAT_APPID: 微信开放平台AppID
  * - WECHAT_SECRET: 微信开放平台AppSecret
+ * - WECHAT_REDIRECT_URI: 微信授权回调地址
  * - WECHAT_MOCK_MODE: 是否使用mock模式（测试用，默认为true）
  *
  * 流程：
@@ -34,6 +40,25 @@ async function handler(request: NextRequest) {
   console.log('[微信登录] ===== 开始处理请求 =====');
 
   try {
+    // 获取微信配置
+    const wechatConfig = getWeChatConfig();
+
+    // 验证配置（仅在非mock模式下）
+    if (!isWeChatMockMode()) {
+      const validation = validateWeChatConfig();
+      if (!validation.valid) {
+        console.error('[微信登录] 配置验证失败:', validation.errors);
+        return NextResponse.json(
+          {
+            success: false,
+            error: '微信登录配置不完整',
+            details: validation.errors,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     console.log('[微信登录] 解析JSON...');
     const body = await request.json();
     console.log('[微信登录] 解析成功，body:', body);
@@ -50,9 +75,7 @@ async function handler(request: NextRequest) {
       );
     }
 
-    // 检查是否使用mock模式
-    const mockMode = process.env.WECHAT_MOCK_MODE !== 'false'; // 默认启用mock模式
-
+    const mockMode = isWeChatMockMode();
     console.log('[微信登录] 请求参数', { code, mockMode });
 
     let wechatOpenId: string;
@@ -69,8 +92,8 @@ async function handler(request: NextRequest) {
       avatar = 'https://thirdwx.qlogo.cn/mmopen/vi_32/default_avatar.jpg';
     } else {
       // 真实模式：调用微信API
-      const appId = process.env.WECHAT_APPID;
-      const secret = process.env.WECHAT_SECRET;
+      const appId = wechatConfig.appId;
+      const secret = wechatConfig.appSecret;
 
       if (!appId || !secret) {
         console.error('[微信登录] 未配置微信AppID或Secret');
@@ -137,35 +160,34 @@ async function handler(request: NextRequest) {
     const db = await getDb();
     console.log('[微信登录] 数据库连接成功');
 
+    const escapedOpenId = wechatOpenId.replace(/'/g, "''");
     const existingUserResult = await db.execute(
-      'SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level FROM users WHERE wechat_open_id = $1',
-      [wechatOpenId]
+      `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level FROM users WHERE wechat_open_id = '${escapedOpenId}'`
     );
 
     console.log('[微信登录] 查询结果:', existingUserResult.rows.length);
 
-    let user;
+    let user: any;
 
     if (existingUserResult.rows.length > 0) {
       // 用户已存在，直接登录
-      const existingUser = existingUserResult.rows[0];
+      const existingUser: any = existingUserResult.rows[0];
       user = existingUser;
 
-      // 更新用户信息（使用参数化查询）
+      // 更新用户信息（使用字符串转义）
+      const escapedUnionId = String(wechatUnionId || existingUser.wechat_union_id || '').replace(/'/g, "''");
+      const escapedUsername = String(nickname || existingUser.username || '').replace(/'/g, "''");
+      const escapedAvatar = String(avatar || existingUser.avatar_url || '').replace(/'/g, "''");
+      const escapedId = String(existingUser.id).replace(/'/g, "''");
+
       await db.execute(
         `UPDATE users SET
-          wechat_union_id = $1,
-          username = $2,
-          avatar_url = $3,
+          wechat_union_id = '${escapedUnionId}',
+          username = '${escapedUsername}',
+          avatar_url = '${escapedAvatar}',
           last_login_at = NOW(),
           updated_at = NOW()
-        WHERE id = $4`,
-        [
-          wechatUnionId || existingUser.wechat_union_id,
-          nickname || existingUser.username,
-          avatar || existingUser.avatar_url,
-          existingUser.id,
-        ]
+        WHERE id = '${escapedId}'`
       );
 
       console.log('[微信登录] 用户已存在:', existingUser.id);
@@ -180,7 +202,14 @@ async function handler(request: NextRequest) {
       const bcrypt = require('bcryptjs');
       const passwordHash = await bcrypt.hash(randomPassword, 12);
 
-      // 使用参数化查询创建用户
+      // 使用字符串转义创建用户
+      const escapedUserId = userId.replace(/'/g, "''");
+      const escapedEmail = `wx_${wechatOpenId}@wechat.user`.replace(/'/g, "''");
+      const escapedUsername = (nickname || '微信用户').replace(/'/g, "''");
+      const escapedOpenId = wechatOpenId.replace(/'/g, "''");
+      const escapedUnionId = (wechatUnionId || '').replace(/'/g, "''");
+      const escapedAvatar = (avatar || 'https://thirdwx.qlogo.cn/mmopen/vi_32/default_avatar.jpg').replace(/'/g, "''");
+
       await db.execute(
         `INSERT INTO users (
           id, email, password_hash, username, role, membership_level,
@@ -188,33 +217,31 @@ async function handler(request: NextRequest) {
           is_active, is_banned, is_super_admin, wechat_open_id, wechat_union_id, avatar_url,
           created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
-        [
-          userId,
-          `wx_${wechatOpenId}@wechat.user`,
-          passwordHash,
-          nickname || '微信用户',
+        VALUES (
+          '${escapedUserId}',
+          '${escapedEmail}',
+          '${passwordHash}',
+          '${escapedUsername}',
           'FREE',
           'FREE',
-          null,
+          NULL,
           0,
           0,
           0,
           true,
           false,
           false,
-          wechatOpenId,
-          wechatUnionId || '',
-          avatar || '',
-          now,
-          now,
-        ]
+          '${escapedOpenId}',
+          '${escapedUnionId}',
+          '${escapedAvatar}',
+          '${now}',
+          '${now}'
+        ) RETURNING id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level, membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at`
       );
 
-      // 查询新创建的用户（使用参数化查询）
+      // 查询新创建的用户
       const newUserResult = await db.execute(
-        'SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level, membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at FROM users WHERE id = $1',
-        [userId]
+        `SELECT id, email, username, wechat_open_id, wechat_union_id, avatar_url, role, membership_level, membership_expire_at, daily_usage_count, monthly_usage_count, storage_used, created_at FROM users WHERE id = '${escapedUserId}'`
       );
 
       if (newUserResult.rows.length === 0) {
@@ -222,7 +249,6 @@ async function handler(request: NextRequest) {
       }
 
       user = newUserResult.rows[0];
-
       console.log('[微信登录] 创建新用户:', userId);
     }
 

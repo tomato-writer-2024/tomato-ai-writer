@@ -1,0 +1,71 @@
+{
+  "buildCommand": "pnpm run build",
+  "devCommand": "pnpm dev --port 5000",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["hkg1"],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "番茄小说AI写作助手",
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_APP_NAME": "番茄小说AI写作助手",
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "app/api/**/*": {
+      "maxDuration": 60
+    },
+    "app/api/ai/**/*": {
+      "maxDuration": 120
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
+}
