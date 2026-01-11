@@ -1,32 +1,69 @@
 /**
  * 数据库连接管理
  * 基于环境变量配置数据库连接
+ * 支持两种配置方式：
+ * 1. DATABASE_URL（推荐）：postgresql://username:password@host:port/database
+ * 2. 单独的环境变量：DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
  */
 import { Pool, PoolConfig, QueryResult } from 'pg';
 
 let pool: Pool | null = null;
 
 /**
+ * 解析DATABASE_URL为连接配置
+ */
+function parseDatabaseUrl(url: string): PoolConfig {
+  const match = url.match(/^postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
+  if (!match) {
+    throw new Error('Invalid DATABASE_URL format');
+  }
+  
+  return {
+    host: match[3],
+    port: parseInt(match[4]),
+    database: match[5],
+    user: match[1],
+    password: match[2],
+  };
+}
+
+/**
  * 获取数据库连接池
  */
 export function getPool(): Pool {
   if (!pool) {
-    const config: PoolConfig = {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'fanqie_ai',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '',
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    };
+    let config: PoolConfig;
+
+    // 优先使用DATABASE_URL
+    if (process.env.DATABASE_URL) {
+      config = parseDatabaseUrl(process.env.DATABASE_URL);
+    } else {
+      // 回退到单独的环境变量
+      config = {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        database: process.env.DB_NAME || 'fanqie_ai',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD || '',
+      };
+    }
+
+    config.max = config.max || 20;
+    config.idleTimeoutMillis = config.idleTimeoutMillis || 30000;
+    config.connectionTimeoutMillis = config.connectionTimeoutMillis || 2000;
 
     pool = new Pool(config);
 
     // 监听连接错误
     pool.on('error', (err) => {
       console.error('数据库连接池错误:', err);
+    });
+
+    console.log('数据库连接池已创建:', {
+      host: config.host,
+      port: config.port,
+      database: config.database,
+      user: config.user,
     });
   }
 
