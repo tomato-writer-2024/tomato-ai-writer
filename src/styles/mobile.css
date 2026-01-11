@@ -1,0 +1,414 @@
+/**
+ * 移动端优化样式
+ * 包含响应式设计、触摸优化、手势支持
+ */
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 增加触摸目标尺寸，符合WCAG 2.1标准（最小44x44px） */
+  button,
+  a,
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+
+  /* 禁用悬停效果 */
+  button:hover,
+  a:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* 触摸反馈效果 */
+  button:active,
+  a:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  /* 字体大小调整 */
+  html {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  /* 间距调整 */
+  .container {
+    padding: 0.75rem;
+  }
+
+  .section {
+    padding: 1rem 0;
+  }
+
+  /* 按钮和输入框全宽 */
+  .btn,
+  .input,
+  .select {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 卡片优化 */
+  .card {
+    border-radius: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 1rem;
+  }
+
+  /* 网格布局转单列 */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* 侧边栏隐藏，改用抽屉式导航 */
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  /* 导航栏优化 */
+  .navbar {
+    padding: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-color);
+  }
+
+  /* 列表项优化 */
+  .list-item {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 模态框全屏 */
+  .modal {
+    position: fixed;
+    inset: 0;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* 表单优化 */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .label {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* 下拉菜单优化 */
+  .dropdown-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 1rem 1rem 0 0;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  /* 工具栏固定底部 */
+  .toolbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    z-index: 100;
+  }
+}
+
+/* 平板设备优化 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .container {
+    max-width: 90%;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* 减少垂直间距 */
+  .section {
+    padding: 0.5rem 0;
+  }
+
+  /* 压缩头部 */
+  .navbar {
+    padding: 0.5rem;
+  }
+
+  /* 模态框居中显示 */
+  .modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+/* 大屏幕优化 */
+@media (min-width: 1536px) {
+  html {
+    font-size: 18px;
+  }
+
+  .container {
+    max-width: 1400px;
+  }
+}
+
+/* 安全区域适配（支持刘海屏等） */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 底部工具栏适配 */
+  .toolbar {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* 触摸手势支持 */
+.touch-swipe {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-pinch {
+  touch-action: none;
+}
+
+/* 滚动优化 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 平滑滚动 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 文本选择优化 */
+.mobile-selectable {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* 输入优化 */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px; /* 防止iOS自动缩放 */
+  }
+}
+
+/* 性能优化 */
+@media (max-width: 768px) {
+  /* 减少动画 */
+  .animate-pulse,
+  .animate-bounce {
+    animation-duration: 2s;
+  }
+
+  /* 减少阴影复杂度 */
+  .card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 黑暗模式优化 */
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: #1a1a1a;
+    border-color: #333;
+  }
+
+  .input,
+  .select {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #fff;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  button,
+  a {
+    border: 2px solid currentColor;
+  }
+
+  .card {
+    border: 2px solid #000;
+  }
+}
+
+/* 减少动画（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 移动端专用类 */
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* 汉堡菜单按钮 */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .hamburger span {
+    width: 24px;
+    height: 2px;
+    background: currentColor;
+    transition: all 0.3s;
+  }
+
+  .hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+
+  .hamburger.active span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+  }
+}
+
+/* 移动端底部导航 */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 100;
+  }
+
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .bottom-nav-item.active {
+    color: var(--primary-color);
+  }
+
+  .bottom-nav-icon {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 2px;
+  }
+}
