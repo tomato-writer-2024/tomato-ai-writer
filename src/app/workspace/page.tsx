@@ -7,7 +7,7 @@ import {
   type Tool,
   type ToolCategory,
 } from '@/lib/toolCategories';
-import { BrandIcons } from '@/lib/brandIcons';
+import { BrandLogo } from '@/components/BrandLogo';
 import { getToken } from '@/lib/auth-client';
 import FileUploader from '@/components/FileUploader';
 import {
@@ -135,7 +135,7 @@ export default function WorkspacePage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="flex min-h-screen bg-gradient-to-br from-red-50 via-orange-50/30 to-pink-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
       {/* 左侧侧边栏 */}
       <aside
         className={`
@@ -150,16 +150,7 @@ export default function WorkspacePage() {
         {/* Logo区域 */}
         <div className="flex h-16 items-center justify-between border-b border-slate-200/50 dark:border-slate-800 px-4">
           <Link href="/" className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl shadow-lg flex-shrink-0">
-              <BrandIcons.Logo size={24} className="text-white" />
-            </div>
-            {!sidebarCollapsed && (
-              <div className="overflow-hidden">
-                <span className="text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent whitespace-nowrap">
-                  番茄AI写作
-                </span>
-              </div>
-            )}
+            <BrandLogo size="md" />
           </Link>
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -172,9 +163,9 @@ export default function WorkspacePage() {
         {/* 用户信息卡片 */}
         {!sidebarCollapsed && (
           <div className="p-4 border-b border-slate-200/50 dark:border-slate-800">
-            <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 p-4 border border-cyan-200/30 dark:border-cyan-800/30">
+            <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-brand-dark/10 p-4 border border-brand/30 dark:border-brand/30">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-white">
                   <Crown size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -188,13 +179,13 @@ export default function WorkspacePage() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                  <p className="text-lg font-bold text-brand dark:text-brand-light">
                     {userStats.totalWords.toLocaleString()}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-400">总字数</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                  <p className="text-lg font-bold text-brand-secondary dark:text-brand-secondary">
                     {userStats.totalWorks}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-400">作品</p>
@@ -218,7 +209,7 @@ export default function WorkspacePage() {
               w-full flex items-center gap-3 px-4 py-3 rounded-xl
               transition-all duration-200 group
               ${selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                ? 'bg-gradient-to-r from-brand to-brand-dark text-white shadow-lg shadow-brand/25'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
               }
             `}
@@ -327,7 +318,7 @@ export default function WorkspacePage() {
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-xl transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25'
+                    ? 'bg-brand text-white shadow-lg shadow-brand/25'
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
@@ -337,7 +328,7 @@ export default function WorkspacePage() {
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-xl transition-all ${
                   viewMode === 'list'
-                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25'
+                    ? 'bg-brand text-white shadow-lg shadow-brand/25'
                     : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
@@ -353,14 +344,14 @@ export default function WorkspacePage() {
               description="创建新章节"
               icon={<PenTool size={24} />}
               href="/works/new"
-              gradient="from-cyan-500 to-blue-600"
+              gradient="from-brand to-brand-dark"
             />
             <QuickActionCard
               title="导入草稿"
               description="上传已有内容"
               icon={<Upload size={24} />}
               href="#import"
-              gradient="from-purple-500 to-pink-600"
+              gradient="from-brand-secondary to-brand-accent"
               isScroll
             />
             <QuickActionCard
@@ -368,7 +359,7 @@ export default function WorkspacePage() {
               description="AI辅助创作"
               icon={<Wand2 size={24} />}
               href="/continue"
-              gradient="from-amber-500 to-orange-600"
+              gradient="from-brand-creative to-brand"
             />
             <QuickActionCard
               title="我的作品"
@@ -566,7 +557,7 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
             </span>
           )}
           {tool.isNew && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 text-xs font-medium">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 dark:bg-brand/30 text-brand dark:text-brand-light text-xs font-medium">
               <Sparkles size={12} />
               新功能
             </span>
