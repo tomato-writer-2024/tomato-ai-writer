@@ -9,7 +9,8 @@ import {
 } from '@/lib/toolCategories';
 import { BrandLogo } from '@/components/BrandLogo';
 import { getToken } from '@/lib/auth-client';
-import FileUploader from '@/components/FileUploader';
+import ImportExport from '@/components/ImportExport';
+import PageIcon, { PageIconCard } from '@/components/PageIcon';
 import {
   BookOpen,
   Zap,
@@ -536,12 +537,12 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-5 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-cyan-300 dark:hover:border-cyan-700"
+      className="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-5 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-[#FF4757] dark:hover:border-[#FF4757]"
     >
       <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-150" />
       <div className="relative">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 text-xl shadow-sm group-hover:shadow-md transition-shadow">
-          {tool.icon}
+        <div className="mb-3">
+          <PageIcon pagePath={tool.href} size="lg" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
         </div>
         <h3 className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
           {tool.name}
@@ -557,7 +558,7 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
             </span>
           )}
           {tool.isNew && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand/10 dark:bg-brand/30 text-brand dark:text-brand-light text-xs font-medium">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FF4757]/10 dark:bg-[#FF4757]/30 text-[#FF4757] text-xs font-medium">
               <Sparkles size={12} />
               新功能
             </span>
@@ -580,11 +581,11 @@ function ToolListItem({ tool, onClick }: { tool: Tool; onClick: () => void }) {
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group flex items-center justify-between rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-lg hover:border-cyan-300 dark:hover:border-cyan-700"
+      className="group flex items-center justify-between rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-lg hover:border-[#FF4757] dark:hover:border-[#FF4757]"
     >
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 text-xl shadow-sm">
-          {tool.icon}
+        <div className="flex h-11 w-11 flex-shrink-0">
+          <PageIcon pagePath={tool.href} size="md" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -592,7 +593,7 @@ function ToolListItem({ tool, onClick }: { tool: Tool; onClick: () => void }) {
               {tool.name}
             </h3>
             {tool.isHot && <Flame size={14} className="text-orange-500 flex-shrink-0" />}
-            {tool.isNew && <Sparkles size={14} className="text-cyan-500 flex-shrink-0" />}
+            {tool.isNew && <Sparkles size={14} className="text-[#FF4757] flex-shrink-0" />}
             {tool.isPro && <Crown size={14} className="text-amber-500 flex-shrink-0" />}
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
@@ -611,10 +612,10 @@ function RecentToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) 
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-cyan-300 dark:hover:border-cyan-700"
+      className="group flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-[#FF4757] dark:hover:border-[#FF4757]"
     >
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-lg">
-        {tool.icon}
+      <div className="flex h-10 w-10 flex-shrink-0">
+        <PageIcon pagePath={tool.href} size="md" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">

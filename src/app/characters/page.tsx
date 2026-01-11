@@ -6,6 +6,7 @@ import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';
 import { Badge } from '@/components/Badge';
+import ImportExport from '@/components/ImportExport';
 import { Loader2, User, Sparkles, Crown, Star, Copy, Download, RefreshCw, Zap, Target, BookOpen, ChevronRight, Plus, Minus, FileText, Wand2, Heart, Sword, Shield, Eye, Brain } from 'lucide-react';
 
 interface CharacterProfile {
@@ -29,6 +30,8 @@ export default function CharactersPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [characterProfile, setCharacterProfile] = useState<CharacterProfile | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [importedContent, setImportedContent] = useState('');
+  const [importedFilename, setImportedFilename] = useState('');
 
   const roles = [
     { value: 'protagonist', label: '主角', icon: Crown, desc: '故事的核心人物' },
@@ -103,7 +106,6 @@ export default function CharactersPage() {
       alert('没有内容可导出');
       return;
     }
-
     setIsExporting(true);
     try {
       const content = `角色设定：${characterProfile.name}\n\n` +
@@ -115,15 +117,13 @@ export default function CharactersPage() {
         `性格特质：\n${characterProfile.traits.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\n` +
         `人际关系：\n${Object.entries(characterProfile.relationships).map(([k, v]) => `${k}: ${v}`).join('\n')}`;
 
-      const filename = `角色设定_${characterProfile.name}`;
-
       const response = await fetch('/api/files/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
           format: 'txt',
-          filename,
+          filename: `角色设定_${characterProfile.name}`,
         }),
       });
 
@@ -145,6 +145,27 @@ export default function CharactersPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // 生成导出内容
+  const generateExportContent = () => {
+    if (!characterProfile) return '';
+    return `角色设定：${characterProfile.name}\n\n` +
+      `角色定位：${characterProfile.role}\n` +
+      `性格特点：${characterProfile.personality}\n\n` +
+      `角色背景：\n${characterProfile.backstory}\n\n` +
+      `动机目标：\n${characterProfile.motivations.map((m, i) => `${i + 1}. ${m}`).join('\n')}\n\n` +
+      `能力特长：\n${characterProfile.abilities.map((a, i) => `${i + 1}. ${a}`).join('\n')}\n\n` +
+      `性格特质：\n${characterProfile.traits.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n\n` +
+      `人际关系：\n${Object.entries(characterProfile.relationships).map(([k, v]) => `${k}: ${v}`).join('\n')}`;
+  };
+
+  // 处理导入内容
+  const handleContentLoaded = (content: string, filename: string) => {
+    setImportedContent(content);
+    setImportedFilename(filename);
+    setStoryContext(content);
+    alert(`文件 "${filename}" 导入成功！内容已添加到故事背景中。`);
   };
 
   return (
@@ -230,6 +251,16 @@ export default function CharactersPage() {
                 </div>
               </CardBody>
             </Card>
+
+            {/* 导入导出 */}
+            <ImportExport
+              mode="both"
+              content={generateExportContent()}
+              filename={`角色设定_${characterName || '未命名'}`}
+              onContentLoaded={handleContentLoaded}
+              variant="full"
+              className="mt-4"
+            />
 
             {/* 角色定位说明 */}
             <Card>

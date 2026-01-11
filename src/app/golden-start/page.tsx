@@ -6,6 +6,7 @@ import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea, Select } from '@/components/Input';
 import { Badge } from '@/components/Badge';
+import ImportExport from '@/components/ImportExport';
 import { Loader2, Sparkles, Crown, Star, Copy, Download, RefreshCw, Zap, Lightbulb, BookOpen, Target, ChevronRight, CheckCircle2, Eye, Plus, Minus, FileText, Wand2, Award } from 'lucide-react';
 
 interface GoldenStartVersion {
@@ -32,6 +33,8 @@ export default function GoldenStartPage() {
   const [generatedVersions, setGeneratedVersions] = useState<GoldenStartVersion[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<number>(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [importedContent, setImportedContent] = useState('');
+  const [importedFilename, setImportedFilename] = useState('');
 
   const genres = [
     { value: 'xuanhuan', label: '玄幻' },
@@ -106,6 +109,32 @@ export default function GoldenStartPage() {
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
     alert('已复制到剪贴板');
+  };
+
+  // 生成导出内容
+  const generateExportContent = () => {
+    if (generatedVersions.length === 0 || !generatedVersions[selectedVersion]) return '';
+    const version = generatedVersions[selectedVersion];
+    return `【黄金开头 - ${protagonist || '未命名'}】\n\n` +
+      `开头类型：${startTypes.find(t => t.value === startType)?.label}\n\n` +
+      `【版本 ${version.version}】\n\n` +
+      `${version.content}\n\n` +
+      `【分析】\n` +
+      `钩子类型：${version.analysis.hookType}\n` +
+      `钩子强度：${version.analysis.hookStrength}/10\n` +
+      `紧张程度：${version.analysis.tensionLevel}/10\n` +
+      `可读性：${version.analysis.readability}/10\n` +
+      `独特性：${version.analysis.uniqueness}/10\n` +
+      `市场适配度：${version.analysis.marketFit}/10\n\n` +
+      `【建议】\n${version.suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+  };
+
+  // 处理导入内容
+  const handleContentLoaded = (content: string, filename: string) => {
+    setImportedContent(content);
+    setImportedFilename(filename);
+    setStoryContext(content);
+    alert(`文件 "${filename}" 导入成功！内容已添加到故事背景中。`);
   };
 
   const handleExport = async (content: string) => {
@@ -268,6 +297,16 @@ export default function GoldenStartPage() {
                 </div>
               </CardBody>
             </Card>
+
+            {/* 导入导出 */}
+            <ImportExport
+              mode="both"
+              content={generateExportContent()}
+              filename={`黄金开头_${protagonist || '未命名'}`}
+              onContentLoaded={handleContentLoaded}
+              variant="full"
+              className="mt-4"
+            />
 
             {/* 开头类型说明 */}
             <Card>
