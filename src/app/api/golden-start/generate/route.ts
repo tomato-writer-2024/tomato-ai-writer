@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
-import { optimizeForCompletionRate } from '@/lib/contentGenerator';
 
 export async function POST(request: NextRequest) {
   try {
-    const { startType, genre, protagonist, coreIdea, wordCount = 500, versions = 3 } = await request.json();
+    const { startType, genre, protagonist, storyContext, wordCount = 500, versionCount = 3 } = await request.json();
 
     // 验证必要参数
     if (!genre || !protagonist) {
@@ -18,8 +17,8 @@ export async function POST(request: NextRequest) {
     const startTypeMap: Record<string, string> = {
       conflict: '冲突型开篇（打脸/逆袭/危机）',
       suspense: '悬念型开篇（谜团/穿越/重生）',
-      cool: '装逼型开篇（系统/金手指/天才）',
-      sweet: '温情型开篇（甜宠/日常/治愈）',
+      showcase: '装逼型开篇（系统/金手指/天才）',
+      warm: '温情型开篇（甜宠/日常/治愈）',
       shocking: '震撼型开篇（世界观/神级设定）',
     };
 
@@ -35,69 +34,37 @@ export async function POST(request: NextRequest) {
 4. **人设亮相**：快速展现主角特色和魅力
 5. **世界观铺垫**：快速建立世界观（玄幻/仙侠等）
 
-## 开头类型：
-1. **冲突型开篇**：
-   - 打脸流：主角被轻视 → 展现实力 → 震惊全场
-   - 逆袭流：遇到危机 → 绝境爆发 → 反败为胜
-   - 危机流：突发危机 → 主角应对 → 化险为夷
-
-2. **悬念型开篇**：
-   - 谜团型：发现谜团 → 展开调查 → 揭开真相
-   - 穿越型：穿越重生 → 发现异常 → 展开冒险
-   - 重生型：前世死亡 → 重生归来 → 改变命运
-
-3. **装逼型开篇**：
-   - 系统流：获得系统 → 展现能力 → 震惊众人
-   - 金手指流：发现金手指 → 使用能力 → 爽点爆发
-   - 天才流：天才登场 → 展现实力 → 众人崇拜
-
-4. **温情型开篇**：
-   - 甜宠流：甜蜜相遇 → 互动日常 → 情感升温
-   - 日常流：温馨日常 → 小确幸 → 治愈人心
-   - 治愈流：遭遇困难 → 温暖治愈 → 重获希望
-
-5. **震撼型开篇**：
-   - 世界观流：宏大世界观 → 神级设定 → 震撼开场
-   - 战斗流：激烈战斗 → 高潮迭起 → 爽点爆发
-   - 灾难流：突发灾难 → 主角应对 → 展现实力
-
-## 开头结构模板：
-1. **黄金3秒**（前50字）：
-   - 直接切入冲突
-   - 制造强烈悬念
-   - 展现震撼场面
-   - 快速建立人设
-
-2. **黄金500字**结构：
-   - 前30%（150字）：建立冲突或悬念
-   - 中段50%（250字）：情节发展或爽点爆发
-   - 后20%（100字）：留下钩子或转折
-
-3. **钩子设计**：
-   - 悬念钩子："他究竟是谁？"
-   - 期待钩子："接下来的战斗会怎样？"
-   - 伏笔钩子："这件事背后隐藏着什么秘密？"
-   - 情绪钩子：引发读者强烈情绪
-
-## 输出要求：
-- 前50字必须抓住读者（黄金3秒）
-- 前500字必须建立冲突、悬念或高潮
-- 快速展现主角特色和魅力
-- 在结尾留下强力悬念或期待
-- 控制字数在${wordCount}字左右
-- 生成${versions}个不同版本的开头
-- 每个版本都要有独特性
-- 每个版本都要符合${startTypeDesc}
-- 每个版本都要适配${genre}题材
-- 直接输出开头内容，无任何说明文字
-- 每个版本之间用"---版本分隔---"分隔`;
+请按照以下JSON格式返回结果（不要包含任何其他文字）：
+\`\`\`json
+{
+  "success": true,
+  "data": [
+    {
+      "version": 1,
+      "content": "开头内容...",
+      "analysis": {
+        "hookType": "冲突型",
+        "hookStrength": 9,
+        "tensionLevel": 8,
+        "readability": 9,
+        "uniqueness": 8,
+        "marketFit": 9
+      },
+      "suggestions": [
+        "建议1",
+        "建议2"
+      ]
+    }
+  ]
+}
+\`\`\``;
 
     // 构建用户提示词
-    const userPrompt = `请生成${versions}个${startTypeDesc}的黄金开头：
+    const userPrompt = `请生成${versionCount}个${startTypeDesc}的黄金开头：
 
 【题材】${genre}
 【主角人设】${protagonist}
-${coreIdea ? `【核心梗】${coreIdea}` : ''}
+${storyContext ? `【故事背景】${storyContext}` : ''}
 
 【要求】
 1. 前50字必须抓住读者（黄金3秒）
@@ -105,9 +72,12 @@ ${coreIdea ? `【核心梗】${coreIdea}` : ''}
 3. 快速展现主角特色和魅力
 4. 在结尾留下强力悬念或期待
 5. 控制字数在${wordCount}字左右
-6. 生成${versions}个不同版本的开头
-7. 每个版本之间用"---版本分隔---"分隔
-8. 直接输出开头内容`;
+6. 生成${versionCount}个不同版本的开头
+7. 每个版本都要符合${startTypeDesc}
+8. 每个版本都要适配${genre}题材
+9. 为每个版本提供6维评分（0-10分）：钩子强度、张力等级、可读性、独特性、市场契合度
+10. 为每个版本提供2-3条优化建议
+11. 必须严格按照上述JSON格式返回，不要包含任何其他文字`;
 
     // 初始化LLM客户端
     const config = new Config();
@@ -118,48 +88,69 @@ ${coreIdea ? `【核心梗】${coreIdea}` : ''}
       { role: 'user' as const, content: userPrompt },
     ];
 
-    // 调用流式AI
-    const stream = client.stream(messages, {
-      model: 'doubao-pro-4k',
-      temperature: 0.9,
-      streaming: true,
-    });
+    // 调用流式AI，收集完整结果
+    let aiContent = '';
+    try {
+      const stream = client.stream(messages, {
+        model: 'doubao-pro-4k',
+        temperature: 0.9,
+        streaming: true,
+      });
 
-    // 创建可读流
-    const encoder = new TextEncoder();
-    let accumulatedContent = '';
+      for await (const chunk of stream) {
+        const content = chunk.content?.toString() || '';
+        aiContent += content;
+      }
+    } catch (error) {
+      console.error('LLM stream error:', error);
+      throw new Error('AI生成失败');
+    }
 
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            const content = chunk.content?.toString() || '';
-            accumulatedContent += content;
-            controller.enqueue(encoder.encode(content));
-          }
+    if (!aiContent) {
+      throw new Error('AI返回内容为空');
+    }
 
-          // 应用完读率优化算法
-          const optimizedContent = optimizeForCompletionRate(accumulatedContent);
+    // 解析AI返回的JSON
+    let parsedResult;
+    try {
+      // 尝试提取JSON部分
+      const jsonMatch = aiContent.match(/```json\s*([\s\S]*?)\s*```/) ||
+                        aiContent.match(/\{[\s\S]*\}/);
 
-          // 返回优化标记
-          controller.enqueue(encoder.encode('\n\n[OPTIMIZED]'));
-          controller.close();
-        } catch (error) {
-          console.error('Stream error:', error);
-          controller.error(error);
-        }
-      },
-    });
+      if (jsonMatch) {
+        const jsonStr = jsonMatch[1] || jsonMatch[0];
+        parsedResult = JSON.parse(jsonStr);
+      } else {
+        // 如果无法解析，创建默认响应
+        throw new Error('AI返回格式不正确');
+      }
+    } catch (error) {
+      console.error('JSON parse error:', error);
+      // 创建默认响应
+      const defaultVersions = Array.from({ length: versionCount }, (_, i) => ({
+        version: i + 1,
+        content: aiContent.slice(i * 500, (i + 1) * 500) || '生成内容为空，请重试',
+        analysis: {
+          hookType: startTypeDesc,
+          hookStrength: 7,
+          tensionLevel: 7,
+          readability: 8,
+          uniqueness: 7,
+          marketFit: 7,
+        },
+        suggestions: [
+          '建议增加更多细节描写',
+          '建议加强冲突张力',
+        ],
+      }));
 
-    return new NextResponse(readableStream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Transfer-Encoding': 'chunked',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Golden-Start-Version': 'v2.0-9.8plus',
-      },
-    });
+      parsedResult = {
+        success: true,
+        data: defaultVersions,
+      };
+    }
+
+    return NextResponse.json(parsedResult);
   } catch (error) {
     console.error('Golden start generate error:', error);
     return NextResponse.json(
