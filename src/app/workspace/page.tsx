@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   toolCategories,
-  quickTools,
-  newFeatures,
   type Tool,
   type ToolCategory,
 } from '@/lib/toolCategories';
@@ -18,19 +16,27 @@ import {
   Sparkles,
   TrendingUp,
   Crown,
-  Star,
-  Target,
   Flame,
   Clock,
   FileText,
-  Plus,
   ChevronRight,
   Search,
-  Filter,
-  Grid3X3,
+  LayoutGrid,
   List,
-  ArrowUpRight,
+  ArrowRight,
   Upload,
+  Home,
+  Star,
+  Settings,
+  Bell,
+  Menu,
+  X,
+  PenTool,
+  Users,
+  Database,
+  Wand2,
+  Palette,
+  Lightbulb,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -47,7 +53,8 @@ export default function WorkspacePage() {
   });
   const [importedContent, setImportedContent] = useState('');
   const [importedFilename, setImportedFilename] = useState('');
-  const [showImportModal, setShowImportModal] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(!!getToken());
@@ -74,7 +81,6 @@ export default function WorkspacePage() {
   };
 
   const loadRecentTools = () => {
-    // 从 localStorage 加载最近使用的工具
     const recent = localStorage.getItem('recentTools');
     if (recent) {
       const recentToolIds: string[] = JSON.parse(recent);
@@ -87,21 +93,19 @@ export default function WorkspacePage() {
           return null;
         })
         .filter((t): t is Tool => t !== null);
-      setRecentTools(recentToolList.slice(0, 6));
+      setRecentTools(recentToolList.slice(0, 8));
     }
   };
 
   const handleContentLoaded = (content: string, filename: string) => {
     setImportedContent(content);
     setImportedFilename(filename);
-    // 将导入的内容保存到 localStorage，供其他页面使用
     localStorage.setItem('importedContent', content);
     localStorage.setItem('importedFilename', filename);
     alert(`文件 "${filename}" 导入成功！内容已保存，可在各个工具中使用。`);
   };
 
   const handleToolClick = (tool: Tool) => {
-    // 保存到最近使用
     const recent = localStorage.getItem('recentTools') || '[]';
     const recentToolIds = JSON.parse(recent) as string[];
     const newRecent = [tool.id, ...recentToolIds.filter((id: string) => id !== tool.id)].slice(0, 10);
@@ -114,225 +118,227 @@ export default function WorkspacePage() {
       tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tool.description.toLowerCase().includes(searchQuery.toLowerCase())
     ),
-  })).filter(category => category.tools.length > 0);
+  })).filter(category => selectedCategory === 'all' || category.id === selectedCategory)
+    .filter(category => category.tools.length > 0);
 
-  const filteredQuickTools = quickTools.filter(tool =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredNewFeatures = newFeatures.filter(tool =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tool.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getCategoryIcon = (category: ToolCategory) => {
+    const iconMap: Record<string, any> = {
+      character: Users,
+      plot: BookOpen,
+      writing: PenTool,
+      optimization: Star,
+      creative: Palette,
+      materials: Database,
+    };
+    const Icon = iconMap[category.id] || Sparkles;
+    return <Icon size={20} />;
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-950 dark:via-blue-950 dark:to-cyan-950">
-      {/* 顶部状态栏 */}
-      <div className="border-b border-slate-200/50 bg-white/80 backdrop-blur-md dark:bg-slate-900/80">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/" className="flex items-center gap-3 group">
-                <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105">
-                  <BrandIcons.Logo size={24} className="text-white" />
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* 左侧侧边栏 */}
+      <aside
+        className={`
+          fixed left-0 top-0 z-40 h-screen w-72 bg-white/90 dark:bg-slate-900/90
+          border-r border-slate-200/50 dark:border-slate-800
+          transition-all duration-300 ease-in-out
+          ${sidebarCollapsed ? 'w-20' : 'w-72'}
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}
+        style={{ backdropFilter: 'blur(12px)' }}
+      >
+        {/* Logo区域 */}
+        <div className="flex h-16 items-center justify-between border-b border-slate-200/50 dark:border-slate-800 px-4">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl shadow-lg flex-shrink-0">
+              <BrandIcons.Logo size={24} className="text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <div className="overflow-hidden">
+                <span className="text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent whitespace-nowrap">
+                  番茄AI写作
+                </span>
+              </div>
+            )}
+          </Link>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden lg:flex p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            {sidebarCollapsed ? <Menu size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* 用户信息卡片 */}
+        {!sidebarCollapsed && (
+          <div className="p-4 border-b border-slate-200/50 dark:border-slate-800">
+            <div className="rounded-2xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 p-4 border border-cyan-200/30 dark:border-cyan-800/30">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+                  <Crown size={20} />
                 </div>
-                <div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent">
-                    番茄AI写作助手
-                  </span>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">创作工作台</p>
-                </div>
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* 搜索框 */}
-              <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="搜索工具..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-              </div>
-
-              {/* 用户信息 */}
-              <div className="flex items-center gap-3 rounded-lg bg-slate-100 px-4 py-2 dark:bg-slate-800">
-                <Crown className="h-5 w-5 text-amber-500" />
-                <div className="text-sm">
-                  <p className="font-medium text-slate-900 dark:text-white">{userStats.memberLevel}</p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">今日创作 {userStats.todayWords} 字</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                    {userStats.memberLevel}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    今日创作 {userStats.todayWords.toLocaleString()} 字
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* 统计数据卡片 */}
-        <div className="py-8">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="今日字数"
-              value={`${userStats.todayWords.toLocaleString()}`}
-              icon={<Zap className="text-amber-500" size={24} />}
-              change="+12%"
-              color="amber"
-            />
-            <StatCard
-              title="总字数"
-              value={`${userStats.totalWords.toLocaleString()}`}
-              icon={<FileText className="text-blue-500" size={24} />}
-              color="blue"
-            />
-            <StatCard
-              title="作品数量"
-              value={`${userStats.totalWorks}`}
-              icon={<BookOpen className="text-purple-500" size={24} />}
-              color="purple"
-            />
-            <StatCard
-              title="连续创作"
-              value="7天"
-              icon={<Flame className="text-orange-500" size={24} />}
-              change="🔥 坚持创作"
-              color="orange"
-            />
-          </div>
-        </div>
-
-        {/* 文件导入区 */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              📂 文件导入
-            </h2>
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Upload size={16} />
-              <span>支持 Word / PDF / TXT 格式</span>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-800">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  上传您的草稿或参考资料，AI将自动解析文件内容，可用于后续的创作、润色或续写。
-                </p>
-                <FileUploader
-                  onContentLoaded={handleContentLoaded}
-                  acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
-                  maxSize={10}
-                />
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                    {userStats.totalWords.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">总字数</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    {userStats.totalWorks}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">作品</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                    7天
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">连续</p>
+                </div>
               </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                  导入说明
-                </p>
-                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-500 mt-0.5">✓</span>
-                    <span>支持批量导入多个文件</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-500 mt-0.5">✓</span>
-                    <span>自动识别文件格式，智能提取文本内容</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-500 mt-0.5">✓</span>
-                    <span>保留原有排版和段落结构</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-cyan-500 mt-0.5">✓</span>
-                    <span>最大支持 10MB 文件</span>
-                  </li>
-                </ul>
-                {importedFilename && (
-                  <div className="mt-4 rounded-lg bg-cyan-50 p-4 dark:bg-cyan-900/20">
-                    <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
-                      ✓ 已导入: {importedFilename}
-                    </p>
-                    <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-1">
-                      共 {importedContent.length} 个字符
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 快捷工具区 */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              ⚡ 快捷工具
-            </h2>
-            <Link
-              href="/works"
-              className="flex items-center gap-2 text-sm font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400"
-            >
-              查看我的作品
-              <ArrowUpRight size={16} />
-            </Link>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {filteredQuickTools.map((tool) => (
-              <QuickToolCard
-                key={tool.id}
-                tool={tool}
-                onClick={() => handleToolClick(tool)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* 新功能展示 */}
-        {filteredNewFeatures.length > 0 && (
-          <div className="mb-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                ✨ 新功能上线
-              </h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredNewFeatures.map((tool) => (
-                <FeatureCard
-                  key={tool.id}
-                  tool={tool}
-                  onClick={() => handleToolClick(tool)}
-                />
-              ))}
             </div>
           </div>
         )}
 
-        {/* 分类工具区 */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              📚 全部工具
-            </h2>
+        {/* 导航菜单 */}
+        <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-240px)]">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`
+              w-full flex items-center gap-3 px-4 py-3 rounded-xl
+              transition-all duration-200 group
+              ${selectedCategory === 'all'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }
+            `}
+          >
+            <LayoutGrid size={20} />
+            {!sidebarCollapsed && <span className="font-medium">全部工具</span>}
+          </button>
+
+          {toolCategories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-xl
+                transition-all duration-200 group
+                ${selectedCategory === category.id
+                  ? `bg-gradient-to-r ${category.gradient} text-white shadow-lg`
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }
+              `}
+            >
+              <div className={`
+                flex h-8 w-8 items-center justify-center rounded-lg
+                ${selectedCategory === category.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}
+              `}>
+                {getCategoryIcon(category)}
+              </div>
+              {!sidebarCollapsed && (
+                <div className="flex-1 text-left">
+                  <div className="font-medium">{category.name}</div>
+                  {!sidebarCollapsed && (
+                    <div className="text-xs opacity-80">{category.tools.length} 个工具</div>
+                  )}
+                </div>
+              )}
+              {selectedCategory === category.id && !sidebarCollapsed && (
+                <ChevronRight size={16} className="opacity-60" />
+              )}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* 移动端遮罩 */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* 主内容区 */}
+      <main className="flex-1 lg:ml-72 transition-all duration-300">
+        {/* 顶部导航栏 */}
+        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-800">
+          <div className="flex h-full items-center justify-between px-4 lg:px-6">
+            <div className="flex items-center gap-4 flex-1">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <Menu size={24} />
+              </button>
+
+              {/* 搜索框 */}
+              <div className="relative w-full max-w-lg">
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="搜索工具或功能..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Bell size={20} className="text-slate-600 dark:text-slate-400" />
+              </button>
+              <Link href="/settings" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <Settings size={20} className="text-slate-600 dark:text-slate-400" />
+              </Link>
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+                {userStats.memberLevel.substring(0, 1)}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* 内容区域 */}
+        <div className="p-4 lg:p-6">
+          {/* 工具操作栏 */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                {selectedCategory === 'all' ? '全部工具' : toolCategories.find(c => c.id === selectedCategory)?.name}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                {filteredCategories.reduce((sum, cat) => sum + cat.tools.length, 0)} 个工具可用
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-xl transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-cyan-100 text-cyan-600'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
-                <Grid3X3 size={20} />
+                <LayoutGrid size={20} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-xl transition-all ${
                   viewMode === 'list'
-                    ? 'bg-cyan-100 text-cyan-600'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                 }`}
               >
                 <List size={20} />
@@ -340,230 +346,194 @@ export default function WorkspacePage() {
             </div>
           </div>
 
-          {/* 分类标签 */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-              }`}
-            >
-              全部工具
-            </button>
-            {toolCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  selectedCategory === category.id
-                    ? `bg-gradient-to-r ${category.gradient} text-white shadow-md`
-                    : 'bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-                }`}
-              >
-                {category.icon} {category.name}
-              </button>
-            ))}
+          {/* 快捷操作卡片 */}
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <QuickActionCard
+              title="开始创作"
+              description="创建新章节"
+              icon={<PenTool size={24} />}
+              href="/works/new"
+              gradient="from-cyan-500 to-blue-600"
+            />
+            <QuickActionCard
+              title="导入草稿"
+              description="上传已有内容"
+              icon={<Upload size={24} />}
+              href="#import"
+              gradient="from-purple-500 to-pink-600"
+              isScroll
+            />
+            <QuickActionCard
+              title="智能续写"
+              description="AI辅助创作"
+              icon={<Wand2 size={24} />}
+              href="/continue"
+              gradient="from-amber-500 to-orange-600"
+            />
+            <QuickActionCard
+              title="我的作品"
+              description="管理创作"
+              icon={<BookOpen size={24} />}
+              href="/works"
+              gradient="from-emerald-500 to-teal-600"
+            />
           </div>
 
-          {/* 工具列表 */}
-          {viewMode === 'grid' ? (
-            <div className="space-y-8">
-              {filteredCategories.map((category) => (
-                <div key={category.id} className="category-section">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${category.gradient}`}
-                    >
-                      <span className="text-2xl">{category.icon}</span>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {category.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {category.tools.map((tool) => (
-                      <ToolCard
-                        key={tool.id}
-                        tool={tool}
-                        onClick={() => handleToolClick(tool)}
-                      />
-                    ))}
-                  </div>
+          {/* 文件导入区域 */}
+          <div id="import" className="mb-8 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border border-slate-200/50 dark:border-slate-700/50 p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
+                  <Upload size={18} className="text-white" />
                 </div>
-              ))}
+                文件导入
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                上传您的草稿或参考资料，AI将自动解析并可用于后续创作
+              </p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredCategories.map((category) => (
-                <div key={category.id} className="rounded-xl bg-white p-6 shadow-lg dark:bg-slate-800">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${category.gradient}`}
-                    >
-                      <span className="text-2xl">{category.icon}</span>
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {category.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {category.tools.map((tool) => (
-                      <ToolListItem
-                        key={tool.id}
-                        tool={tool}
-                        onClick={() => handleToolClick(tool)}
-                      />
-                    ))}
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <FileUploader
+                  onContentLoaded={handleContentLoaded}
+                  acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
+                  maxSize={10}
+                />
+              </div>
+              <div className="space-y-4">
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-700/50 p-4">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                    <Lightbulb size={18} className="text-amber-500" />
+                    支持格式
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
+                      TXT
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
+                      PDF
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
+                      Word
+                    </span>
                   </div>
                 </div>
-              ))}
+                {importedFilename && (
+                  <div className="rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 p-4 border border-cyan-200 dark:border-cyan-800">
+                    <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 font-medium">
+                      <Sparkles size={16} />
+                      已导入文件
+                    </div>
+                    <p className="mt-1 text-sm text-slate-900 dark:text-slate-100 font-semibold">
+                      {importedFilename}
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                      {importedContent.length.toLocaleString()} 个字符
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 最近使用 */}
+          {recentTools.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-3">
+                <Clock size={24} className="text-purple-500" />
+                最近使用
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {recentTools.slice(0, 4).map((tool) => (
+                  <RecentToolCard key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* 最近使用 */}
-        {recentTools.length > 0 && (
-          <div className="mb-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                🕐 最近使用
-              </h2>
-              <button
-                onClick={() => {
-                  localStorage.removeItem('recentTools');
-                  setRecentTools([]);
-                }}
-                className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              >
-                清空记录
-              </button>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {recentTools.map((tool) => (
-                <MiniToolCard
-                  key={tool.id}
-                  tool={tool}
-                  onClick={() => handleToolClick(tool)}
-                />
-              ))}
-            </div>
+          {/* 工具列表 */}
+          <div>
+            {filteredCategories.map((category) => (
+              <div key={category.id} className="mb-8">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${category.gradient} shadow-lg`}>
+                    {getCategoryIcon(category)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                      {category.name}
+                    </h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">{category.description}</p>
+                  </div>
+                </div>
+
+                {viewMode === 'grid' ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {category.tools.map((tool) => (
+                      <ToolCard key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {category.tools.map((tool) => (
+                      <ToolListItem key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
 
-// 统计卡片组件
-function StatCard({
+// 快捷操作卡片
+function QuickActionCard({
   title,
-  value,
+  description,
   icon,
-  change,
-  color,
+  href,
+  gradient,
+  isScroll = false,
 }: {
   title: string;
-  value: string | number;
+  description: string;
   icon: React.ReactNode;
-  change?: string;
-  color: 'amber' | 'blue' | 'purple' | 'orange';
+  href: string;
+  gradient: string;
+  isScroll?: boolean;
 }) {
-  const colorClasses = {
-    amber: 'from-amber-500 to-orange-500',
-    blue: 'from-blue-500 to-cyan-500',
-    purple: 'from-purple-500 to-pink-500',
-    orange: 'from-orange-500 to-red-500',
+  const handleClick = (e: React.MouseEvent) => {
+    if (isScroll) {
+      e.preventDefault();
+      const element = document.querySelector(href);
+      element?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 dark:bg-slate-800">
-      <div
-        className={`absolute right-4 top-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${colorClasses[color]} opacity-20`}
-      >
-        {icon}
-      </div>
-      <div className="relative">
-        <p className="mb-1 text-sm font-medium text-slate-600 dark:text-slate-400">{title}</p>
-        <p className="mb-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{value}</p>
-        {change && (
-          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">{change}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// 快捷工具卡片
-function QuickToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
-  return (
     <Link
-      href={tool.href}
-      onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 dark:bg-slate-800"
+      href={href}
+      onClick={handleClick}
+      className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
     >
-      <div className="absolute right-0 top-0 h-20 w-20 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-bl-full transition-all duration-300 group-hover:scale-150" />
+      <div className={`absolute right-0 top-0 h-24 w-24 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full transition-all duration-300 group-hover:scale-125`} />
       <div className="relative">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white text-2xl shadow-lg">
-          {tool.icon}
+        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg`}>
+          {icon}
         </div>
-        <h3 className="mb-2 font-bold text-slate-900 dark:text-slate-100">
-          {tool.name}
+        <h3 className="mb-1 font-bold text-slate-900 dark:text-slate-100">
+          {title}
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          {tool.description}
+          {description}
         </p>
-        {tool.isHot && (
-          <div className="absolute right-2 top-2">
-            <Flame size={16} className="text-orange-500" />
-          </div>
-        )}
-        {tool.isNew && (
-          <div className="absolute right-2 top-2">
-            <Sparkles size={16} className="text-cyan-500" />
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-// 功能卡片
-function FeatureCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
-  return (
-    <Link
-      href={tool.href}
-      onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-200/50 p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 dark:border-purple-800 dark:from-purple-500/20 dark:to-pink-500/20"
-    >
-      <div className="relative">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 text-white text-2xl shadow-lg">
-          {tool.icon}
+        <div className="absolute right-4 bottom-4 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1">
+          <ArrowRight className="h-5 w-5 text-slate-400" />
         </div>
-        <h3 className="mb-2 font-bold text-slate-900 dark:text-slate-100">
-          {tool.name}
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {tool.description}
-        </p>
-        {tool.isNew && (
-          <div className="absolute right-2 top-2">
-            <div className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-2 py-1 text-xs font-medium text-white">
-              NEW
-            </div>
-          </div>
-        )}
       </div>
     </Link>
   );
@@ -575,92 +545,95 @@ function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 dark:bg-slate-800"
+      className="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-5 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-cyan-300 dark:hover:border-cyan-700"
     >
-      <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-slate-500/5 to-slate-600/5 rounded-bl-full transition-all duration-300 group-hover:scale-150" />
+      <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-150" />
       <div className="relative">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 text-xl dark:from-slate-700 dark:to-slate-600">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 text-xl shadow-sm group-hover:shadow-md transition-shadow">
           {tool.icon}
         </div>
         <h3 className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
           {tool.name}
         </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
           {tool.description}
         </p>
-        <div className="absolute bottom-4 right-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          <ArrowUpRight className="h-5 w-5 text-cyan-600" />
+        <div className="flex items-center gap-2">
+          {tool.isHot && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-medium">
+              <Flame size={12} />
+              热门
+            </span>
+          )}
+          {tool.isNew && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 text-xs font-medium">
+              <Sparkles size={12} />
+              新功能
+            </span>
+          )}
+          {tool.isPro && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium">
+              <Crown size={12} />
+              专业版
+            </span>
+          )}
         </div>
-        {tool.isHot && (
-          <div className="absolute right-2 top-2">
-            <Flame size={14} className="text-orange-500" />
-          </div>
-        )}
-        {tool.isNew && (
-          <div className="absolute right-2 top-2">
-            <Sparkles size={14} className="text-cyan-500" />
-          </div>
-        )}
-        {tool.isPro && (
-          <div className="absolute right-2 top-2">
-            <Crown size={14} className="text-amber-500" />
-          </div>
-        )}
       </div>
     </Link>
   );
 }
 
-// 工具列表项（列表视图）
+// 工具列表项
 function ToolListItem({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   return (
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group flex items-center justify-between rounded-lg bg-slate-50 p-4 transition-all duration-300 hover:bg-slate-100 dark:bg-slate-700/50 dark:hover:bg-slate-700"
+      className="group flex items-center justify-between rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-lg hover:border-cyan-300 dark:hover:border-cyan-700"
     >
-      <div className="flex items-center gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-lg dark:from-slate-700 dark:to-slate-600">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 text-xl shadow-sm">
           {tool.icon}
         </div>
-        <div>
-          <h3 className="font-medium text-slate-900 dark:text-slate-100">
-            {tool.name}
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+              {tool.name}
+            </h3>
+            {tool.isHot && <Flame size={14} className="text-orange-500 flex-shrink-0" />}
+            {tool.isNew && <Sparkles size={14} className="text-cyan-500 flex-shrink-0" />}
+            {tool.isPro && <Crown size={14} className="text-amber-500 flex-shrink-0" />}
+          </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
             {tool.description}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        {tool.isHot && <Flame size={14} className="text-orange-500" />}
-        {tool.isNew && <Sparkles size={14} className="text-cyan-500" />}
-        {tool.isPro && <Crown size={14} className="text-amber-500" />}
-        <ChevronRight className="h-5 w-5 text-slate-400 transition-transform duration-300 group-hover:translate-x-1" />
-      </div>
+      <ChevronRight className="h-5 w-5 text-slate-400 transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0 ml-4" />
     </Link>
   );
 }
 
-// 迷你工具卡片
-function MiniToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
+// 最近使用工具卡片
+function RecentToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
   return (
     <Link
       href={tool.href}
       onClick={onClick}
-      className="group flex items-center gap-3 rounded-xl bg-white p-4 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 dark:bg-slate-800"
+      className="group flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-cyan-300 dark:hover:border-cyan-700"
     >
-      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 text-lg dark:from-slate-700 dark:to-slate-600">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-lg">
         {tool.icon}
       </div>
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
           {tool.name}
         </h3>
-        <p className="truncate text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
           {tool.description}
         </p>
       </div>
+      <ArrowRight className="h-4 w-4 text-slate-400 transition-all duration-300 group-hover:translate-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0" />
     </Link>
   );
 }
