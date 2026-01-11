@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, ArrowLeft, Zap, CheckCircle, AlertCircle } from 'lucide-react';
 import { BrandIcons } from '@/lib/brandIcons';
+import { setToken } from '@/lib/auth-client';
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
@@ -59,6 +60,10 @@ export default function ResetPasswordPage() {
       const data = await response.json();
 
       if (data.success) {
+        // 存储token到localStorage
+        if (data.data && data.data.token) {
+          setToken(data.data.token);
+        }
         setIsSuccess(true);
       } else {
         setError(data.error || '重置失败，请稍后重试');

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BrandIcons, BRAND_COLORS } from '@/lib/brandIcons';
+import { removeToken, getToken } from '@/lib/auth-client';
 import { Menu, X, User, FileText, BarChart3, Settings, LogOut } from 'lucide-react';
 
 interface NavItem {
@@ -33,16 +34,15 @@ const navItems: NavItem[] = [
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticatedState, setIsAuthenticatedState] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    setIsAuthenticatedState(!!getToken());
   }, [pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    removeToken();
     window.location.href = '/login';
   };
 
@@ -51,7 +51,7 @@ export default function Navigation() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href={isAuthenticated ? '/workspace' : '/'} className="flex items-center gap-3 group">
+          <Link href={isAuthenticatedState ? '/workspace' : '/'} className="flex items-center gap-3 group">
             <div
               className="flex items-center justify-center rounded-xl shadow-lg transition-all duration-300 group-hover:shadow-xl group-hover:scale-105"
               style={{
@@ -72,7 +72,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:gap-1">
-            {isAuthenticated ? (
+            {isAuthenticatedState ? (
               <>
                 {navItems.map((item) => (
                   <Link
@@ -126,7 +126,7 @@ export default function Navigation() {
       {isMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md">
           <div className="space-y-1 px-4 py-3">
-            {isAuthenticated ? (
+            {isAuthenticatedState ? (
               <>
                 {navItems.map((item) => (
                   <Link

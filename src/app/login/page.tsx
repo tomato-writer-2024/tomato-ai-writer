@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogIn, Mail, Lock, Sparkles, Zap, Eye, EyeOff } from 'lucide-react';
 import { BrandIcons } from '@/lib/brandIcons';
+import { setToken } from '@/lib/auth-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,6 +31,10 @@ export default function LoginPage() {
 
       const data = await response.json();
       if (data.success) {
+        // 存储token到localStorage
+        if (data.data && data.data.token) {
+          setToken(data.data.token);
+        }
         alert('登录成功！');
         router.push('/workspace');
       } else {

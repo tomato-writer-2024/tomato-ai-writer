@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { UserPlus, Mail, Lock, User, Sparkles, Zap, Eye, EyeOff } from 'lucide-react';
 import { BrandIcons } from '@/lib/brandIcons';
+import { setToken } from '@/lib/auth-client';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,6 +48,10 @@ export default function RegisterPage() {
 
       const data = await response.json();
       if (data.success) {
+        // 存储token到localStorage
+        if (data.data && data.data.token) {
+          setToken(data.data.token);
+        }
         alert('注册成功！');
         router.push('/workspace');
       } else {
