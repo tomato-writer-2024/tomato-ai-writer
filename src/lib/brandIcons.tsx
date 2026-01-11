@@ -1,19 +1,16 @@
 import React from 'react';
+import Image from 'next/image';
 
 export const Logo = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-  </svg>
+  <div className={`relative ${className}`} style={{ width: size, height: size }}>
+    <Image
+      src="/logo.png"
+      alt="番茄AI写作助手"
+      fill
+      className="object-contain"
+      sizes={`${size}px`}
+    />
+  </div>
 );
 
 export const Writing = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
