@@ -168,42 +168,43 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
           <FeatureCard
             icon={<BrandIcons.Writing size={36} />}
-            title="精修润色工坊"
-            description="完读率潜力计算、爽点密度控制、网感增强，让文字更具冲击力"
-            link="/workspace/polish"
+            title="智能续写"
+            description="AI智能续写，保持剧情连贯和风格一致"
+            link="/continue"
             isNew
           />
           <FeatureCard
             icon={<BrandIcons.AI size={36} />}
-            title="智能续写大脑"
-            description="剧情逻辑锚点、多分支剧情生成、风格一致性保障，告别逻辑混乱"
-            link="/workspace/continue"
+            title="爆款拆解"
+            description="深度拆解爆款作品的成功要素"
+            link="/explosive-analyze"
           />
           <FeatureCard
             icon={<BrandIcons.Star size={36} />}
-            title="爆款拆解分析"
-            description="深度拆解爆款作品的6大分析维度和5大爆款公式，提炼可复制的成功模板"
-            link="/workspace/analyze"
-            isNew
+            title="编辑审稿"
+            description="模拟编辑审稿，提供专业修改建议"
+            link="/editor-review"
+            isPro
           />
           <FeatureCard
             icon={<BrandIcons.Award size={36} />}
-            title="模拟编辑审稿"
-            description="双视角专业审稿，预测书评章评9.8分+，为达成爆款Top3提供明确方向"
-            link="/workspace/review"
+            title="黄金开头"
+            description="生成吸引读者的黄金3秒开头"
+            link="/golden-start"
             isPro
           />
           <FeatureCard
             icon={<BrandIcons.Crown size={36} />}
-            title="黄金开头生成"
-            description="遵循黄金3秒+黄金500字原则，生成多版本开头，助你打造爆款开篇"
-            link="/workspace/golden-start"
+            title="爽感引擎"
+            description="优化情节爽点，提升读者爽感"
+            link="/satisfaction-engine"
+            isNew
           />
           <FeatureCard
             icon={<BrandIcons.Stats size={36} />}
-            title="数据统计追踪"
-            description="爆款趋势分析、质量追踪、用户画像，全方位助力内容优化"
-            link="/workspace/stats"
+            title="数据统计"
+            description="查看创作数据和统计分析"
+            link="/stats"
           />
         </div>
 
@@ -221,37 +222,37 @@ export default function Home() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
               icon={<BookOpen size={36} />}
-              title="百万级素材库"
-              description="古代常识、民俗神话、写作技巧等海量素材，拒绝海量查找，精准定位"
-              link="/workspace/materials"
+              title="素材库"
+              description="管理你的创作素材和参考资料"
+              link="/materials"
               isNew
             />
             <FeatureCard
               icon={<Target size={36} />}
-              title="番茄投稿攻略"
-              description="独家番茄投稿指南、审核标准、签约政策、避坑指南，新人必备"
-              link="/workspace/submission-guide"
+              title="大纲生成"
+              description="自动生成完整故事大纲"
+              link="/outline-generator"
               isNew
             />
             <FeatureCard
               icon={<Database size={36} />}
-              title="拆书分析功能"
-              description="深度拆解爆款小说，提炼成功模板，一键应用，快速掌握爆款秘诀"
-              link="/workspace/book-analysis"
+              title="角色生成"
+              description="一键创建立体角色"
+              link="/characters"
               isPro
             />
             <FeatureCard
               icon={<Globe size={36} />}
-              title="多平台适配"
-              description="支持番茄、起点、晋江、知乎等主流平台，一键适配不同风格"
-              link="/workspace/platform-adapter"
+              title="风格模拟"
+              description="模拟不同作家的写作风格"
+              link="/style-simulator"
               isNew
             />
             <FeatureCard
               icon={<Shield size={36} />}
-              title="原创性检测"
-              description="版权检测、敏感词过滤、抄袭风险分析，确保内容原创合规"
-              link="/workspace/compliance"
+              title="情节反转"
+              description="设计意想不到的剧情反转"
+              link="/plot-twist"
               isNew
             />
           </div>
