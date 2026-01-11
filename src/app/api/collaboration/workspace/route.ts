@@ -1,101 +1,43 @@
 /**
- * 协作工作空间 API
- * 实现实时协作和版本控制
+ * 协作功能 - 工作空间 API
+ * 支持工作空间创建、管理、实时协作
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
-import crypto from 'crypto';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 
 /**
- * 创建协作工作空间
- */
-export async function POST(request: NextRequest) {
-  try {
-    const token = getToken(request);
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
-    }
-
-    const userId = token.userId;
-    const body = await request.json();
-    const { name, description, type = 'document' } = body;
-
-    // 生成唯一的工作空间ID
-    const workspaceId = crypto.randomBytes(16).toString('hex');
-
-    const pool = getPool();
-
-    // 创建工作空间
-    await pool.query(
-      `INSERT INTO collaboration_workspaces
-        (id, owner_id, name, description, type, created_at)
-       VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [workspaceId, userId, name, description, type]
-    );
-
-    // 添加创建者为管理员
-    await pool.query(
-      `INSERT INTO workspace_members
-        (workspace_id, user_id, role, joined_at)
-       VALUES ($1, $2, 'owner', NOW())`,
-      [workspaceId, userId]
-    );
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        workspaceId,
-        name,
-        description,
-        type,
-      },
-    });
-  } catch (error) {
-    console.error('创建工作空间失败:', error);
-    return NextResponse.json(
-      { success: false, error: '创建工作空间失败' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
+ * GET /api/collaboration/workspace
  * 获取用户的工作空间列表
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const pool = getPool();
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
+    }
 
-    const result = await pool.query(
+    const userId = payload.userId;
+
+    const result = await db.query(
       `SELECT
-        cw.id,
-        cw.name,
-        cw.description,
-        cw.type,
-        cw.created_at,
-        cw.updated_at,
-        wm.role,
-        u.username as owner_name,
-        (SELECT COUNT(*) FROM workspace_members WHERE workspace_id = cw.id) as member_count,
-        (SELECT COUNT(*) FROM workspace_documents WHERE workspace_id = cw.id) as document_count
-      FROM collaboration_workspaces cw
-      JOIN workspace_members wm ON cw.id = wm.workspace_id
-      JOIN users u ON cw.owner_id = u.id
-      WHERE wm.user_id = $1
-      ORDER BY cw.updated_at DESC`,
+        w.workspace_id,
+        w.name,
+        w.description,
+        w.created_at,
+        w.updated_at,
+        COUNT(uw.user_id) as member_count
+      FROM workspaces w
+      JOIN workspace_members uw ON w.workspace_id = uw.workspace_id
+      WHERE uw.user_id = $1 OR w.owner_id = $1
+      GROUP BY w.workspace_id
+      ORDER BY w.updated_at DESC`,
       [userId]
     );
 
@@ -105,9 +47,49 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('获取工作空间失败:', error);
-    return NextResponse.json(
-      { success: false, error: '获取工作空间失败' },
-      { status: 500 }
+    return NextResponse.json({ error: '获取工作空间失败' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/collaboration/workspace
+ * 创建新工作空间
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const { name, description } = await request.json();
+
+    const result = await db.query(
+      `INSERT INTO workspaces (name, description, owner_id, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
+       RETURNING workspace_id`,
+      [name, description, userId]
     );
+
+    // 添加创建者为成员
+    await db.query(
+      `INSERT INTO workspace_members (workspace_id, user_id, role, joined_at)
+       VALUES ($1, $2, 'owner', NOW())`,
+      [result.rows[0].workspace_id, userId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: { workspaceId: result.rows[0].workspace_id },
+    });
+  } catch (error) {
+    console.error('创建工作空间失败:', error);
+    return NextResponse.json({ error: '创建工作空间失败' }, { status: 500 });
   }
 }

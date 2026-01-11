@@ -2,7 +2,7 @@
  * 数据库连接管理
  * 基于环境变量配置数据库连接
  */
-import { Pool, PoolConfig } from 'pg';
+import { Pool, PoolConfig, QueryResult } from 'pg';
 
 let pool: Pool | null = null;
 
@@ -34,6 +34,25 @@ export function getPool(): Pool {
 }
 
 /**
+ * 导出数据库实例，方便在API路由中使用
+ */
+export const db = {
+  query: async (text: string, params?: any[]): Promise<QueryResult> => {
+    const pool = getPool();
+    const start = Date.now();
+    try {
+      const res = await pool.query(text, params);
+      const duration = Date.now() - start;
+      console.log('Executed query', { text, duration, rows: res.rowCount });
+      return res;
+    } catch (error) {
+      console.error('Query error', { text, params, error });
+      throw error;
+    }
+  },
+};
+
+/**
  * 关闭数据库连接池
  */
 export async function closePool(): Promise<void> {
@@ -54,7 +73,7 @@ export async function testConnection(): Promise<boolean> {
     client.release();
     return true;
   } catch (error) {
-    console.error('数据库连接测试失败:', error);
+    console.error('数据库连接测试测试失败:', error);
     return false;
   }
 }

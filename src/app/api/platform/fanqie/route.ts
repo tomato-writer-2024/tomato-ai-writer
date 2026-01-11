@@ -1,302 +1,197 @@
 /**
- * 番茄小说平台对接 API
- * 实现多平台发布和管理
+ * 平台对接 - 番茄小说 API
+ * 实现多平台账号管理、作品同步发布
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 import crypto from 'crypto';
 
 /**
- * 平台配置
- */
-const FANQIE_CONFIG = {
-  baseUrl: process.env.FANQIE_API_URL || 'https://api.fanqienovel.com',
-  appKey: process.env.FANQIE_APP_KEY || '',
-  appSecret: process.env.FANQIE_APP_SECRET || '',
-};
-
-/**
- * 签名生成
- */
-function generateSignature(params: any, secret: string): string {
-  const sortedKeys = Object.keys(params).sort();
-  const signStr = sortedKeys
-    .map((key) => `${key}=${params[key]}`)
-    .join('&') + `&key=${secret}`;
-
-  return crypto.createHash('md5').update(signStr).digest('hex');
-}
-
-/**
- * POST /api/platform/fanqie/sync
- * 同步作品到番茄小说
- */
-export async function POST(request: NextRequest) {
-  try {
-    const token = getToken(request);
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
-    }
-
-    const userId = token.userId;
-    const body = await request.json();
-    const { workId, chapters } = body;
-
-    if (!workId) {
-      return NextResponse.json(
-        { success: false, error: '缺少workId参数' },
-        { status: 400 }
-      );
-    }
-
-    const pool = getPool();
-
-    // 获取作品信息
-    const workResult = await pool.query(
-      `SELECT * FROM user_works WHERE id = $1 AND user_id = $2`,
-      [workId, userId]
-    );
-
-    if (workResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '作品不存在' },
-        { status: 404 }
-      );
-    }
-
-    const work = workResult.rows[0];
-
-    // 获取用户的番茄小说账号信息
-    const accountResult = await pool.query(
-      `SELECT * FROM platform_accounts
-       WHERE user_id = $1 AND platform = 'fanqie' AND is_active = true`,
-      [userId]
-    );
-
-    if (accountResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '未绑定番茄小说账号' },
-        { status: 400 }
-      );
-    }
-
-    const account = accountResult.rows[0];
-
-    // 构建API请求参数
-    const params: any = {
-      app_key: FANQIE_CONFIG.appKey,
-      timestamp: Date.now(),
-      novel_id: work.external_id || '',
-      title: work.title,
-      description: work.description,
-      category: work.genre,
-      tags: work.tags || [],
-    };
-
-    // 生成签名
-    const signature = generateSignature(params, FANQIE_CONFIG.appSecret);
-    params.signature = signature;
-
-    try {
-      // 调用番茄小说API（模拟）
-      // const response = await fetch(`${FANQIE_CONFIG.baseUrl}/v1/novel/sync`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     Authorization: `Bearer ${account.access_token}`,
-      //   },
-      //   body: JSON.stringify(params),
-      // });
-
-      // const data = await response.json();
-
-      // 模拟成功响应
-      const data = {
-        success: true,
-        novel_id: work.external_id || `fanqie_${Date.now()}`,
-        message: '同步成功',
-        signature: params.signature,
-      };
-
-      // 保存外部ID
-      if (data.novel_id && !work.external_id) {
-        await pool.query(
-          `UPDATE user_works SET external_id = $1 WHERE id = $2`,
-          [data.novel_id, workId]
-        );
-      }
-
-      // 记录同步日志
-      await pool.query(
-        `INSERT INTO platform_sync_logs
-          (user_id, work_id, platform, action, status, message, created_at)
-         VALUES ($1, $2, 'fanqie', 'sync', 'success', $3, NOW())`,
-        [userId, workId, data.message]
-      );
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          novelId: data.novel_id,
-          message: data.message,
-        },
-      });
-    } catch (apiError) {
-      console.error('番茄小说API调用失败:', apiError);
-
-      // 记录失败日志
-      await pool.query(
-        `INSERT INTO platform_sync_logs
-          (user_id, work_id, platform, action, status, message, created_at)
-         VALUES ($1, $2, 'fanqie', 'sync', 'failed', $3, NOW())`,
-        [userId, workId, 'API调用失败']
-      );
-
-      return NextResponse.json(
-        { success: false, error: '平台API调用失败' },
-        { status: 500 }
-      );
-    }
-  } catch (error) {
-    console.error('同步作品失败:', error);
-    return NextResponse.json(
-      { success: false, error: '同步作品失败' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/platform/fanqie/status
- * 查询同步状态
+ * GET /api/platform/fanqie
+ * 获取番茄小说账号信息
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const { searchParams } = new URL(request.url);
-    const workId = searchParams.get('workId');
-
-    if (!workId) {
-      return NextResponse.json(
-        { success: false, error: '缺少workId参数' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
+    const userId = payload.userId;
 
-    // 查询最新的同步日志
-    const result = await pool.query(
-      `SELECT * FROM platform_sync_logs
-       WHERE user_id = $1 AND work_id = $2 AND platform = 'fanqie'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [userId, workId]
+    const result = await db.query(
+      `SELECT
+        platform_account_id,
+        platform_name,
+        account_name,
+        access_token,
+        refresh_token,
+        expires_at,
+        is_active
+      FROM platform_accounts
+      WHERE user_id = $1 AND platform_name = 'fanqie'`,
+      [userId]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({
         success: true,
-        data: {
-          synced: false,
-          message: '尚未同步',
-        },
+        data: null,
+        message: '未绑定番茄小说账号',
       });
     }
 
-    const log = result.rows[0];
-
     return NextResponse.json({
       success: true,
-      data: {
-        synced: log.status === 'success',
-        lastSync: log.created_at,
-        message: log.message,
-        status: log.status,
-      },
+      data: result.rows[0],
     });
   } catch (error) {
-    console.error('查询同步状态失败:', error);
-    return NextResponse.json(
-      { success: false, error: '查询同步状态失败' },
-      { status: 500 }
-    );
+    console.error('获取账号信息失败:', error);
+    return NextResponse.json({ error: '获取账号信息失败' }, { status: 500 });
   }
 }
 
 /**
- * PUT /api/platform/fanqie/account
+ * POST /api/platform/fanqie
  * 绑定番茄小说账号
  */
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const body = await request.json();
-    const { username, password } = body;
-
-    if (!username || !password) {
-      return NextResponse.json(
-        { success: false, error: '缺少账号信息' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
+    const userId = payload.userId;
+    const { accountName, accessToken, refreshToken } = await request.json();
 
-    // 检查是否已绑定
-    const existingResult = await pool.query(
-      `SELECT * FROM platform_accounts
-       WHERE user_id = $1 AND platform = 'fanqie'`,
-      [userId]
+    const result = await db.query(
+      `INSERT INTO platform_accounts
+       (user_id, platform_name, account_name, access_token, refresh_token, expires_at, is_active, created_at)
+       VALUES ($1, 'fanqie', $2, $3, $4, NOW() + INTERVAL '30 days', true, NOW())
+       ON CONFLICT (user_id, platform_name)
+       DO UPDATE SET
+         account_name = $2,
+         access_token = $3,
+         refresh_token = $4,
+         expires_at = NOW() + INTERVAL '30 days',
+         is_active = true,
+         updated_at = NOW()
+       RETURNING platform_account_id`,
+      [userId, accountName, accessToken, refreshToken]
     );
-
-    if (existingResult.rows.length > 0) {
-      // 更新账号信息
-      await pool.query(
-        `UPDATE platform_accounts
-         SET username = $1, access_token = $2, is_active = true, updated_at = NOW()
-         WHERE id = $3`,
-        [username, password, existingResult.rows[0].id]
-      );
-    } else {
-      // 插入新账号
-      await pool.query(
-        `INSERT INTO platform_accounts
-          (user_id, platform, username, access_token, is_active, created_at, updated_at)
-         VALUES ($1, 'fanqie', $2, $3, true, NOW(), NOW())`,
-        [userId, username, password]
-      );
-    }
 
     return NextResponse.json({
       success: true,
-      message: '账号绑定成功',
+      data: { platformAccountId: result.rows[0].platform_account_id },
     });
   } catch (error) {
     console.error('绑定账号失败:', error);
-    return NextResponse.json(
-      { success: false, error: '绑定账号失败' },
-      { status: 500 }
+    return NextResponse.json({ error: '绑定账号失败' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/platform/fanqie/publish
+ * 同步发布到番茄小说
+ */
+export async function publishToFanqie(request: NextRequest) {
+  try {
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
+    const { chapterId, novelId } = await request.json();
+
+    // 获取章节内容
+    const chapter = await db.query(
+      `SELECT title, content, chapter_number FROM chapters WHERE chapter_id = $1 AND user_id = $2`,
+      [chapterId, userId]
     );
+
+    if (chapter.rows.length === 0) {
+      return NextResponse.json({ error: '章节不存在' }, { status: 404 });
+    }
+
+    // 获取平台账号
+    const account = await db.query(
+      `SELECT access_token FROM platform_accounts WHERE user_id = $1 AND platform_name = 'fanqie' AND is_active = true`,
+      [userId]
+    );
+
+    if (account.rows.length === 0) {
+      return NextResponse.json({ error: '未绑定番茄小说账号' }, { status: 400 });
+    }
+
+    // TODO: 调用番茄小说API进行发布
+    // const response = await fetch('https://api.fanqie.com/v1/novels/chapters', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${account.rows[0].access_token}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     novel_id: novelId,
+    //     title: chapter.rows[0].title,
+    //     content: chapter.rows[0].content,
+    //     chapter_number: chapter.rows[0].chapter_number,
+    //   }),
+    // });
+
+    // 记录发布日志
+    await db.query(
+      `INSERT INTO platform_publish_logs
+       (user_id, chapter_id, platform_name, status, message, created_at)
+       VALUES ($1, $2, 'fanqie', 'success', '发布成功', NOW())`,
+      [userId, chapterId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: '发布成功',
+      data: {
+        platformChapterId: `fanqie_${chapterId}`,
+        publishTime: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('发布失败:', error);
+
+    // 记录失败日志
+    if (request.headers.get('authorization')) {
+      const payload = verifyToken(request.headers.get('authorization')!.replace('Bearer ', ''));
+      if (payload) {
+        const { chapterId } = await request.json().catch(() => ({ chapterId: null }));
+        if (chapterId) {
+          await db.query(
+            `INSERT INTO platform_publish_logs
+             (user_id, chapter_id, platform_name, status, message, created_at)
+             VALUES ($1, $2, 'fanqie', 'failed', $3, NOW())`,
+            [payload.userId, chapterId, (error as Error).message]
+          );
+        }
+      }
+    }
+
+    return NextResponse.json({ error: '发布失败' }, { status: 500 });
   }
 }

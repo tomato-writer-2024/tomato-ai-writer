@@ -1,265 +1,495 @@
 /**
  * 全局快捷键系统 Hook
- * 支持 Cmd/Ctrl 快捷键
+ * 支持 Cmd/Ctrl 快捷键、多作用域管理、快捷键帮助面板
  */
 
-export interface ShortcutKey {
-  key: string;
-  ctrl?: boolean;
-  shift?: boolean;
-  alt?: boolean;
-  meta?: boolean; // Cmd on Mac, Win key on Windows
-}
+import { useEffect, useCallback, useState, useRef } from 'react';
 
-export type ShortcutHandler = (event: KeyboardEvent) => void;
+export type ShortcutScope = 'global' | 'editor' | 'navigation' | 'workspace';
 
 export interface Shortcut {
-  keys: ShortcutKey | ShortcutKey[];
-  handler: ShortcutHandler;
+  key: string;
   description: string;
-  scope?: 'global' | 'editor' | 'navigation';
+  handler: () => void;
+  scope?: ShortcutScope;
+  macKey?: string; // Mac 专用按键
+  disabled?: boolean;
 }
 
-export class KeyboardShortcutManager {
-  private shortcuts: Map<string, Shortcut> = new Map();
-  private scope: 'global' | 'editor' | 'navigation' = 'global';
+export interface ShortcutGroup {
+  scope: ShortcutScope;
+  name: string;
+  shortcuts: Shortcut[];
+}
 
-  /**
-   * 注册快捷键
-   */
-  register(id: string, shortcut: Shortcut): () => void {
-    this.shortcuts.set(id, shortcut);
+/**
+ * 使用快捷键 Hook
+ */
+export function useKeyboardShortcuts(
+  shortcuts: Shortcut[],
+  scope?: ShortcutScope
+) {
+  const [activeScope, setActiveScope] = useState<ShortcutScope>('global');
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const scopeRef = useRef(scope || 'global');
 
-    // 返回取消注册的函数
-    return () => {
-      this.shortcuts.delete(id);
-    };
-  }
+  // 更新作用域
+  const setScope = useCallback((newScope: ShortcutScope) => {
+    scopeRef.current = newScope;
+    setActiveScope(newScope);
+  }, []);
 
-  /**
-   * 设置当前作用域
-   */
-  setScope(scope: 'global' | 'editor' | 'navigation') {
-    this.scope = scope;
-  }
+  // 处理按键事件
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const currentScope = scope || scopeRef.current;
 
-  /**
-   * 检查键盘事件是否匹配快捷键
-   */
-  private matchesShortcut(
-    event: KeyboardEvent,
-    shortcutKey: ShortcutKey
-  ): boolean {
-    const key = event.key.toLowerCase();
-    const ctrl = event.ctrlKey || event.metaKey; // Mac 上 Cmd 等同于 Ctrl
-    const shift = event.shiftKey;
-    const alt = event.altKey;
+    // 检查是否在输入框中
+    const target = event.target as HTMLElement;
+    const isInput =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable;
 
-    return (
-      key === shortcutKey.key.toLowerCase() &&
-      (shortcutKey.ctrl ? ctrl : !ctrl) &&
-      (shortcutKey.shift ? shift : !shift) &&
-      (shortcutKey.alt ? alt : !alt)
-    );
-  }
-
-  /**
-   * 处理键盘事件
-   */
-  handleEvent(event: KeyboardEvent): boolean {
-    // 如果在输入框中，只处理特定的快捷键
-    const isInputFocused =
-      event.target instanceof HTMLInputElement ||
-      event.target instanceof HTMLTextAreaElement ||
-      event.target instanceof HTMLSelectElement ||
-      (event.target as HTMLElement).isContentEditable;
-
-    for (const [id, shortcut] of this.shortcuts) {
-      // 检查作用域
-      if (shortcut.scope && shortcut.scope !== this.scope) {
-        continue;
-      }
-
-      // 如果在输入框中，跳过非编辑器快捷键
-      if (isInputFocused && shortcut.scope !== 'editor') {
-        continue;
-      }
-
-      const keys = Array.isArray(shortcut.keys)
-        ? shortcut.keys
-        : [shortcut.keys];
-
-      const matched = keys.some(key => this.matchesShortcut(event, key));
-
-      if (matched) {
-        event.preventDefault();
-        event.stopPropagation();
-        shortcut.handler(event);
-        return true;
-      }
+    // 如果是输入框且不是编辑器作用域，则忽略快捷键
+    if (isInput && currentScope !== 'editor') {
+      return;
     }
 
-    return false;
-  }
+    // 检查 Cmd/Ctrl 键
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
 
-  /**
-   * 获取所有快捷键
-   */
-  getShortcuts(): Map<string, Shortcut> {
-    return this.shortcuts;
-  }
-}
+    // 构建快捷键字符串
+    const modifiers: string[] = [];
+    if (cmdOrCtrl) modifiers.push(isMac ? 'Cmd' : 'Ctrl');
+    if (event.shiftKey) modifiers.push('Shift');
+    if (event.altKey) modifiers.push('Alt');
+    const key = event.key === ' ' ? 'Space' : event.key;
+    const shortcutKey = [...modifiers, key].join('+');
 
-// 全局快捷键管理器实例
-const globalShortcutManager = new KeyboardShortcutManager();
+    // 查找匹配的快捷键
+    const matchedShortcut = shortcuts.find(
+      (shortcut) =>
+        !shortcut.disabled &&
+        (!shortcut.scope || shortcut.scope === currentScope) &&
+        (shortcut.key === shortcutKey ||
+          (isMac && shortcut.macKey === shortcutKey))
+    );
 
-// 在客户端挂载全局键盘事件监听器
-if (typeof window !== 'undefined') {
-  window.addEventListener('keydown', (event) => {
-    globalShortcutManager.handleEvent(event);
-  });
-}
+    if (matchedShortcut) {
+      event.preventDefault();
+      matchedShortcut.handler();
+    }
 
-/**
- * 全局快捷键 Hook
- */
-export function useKeyboardShortcuts() {
-  const register = (id: string, shortcut: Shortcut): () => void => {
-    return globalShortcutManager.register(id, shortcut);
+    // 打开帮助面板（Ctrl/Cmd + /）
+    if (cmdOrCtrl && event.key === '/') {
+      event.preventDefault();
+      setIsHelpOpen(!isHelpOpen);
+    }
+  }, [shortcuts, scope, isHelpOpen]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  return {
+    activeScope,
+    setScope,
+    isHelpOpen,
+    setIsHelpOpen,
   };
-
-  const setScope = (scope: 'global' | 'editor' | 'navigation') => {
-    globalShortcutManager.setScope(scope);
-  };
-
-  const getShortcuts = () => globalShortcutManager.getShortcuts();
-
-  return { register, setScope, getShortcuts };
 }
 
 /**
- * 预定义的快捷键配置
+ * 全局快捷键配置
  */
-export const SHORTCUTS = {
-  // 全局快捷键
-  SAVE: { key: 's', ctrl: true, meta: true },
-  SAVE_AS: { key: 's', ctrl: true, shift: true, meta: true },
-  NEW_FILE: { key: 'n', ctrl: true, meta: true },
-  OPEN_FILE: { key: 'o', ctrl: true, meta: true },
-  SEARCH: { key: 'f', ctrl: true, meta: true },
-  REPLACE: { key: 'h', ctrl: true, meta: true },
-  HELP: { key: '/', ctrl: true, meta: true },
-  SETTINGS: { key: ',', ctrl: true, meta: true },
-
-  // 编辑器快捷键
-  BOLD: { key: 'b', ctrl: true, meta: true },
-  ITALIC: { key: 'i', ctrl: true, meta: true },
-  UNDERLINE: { key: 'u', ctrl: true, meta: true },
-  STRIKETHROUGH: { key: 'd', ctrl: true, shift: true, meta: true },
-  HEADER: { key: '1', ctrl: true, alt: true, meta: true },
-
-  // AI写作快捷键
-  AI_CONTINUE: { key: 'k', ctrl: true, meta: true },
-  AI_POLISH: { key: 'p', ctrl: true, alt: true, meta: true },
-  AI_GENERATE: { key: 'g', ctrl: true, meta: true },
-
-  // 导航快捷键
-  GO_HOME: { key: 'h', alt: true },
-  GO_WORKSPACE: { key: 'w', alt: true },
-  GO_ANALYTICS: { key: 'a', alt: true },
-  GO_SETTINGS: { key: 's', alt: true },
-
-  // 视图快捷键
-  TOGGLE_SIDEBAR: { key: 'b', ctrl: true, alt: true, meta: true },
-  TOGGLE_DARK: { key: 'd', ctrl: true, shift: true, alt: true, meta: true },
-  ZOOM_IN: { key: '=', ctrl: true, meta: true },
-  ZOOM_OUT: { key: '-', ctrl: true, meta: true },
-  ZOOM_RESET: { key: '0', ctrl: true, meta: true },
-} as const;
+export const globalShortcuts: Shortcut[] = [
+  // 导航
+  {
+    key: 'Ctrl+K',
+    macKey: 'Cmd+K',
+    description: '快速搜索',
+    scope: 'global',
+    handler: () => {
+      // 打开搜索框
+      console.log('打开搜索框');
+    },
+  },
+  {
+    key: 'Ctrl+B',
+    macKey: 'Cmd+B',
+    description: '打开侧边栏',
+    scope: 'global',
+    handler: () => {
+      console.log('打开侧边栏');
+    },
+  },
+  {
+    key: 'Ctrl+N',
+    macKey: 'Cmd+N',
+    description: '新建项目',
+    scope: 'global',
+    handler: () => {
+      console.log('新建项目');
+    },
+  },
+  {
+    key: 'Ctrl+S',
+    macKey: 'Cmd+S',
+    description: '保存',
+    scope: 'editor',
+    handler: () => {
+      console.log('保存');
+    },
+  },
+  {
+    key: 'Ctrl+Shift+S',
+    macKey: 'Cmd+Shift+S',
+    description: '另存为',
+    scope: 'editor',
+    handler: () => {
+      console.log('另存为');
+    },
+  },
+  // 编辑器
+  {
+    key: 'Ctrl+B',
+    macKey: 'Cmd+B',
+    description: '加粗',
+    scope: 'editor',
+    handler: () => {
+      console.log('加粗');
+    },
+  },
+  {
+    key: 'Ctrl+I',
+    macKey: 'Cmd+I',
+    description: '斜体',
+    scope: 'editor',
+    handler: () => {
+      console.log('斜体');
+    },
+  },
+  {
+    key: 'Ctrl+U',
+    macKey: 'Cmd+U',
+    description: '下划线',
+    scope: 'editor',
+    handler: () => {
+      console.log('下划线');
+    },
+  },
+  {
+    key: 'Ctrl+Z',
+    macKey: 'Cmd+Z',
+    description: '撤销',
+    scope: 'editor',
+    handler: () => {
+      console.log('撤销');
+    },
+  },
+  {
+    key: 'Ctrl+Shift+Z',
+    macKey: 'Cmd+Shift+Z',
+    description: '重做',
+    scope: 'editor',
+    handler: () => {
+      console.log('重做');
+    },
+  },
+  {
+    key: 'Ctrl+F',
+    macKey: 'Cmd+F',
+    description: '查找',
+    scope: 'editor',
+    handler: () => {
+      console.log('查找');
+    },
+  },
+  {
+    key: 'Ctrl+H',
+    macKey: 'Cmd+H',
+    description: '替换',
+    scope: 'editor',
+    handler: () => {
+      console.log('替换');
+    },
+  },
+  // 工作区
+  {
+    key: 'Ctrl+1',
+    macKey: 'Cmd+1',
+    description: '切换到工作台',
+    scope: 'workspace',
+    handler: () => {
+      console.log('切换到工作台');
+    },
+  },
+  {
+    key: 'Ctrl+2',
+    macKey: 'Cmd+2',
+    description: '切换到编辑器',
+    scope: 'workspace',
+    handler: () => {
+      console.log('切换到编辑器');
+    },
+  },
+  {
+    key: 'Ctrl+3',
+    macKey: 'Cmd+3',
+    description: '切换到数据分析',
+    scope: 'workspace',
+    handler: () => {
+      console.log('切换到数据分析');
+    },
+  },
+  // 其他
+  {
+    key: 'Escape',
+    description: '关闭弹窗/退出',
+    scope: 'global',
+    handler: () => {
+      console.log('关闭弹窗');
+    },
+  },
+  {
+    key: 'Enter',
+    description: '确认',
+    scope: 'global',
+    handler: () => {
+      console.log('确认');
+    },
+  },
+  {
+    key: 'Ctrl+/',
+    macKey: 'Cmd+/',
+    description: '打开快捷键帮助',
+    scope: 'global',
+    handler: () => {
+      console.log('打开快捷键帮助');
+    },
+  },
+];
 
 /**
- * 快捷键显示名称生成器
+ * 快捷键分组
  */
-export function formatShortcut(keys: ShortcutKey | ShortcutKey[]): string {
-  const keyArray = Array.isArray(keys) ? keys : [keys];
-
-  return keyArray
-    .map(k => {
-      const parts: string[] = [];
-
-      if (k.ctrl || k.meta) parts.push('⌘'); // Mac 使用 ⌘ 符号
-      if (k.alt) parts.push('⌥');
-      if (k.shift) parts.push('⇧');
-
-      // 转换特殊按键
-      const keyName = k.key
-        .replace('escape', 'Esc')
-        .replace('arrowup', '↑')
-        .replace('arrowdown', '↓')
-        .replace('arrowleft', '←')
-        .replace('arrowright', '→')
-        .replace('enter', '↵')
-        .replace('backspace', '⌫')
-        .replace('delete', '⌦')
-        .replace(' ', 'Space')
-        .toUpperCase();
-
-      parts.push(keyName);
-
-      return parts.join('');
-    })
-    .join(' 或 ');
-}
+export const shortcutGroups: ShortcutGroup[] = [
+  {
+    scope: 'global',
+    name: '全局快捷键',
+    shortcuts: [
+      {
+        key: 'Ctrl+K',
+        macKey: 'Cmd+K',
+        description: '快速搜索',
+        scope: 'global',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+N',
+        macKey: 'Cmd+N',
+        description: '新建项目',
+        scope: 'global',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+S',
+        macKey: 'Cmd+S',
+        description: '保存',
+        scope: 'global',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+/',
+        macKey: 'Cmd+/',
+        description: '快捷键帮助',
+        scope: 'global',
+        handler: () => {},
+      },
+      {
+        key: 'Escape',
+        description: '关闭弹窗',
+        scope: 'global',
+        handler: () => {},
+      },
+    ],
+  },
+  {
+    scope: 'editor',
+    name: '编辑器快捷键',
+    shortcuts: [
+      {
+        key: 'Ctrl+B',
+        macKey: 'Cmd+B',
+        description: '加粗',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+I',
+        macKey: 'Cmd+I',
+        description: '斜体',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+U',
+        macKey: 'Cmd+U',
+        description: '下划线',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+Z',
+        macKey: 'Cmd+Z',
+        description: '撤销',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+Shift+Z',
+        macKey: 'Cmd+Shift+Z',
+        description: '重做',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+F',
+        macKey: 'Cmd+F',
+        description: '查找',
+        scope: 'editor',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+H',
+        macKey: 'Cmd+H',
+        description: '替换',
+        scope: 'editor',
+        handler: () => {},
+      },
+    ],
+  },
+  {
+    scope: 'workspace',
+    name: '工作区快捷键',
+    shortcuts: [
+      {
+        key: 'Ctrl+1',
+        macKey: 'Cmd+1',
+        description: '切换到工作台',
+        scope: 'workspace',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+2',
+        macKey: 'Cmd+2',
+        description: '切换到编辑器',
+        scope: 'workspace',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+3',
+        macKey: 'Cmd+3',
+        description: '切换到数据分析',
+        scope: 'workspace',
+        handler: () => {},
+      },
+      {
+        key: 'Ctrl+B',
+        macKey: 'Cmd+B',
+        description: '打开侧边栏',
+        scope: 'workspace',
+        handler: () => {},
+      },
+    ],
+  },
+];
 
 /**
- * 快捷键帮助组件
+ * 检测快捷键冲突
  */
-export function useShortcutHelp() {
-  const { getShortcuts } = useKeyboardShortcuts();
-  const shortcuts = getShortcuts();
+export function detectShortcutConflicts(
+  newShortcuts: Shortcut[],
+  existingShortcuts: Shortcut[]
+): Shortcut[] {
+  const conflicts: Shortcut[] = [];
 
-  const shortcutsByScope = {
-    global: [] as Array<{ id: string; description: string; keys: string }>,
-    editor: [] as Array<{ id: string; description: string; keys: string }>,
-    navigation: [] as Array<{ id: string; description: string; keys: string }>,
-  };
+  newShortcuts.forEach((newShortcut) => {
+    const conflict = existingShortcuts.find(
+      (existing) =>
+        existing.key === newShortcut.key &&
+        existing.scope === newShortcut.scope &&
+        (!newShortcut.scope || newShortcut.scope === existing.scope)
+    );
 
-  shortcuts.forEach((shortcut, id) => {
-    const scope = shortcut.scope || 'global';
-    const keys = Array.isArray(shortcut.keys) ? shortcut.keys : [shortcut.keys];
-    shortcutsByScope[scope].push({
-      id,
-      description: shortcut.description,
-      keys: formatShortcut(keys),
-    });
-  });
-
-  return shortcutsByScope;
-}
-
-/**
- * 快捷键冲突检测
- */
-export function useShortcutConflict(shortcut: ShortcutKey) {
-  const conflicts: string[] = [];
-
-  const { getShortcuts } = useKeyboardShortcuts();
-  const shortcuts = getShortcuts();
-
-  shortcuts.forEach((s, id) => {
-    const keys = Array.isArray(s.keys) ? s.keys : [s.keys];
-
-    keys.forEach(k => {
-      if (
-        k.key.toLowerCase() === shortcut.key.toLowerCase() &&
-        (k.ctrl ? shortcut.ctrl : !shortcut.ctrl) &&
-        (k.shift ? shortcut.shift : !shortcut.shift) &&
-        (k.alt ? shortcut.alt : !shortcut.alt)
-      ) {
-        conflicts.push(id);
-      }
-    });
+    if (conflict) {
+      conflicts.push(newShortcut);
+    }
   });
 
   return conflicts;
 }
+
+/**
+ * 格式化快捷键显示
+ */
+export function formatShortcutDisplay(key: string): string {
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  return key.replace('Ctrl', isMac ? '⌘' : 'Ctrl').replace('Cmd', '⌘');
+}
+
+/**
+ * 快捷键工具函数
+ */
+export const shortcutUtils = {
+  /**
+   * 解析快捷键字符串
+   */
+  parseShortcut(shortcut: string): {
+    ctrl: boolean;
+    shift: boolean;
+    alt: boolean;
+    meta: boolean;
+    key: string;
+  } {
+    const parts = shortcut.split('+');
+    return {
+      ctrl: parts.includes('Ctrl'),
+      shift: parts.includes('Shift'),
+      alt: parts.includes('Alt'),
+      meta: parts.includes('Cmd'),
+      key: parts[parts.length - 1],
+    };
+  },
+
+  /**
+   * 判断两个快捷键是否相同
+   */
+  isShortcutMatch(
+    event: KeyboardEvent,
+    shortcut: string
+  ): boolean {
+    const parsed = this.parseShortcut(shortcut);
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+
+    return (
+      (parsed.ctrl === event.ctrlKey || (isMac && parsed.meta === event.metaKey)) &&
+      parsed.shift === event.shiftKey &&
+      parsed.alt === event.altKey &&
+      event.key.toLowerCase() === parsed.key.toLowerCase()
+    );
+  },
+
+  /**
+   * 获取快捷键提示文本
+   */
+  getShortcutTooltip(shortcuts: Shortcut[]): string {
+    return shortcuts
+      .map((s) => formatShortcutDisplay(s.key))
+      .join(' / ');
+  },
+};

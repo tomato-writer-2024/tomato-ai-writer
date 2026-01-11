@@ -1,14 +1,15 @@
 /**
- * 社区功能 API
- * 评论、点赞、分享
+ * 社区功能 - 帖子 API
+ * 支持发布帖子、浏览帖子、分类筛选
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 
 /**
  * GET /api/community/posts
- * 获取社区帖子列表
+ * 获取帖子列表
  */
 export async function GET(request: NextRequest) {
   try {
@@ -16,55 +17,47 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const category = searchParams.get('category');
-    const sort = searchParams.get('sort') || 'latest';
+    const sort = searchParams.get('sort') || 'latest'; // latest, hot, popular
 
     const offset = (page - 1) * limit;
 
-    const pool = getPool();
-
-    let query = `
-      SELECT
-        cp.id,
-        cp.title,
-        cp.content,
-        cp.category,
-        cp.views,
-        cp.likes_count,
-        cp.comments_count,
-        cp.created_at,
-        u.id as user_id,
-        u.username,
-        u.avatar_url,
-        (SELECT COUNT(*) FROM post_likes WHERE post_id = cp.id) as total_likes,
-        ${searchParams.get('userId')
-      ? `(SELECT COUNT(*) FROM post_likes WHERE post_id = cp.id AND user_id = ${searchParams.get('userId')}) > 0 as is_liked`
-      : 'false as is_liked'}
-      FROM community_posts cp
-      JOIN users u ON cp.user_id = u.id
-    `;
-
-    const params: any[] = [];
-    let paramCount = 0;
-
-    if (category) {
-      paramCount++;
-      query += ` WHERE cp.category = $${paramCount}`;
-      params.push(category);
+    let orderBy = 'ORDER BY p.created_at DESC';
+    if (sort === 'hot') {
+      orderBy = 'ORDER BY (p.view_count + p.like_count * 2 + p.comment_count * 3) DESC';
+    } else if (sort === 'popular') {
+      orderBy = 'ORDER BY p.like_count DESC';
     }
 
-    // 排序
-    if (sort === 'latest') {
-      query += ' ORDER BY cp.created_at DESC';
-    } else if (sort === 'hot') {
-      query += ' ORDER BY cp.likes_count DESC, cp.comments_count DESC';
-    } else if (sort === 'views') {
-      query += ' ORDER BY cp.views DESC';
+    let whereClause = '';
+    const queryParams: any[] = [limit, offset];
+
+    if (category && category !== 'all') {
+      whereClause = 'WHERE p.category = $3';
+      queryParams.push(category);
     }
 
-    query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
-    params.push(limit, offset);
-
-    const result = await pool.query(query, params);
+    const result = await db.query(
+      `SELECT
+        p.post_id,
+        p.title,
+        p.content,
+        p.category,
+        p.view_count,
+        p.like_count,
+        p.comment_count,
+        p.created_at,
+        u.username as author_name,
+        u.avatar_url as author_avatar,
+        COUNT(CASE WHEN pl.post_id IS NOT NULL THEN 1 END) as is_liked
+      FROM posts p
+      JOIN users u ON p.author_id = u.user_id
+      LEFT JOIN post_likes pl ON p.post_id = pl.post_id AND pl.user_id = $1
+      ${whereClause}
+      GROUP BY p.post_id, u.username, u.avatar_url
+      ${orderBy}
+      LIMIT $2 OFFSET $3`,
+      queryParams
+    );
 
     return NextResponse.json({
       success: true,
@@ -72,62 +65,47 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: result.rowCount,
+        total: result.rows.length,
       },
     });
   } catch (error) {
     console.error('获取帖子列表失败:', error);
-    return NextResponse.json(
-      { success: false, error: '获取帖子列表失败' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '获取帖子列表失败' }, { status: 500 });
   }
 }
 
 /**
  * POST /api/community/posts
- * 创建新帖子
+ * 发布新帖子
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const body = await request.json();
-    const { title, content, category, tags } = body;
-
-    if (!title || !content || !category) {
-      return NextResponse.json(
-        { success: false, error: '缺少必要参数' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
+    const userId = payload.userId;
+    const { title, content, category, tags } = await request.json();
 
-    const result = await pool.query(
-      `INSERT INTO community_posts
-        (user_id, title, content, category, tags, created_at, updated_at)
+    const result = await db.query(
+      `INSERT INTO posts (author_id, title, content, category, tags, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-       RETURNING *`,
-      [userId, title, content, category, JSON.stringify(tags || [])]
+       RETURNING post_id`,
+      [userId, title, content, category, tags]
     );
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
+      data: { postId: result.rows[0].post_id },
     });
   } catch (error) {
-    console.error('创建帖子失败:', error);
-    return NextResponse.json(
-      { success: false, error: '创建帖子失败' },
-      { status: 500 }
-    );
+    console.error('发布帖子失败:', error);
+    return NextResponse.json({ error: '发布帖子失败' }, { status: 500 });
   }
 }

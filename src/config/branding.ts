@@ -1,6 +1,7 @@
 /**
  * 番茄AI写作助手 - VI设计系统
  * 基于logo色彩构建的品牌视觉识别系统
+ * 专为创作者打造，提供专业、现代、高效的视觉体验
  */
 
 // ============ 色彩系统 ============
@@ -11,7 +12,7 @@ export interface ColorPalette {
   description: string;
 }
 
-/** 主色调 - 品牌核心色 */
+/** 主色调 - 品牌核心色（基于logo番茄红） */
 export const primaryColors: ColorPalette[] = [
   {
     name: '番茄红',
@@ -27,6 +28,16 @@ export const primaryColors: ColorPalette[] = [
     name: '浅红',
     value: '#FF6B81',
     description: '品牌浅色，用于背景和辅助元素',
+  },
+  {
+    name: '绯红',
+    value: '#FF375F',
+    description: '鲜艳绯红，用于高亮和重要提示',
+  },
+  {
+    name: '玫瑰红',
+    value: '#FF7E8E',
+    description: '温柔玫瑰红，用于柔和的视觉元素',
   },
 ];
 
@@ -46,6 +57,21 @@ export const secondaryColors: ColorPalette[] = [
     name: '橙色',
     value: '#FF9F43',
     description: '辅助色，代表创意、灵感',
+  },
+  {
+    name: '紫罗兰',
+    value: '#A55EEA',
+    description: '代表艺术、想象、浪漫',
+  },
+  {
+    name: '翡翠绿',
+    value: '#00D2D3',
+    description: '代表成长、新生、希望',
+  },
+  {
+    name: '皇家蓝',
+    value: '#4B7BEC',
+    description: '代表专业、信任、权威',
   },
 ];
 
@@ -71,6 +97,27 @@ export const gradients = {
 
   /** 卡片渐变 - 白色到浅灰 */
   card: 'linear-gradient(145deg, #FFFFFF 0%, #F8F9FA 100%)',
+
+  /** 热情渐变 - 多色渐变 */
+  passion: 'linear-gradient(135deg, #FF4757 0%, #FF6B81 25%, #FF9F43 50%, #FFD700 75%, #FF4757 100%)',
+
+  /** 梦幻渐变 - 紫色系 */
+  dream: 'linear-gradient(135deg, #A55EEA 0%, #5F27CD 50%, #4B7BEC 100%)',
+
+  /** 清新渐变 - 青绿色系 */
+  fresh: 'linear-gradient(135deg, #00D2D3 0%, #0ABDE3 50%, #4B7BEC 100%)',
+
+  /** 深邃渐变 - 深色系 */
+  deep: 'linear-gradient(135deg, #2F3542 0%, #1E272E 50%, #000000 100%)',
+
+  /** 日落渐变 */
+  sunset: 'linear-gradient(135deg, #FF7E8E 0%, #FF6B81 25%, #FF4757 50%, #E84118 75%, #FF9F43 100%)',
+
+  /** 极光渐变 */
+  aurora: 'linear-gradient(135deg, #00D2D3 0%, #0ABDE3 25%, #4B7BEC 50%, #A55EEA 75%, #FF4757 100%)',
+
+  /** 编写工具专用 - 创作灵感 */
+  inspiration: 'linear-gradient(135deg, #FF4757 0%, #FF9F43 25%, #FFD700 50%, #00D2D3 75%, #5F27CD 100%)',
 };
 
 /** 中性色系统 */
@@ -469,5 +516,316 @@ export const tailwindConfig = {
       'shimmer': 'shimmer 2s ease-in-out infinite',
     },
     keyframes: animations.keyframes,
+  },
+};
+
+// ============ 创作工具特定配置 ============
+
+/** 创作状态颜色 */
+export const writingStates = {
+  drafting: {
+    color: '#FF9F43',
+    bg: '#FEF9E7',
+    border: '#F1C40F',
+    icon: '✏️',
+  },
+  editing: {
+    color: '#0ABDE3',
+    bg: '#EBF5FB',
+    border: '#3498DB',
+    icon: '📝',
+  },
+  reviewing: {
+    color: '#5F27CD',
+    bg: '#F4EAFD',
+    border: '#A55EEA',
+    icon: '👁️',
+  },
+  published: {
+    color: '#27AE60',
+    bg: '#E8F8F5',
+    border: '#2ECC71',
+    icon: '📚',
+  },
+};
+
+/** 工具分类配色 */
+export const categoryColors = {
+  character: {
+    name: '角色设定',
+    color: '#FF4757',
+    gradient: 'linear-gradient(135deg, #FF4757 0%, #FF6B81 100%)',
+    icon: '👤',
+  },
+  plot: {
+    name: '情节设计',
+    color: '#FF9F43',
+    gradient: 'linear-gradient(135deg, #FF9F43 0%, #FFD700 100%)',
+    icon: '📖',
+  },
+  writing: {
+    name: '智能写作',
+    color: '#0ABDE3',
+    gradient: 'linear-gradient(135deg, #0ABDE3 0%, #00D2D3 100%)',
+    icon: '✨',
+  },
+  polish: {
+    name: '润色优化',
+    color: '#5F27CD',
+    gradient: 'linear-gradient(135deg, #5F27CD 0%, #A55EEA 100%)',
+    icon: '💎',
+  },
+  creative: {
+    name: '创意工具',
+    color: '#A55EEA',
+    gradient: 'linear-gradient(135deg, #A55EEA 0%, #FF4757 100%)',
+    icon: '🎨',
+  },
+  resources: {
+    name: '素材资源',
+    color: '#00D2D3',
+    gradient: 'linear-gradient(135deg, #00D2D3 0%, #0ABDE3 100%)',
+    icon: '📦',
+  },
+  data: {
+    name: '数据分析',
+    color: '#4B7BEC',
+    gradient: 'linear-gradient(135deg, #4B7BEC 0%, #5F27CD 100%)',
+    icon: '📊',
+  },
+  collaboration: {
+    name: '协作功能',
+    color: '#27AE60',
+    gradient: 'linear-gradient(135deg, #27AE60 0%, #00D2D3 100%)',
+    icon: '🤝',
+  },
+  protection: {
+    name: '版权保护',
+    color: '#E74C3C',
+    gradient: 'linear-gradient(135deg, #E74C3C 0%, #FF4757 100%)',
+    icon: '🔒',
+  },
+  platform: {
+    name: '平台对接',
+    color: '#2E86DE',
+    gradient: 'linear-gradient(135deg, #2E86DE 0%, #4B7BEC 100%)',
+    icon: '🚀',
+  },
+  aiTuning: {
+    name: 'AI微调',
+    color: '#FF6B81',
+    gradient: 'linear-gradient(135deg, #FF6B81 0%, #A55EEA 100%)',
+    icon: '🧠',
+  },
+  community: {
+    name: '社区功能',
+    color: '#FFD700',
+    gradient: 'linear-gradient(135deg, #FFD700 0%, #FF9F43 100%)',
+    icon: '🌟',
+  },
+};
+
+/** 创作模式主题 */
+export const writingModes = {
+  focus: {
+    name: '专注模式',
+    description: '极简界面，专注于写作',
+    colors: {
+      bg: '#FFFFFF',
+      text: '#2F3542',
+      accent: '#FF4757',
+    },
+    features: ['无干扰', '沉浸式', '自动保存'],
+  },
+  zen: {
+    name: '禅意模式',
+    description: '柔和配色，舒缓创作压力',
+    colors: {
+      bg: '#F8F9FA',
+      text: '#57606F',
+      accent: '#5F27CD',
+    },
+    features: ['柔和视觉', '白噪音', '计时提醒'],
+  },
+  dark: {
+    name: '暗色模式',
+    description: '护眼配色，适合夜间写作',
+    colors: {
+      bg: '#1E272E',
+      text: '#F1F2F6',
+      accent: '#FF6B81',
+    },
+    features: ['护眼', '夜间模式', '高对比度'],
+  },
+  colorful: {
+    name: '多彩模式',
+    description: '活力配色，激发创作灵感',
+    colors: {
+      bg: 'linear-gradient(135deg, #FF4757 0%, #5F27CD 100%)',
+      text: '#FFFFFF',
+      accent: '#FFD700',
+    },
+    features: ['活力配色', '动态背景', '创意激发'],
+  },
+};
+
+/** 质量评分色彩 */
+export const qualityGrades = {
+  excellent: {
+    range: [90, 100],
+    color: '#27AE60',
+    bg: '#E8F8F5',
+    border: '#2ECC71',
+    icon: '⭐⭐⭐⭐⭐',
+    label: '优秀',
+  },
+  good: {
+    range: [80, 89],
+    color: '#00D2D3',
+    bg: '#EBF5FB',
+    border: '#0ABDE3',
+    icon: '⭐⭐⭐⭐',
+    label: '良好',
+  },
+  average: {
+    range: [70, 79],
+    color: '#FF9F43',
+    bg: '#FEF9E7',
+    border: '#F1C40F',
+    icon: '⭐⭐⭐',
+    label: '一般',
+  },
+  poor: {
+    range: [0, 69],
+    color: '#E74C3C',
+    bg: '#FDEDEC',
+    border: '#C0392B',
+    icon: '⭐⭐',
+    label: '需改进',
+  },
+};
+
+/** 平台对接颜色 */
+export const platformColors = {
+  fanqie: {
+    name: '番茄小说',
+    color: '#FF4757',
+    bg: '#FDEDEC',
+    border: '#E74C3C',
+  },
+  jinjiang: {
+    name: '晋江文学城',
+    color: '#E84118',
+    bg: '#FADBD8',
+    border: '#C0392B',
+  },
+  qidian: {
+    name: '起点中文网',
+    color: '#F1C40F',
+    bg: '#FEF9E7',
+    border: '#F39C12',
+  },
+  zongheng: {
+    name: '纵横中文网',
+    color: '#3498DB',
+    bg: '#EBF5FB',
+    border: '#2980B9',
+  },
+};
+
+/** 导出格式颜色 */
+export const exportFormats = {
+  word: {
+    name: 'Word文档',
+    color: '#2B579A',
+    icon: '📄',
+  },
+  pdf: {
+    name: 'PDF文档',
+    color: '#E74C3C',
+    icon: '📕',
+  },
+  txt: {
+    name: 'TXT纯文本',
+    color: '#747D8C',
+    icon: '📃',
+  },
+  epub: {
+    name: 'EPUB电子书',
+    color: '#27AE60',
+    icon: '📚',
+  },
+};
+
+/** 创作者专属色卡 */
+export const creatorPalette = {
+  /** 激发灵感的色彩 */
+  inspiration: ['#FF4757', '#FF9F43', '#FFD700', '#00D2D3', '#5F27CD'],
+  
+  /** 专注写作的色彩 */
+  focus: ['#FFFFFF', '#F8F9FA', '#F1F2F6', '#DFE4EA', '#A4B0BE'],
+  
+  /** 深度思考的色彩 */
+  thinking: ['#2F3542', '#57606F', '#747D8C', '#A4B0BE', '#CED6E0'],
+  
+  /** 创意迸发的色彩 */
+  creative: ['#FF4757', '#FF6B81', '#FF9F43', '#FFD700', '#A55EEA'],
+  
+  /** 数据分析的色彩 */
+  analytics: ['#00D2D3', '#0ABDE3', '#4B7BEC', '#5F27CD', '#A55EEA'],
+  
+  /** 协作互动的色彩 */
+  collaboration: ['#27AE60', '#00D2D3', '#0ABDE3', '#3498DB', '#4B7BEC'],
+};
+
+/** 玻璃态样式 */
+export const glassEffects = {
+  /** 品牌色玻璃态 */
+  brand: {
+    background: 'rgba(255, 71, 87, 0.1)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 71, 87, 0.2)',
+    boxShadow: '0 8px 32px rgba(255, 71, 87, 0.1)',
+  },
+  /** 深色玻璃态 */
+  dark: {
+    background: 'rgba(0, 0, 0, 0.4)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  },
+  /** 浅色玻璃态 */
+  light: {
+    background: 'rgba(255, 255, 255, 0.7)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  },
+};
+
+/** 创作者主题 */
+export const creatorTheme = {
+  /** 欢迎页主题 */
+  welcome: {
+    background: gradients.primary,
+    textColor: '#FFFFFF',
+    accentColor: '#FFD700',
+  },
+  
+  /** 工作台主题 */
+  workspace: {
+    background: '#F8F9FA',
+    textColor: '#2F3542',
+    accentColor: '#FF4757',
+    cardBackground: '#FFFFFF',
+    borderColor: '#E9ECEF',
+  },
+  
+  /** 编辑器主题 */
+  editor: {
+    background: '#FFFFFF',
+    textColor: '#2F3542',
+    accentColor: '#0ABDE3',
+    selectionColor: 'rgba(255, 71, 87, 0.1)',
   },
 };

@@ -1,155 +1,104 @@
 /**
- * 版本控制 API
+ * 协作功能 - 版本控制 API
+ * 支持保存版本、查看历史、回滚版本
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 
 /**
- * 创建新版本
+ * GET /api/collaboration/versions?chapterId=xxx
+ * 获取章节的版本历史
  */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const body = await request.json();
-    const { documentId, content, message } = body;
-
-    if (!documentId || !content) {
-      return NextResponse.json(
-        { success: false, error: '缺少必要参数' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
+    const { searchParams } = new URL(request.url);
+    const chapterId = searchParams.get('chapterId');
 
-    // 验证用户权限
-    const permissionResult = await pool.query(
-      `SELECT wd.*
-      FROM workspace_documents wd
-      JOIN workspace_members wm ON wd.workspace_id = wm.workspace_id
-      WHERE wd.id = $1
-        AND wm.user_id = $2`,
-      [documentId, userId]
-    );
-
-    if (permissionResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '无权限' },
-        { status: 403 }
-      );
+    if (!chapterId) {
+      return NextResponse.json({ error: '缺少chapterId参数' }, { status: 400 });
     }
 
-    // 保存版本
-    const versionResult = await pool.query(
-      `INSERT INTO document_versions
-        (document_id, user_id, content, message, created_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       RETURNING id, version_number`,
-      [documentId, userId, content, message || '自动保存']
-    );
-
-    // 更新文档的当前版本
-    await pool.query(
-      `UPDATE workspace_documents
-       SET current_version_id = $1, content = $2, updated_at = NOW()
-       WHERE id = $3`,
-      [versionResult.rows[0].id, content, documentId]
+    const result = await db.query(
+      `SELECT
+        version_id,
+        version_number,
+        content,
+        word_count,
+        created_at,
+        created_by,
+        comment
+      FROM chapter_versions
+      WHERE chapter_id = $1
+      ORDER BY version_number DESC`,
+      [chapterId]
     );
 
     return NextResponse.json({
       success: true,
-      data: {
-        versionId: versionResult.rows[0].id,
-        versionNumber: versionResult.rows[0].version_number,
-        message,
-      },
+      data: result.rows,
     });
   } catch (error) {
-    console.error('创建版本失败:', error);
-    return NextResponse.json(
-      { success: false, error: '创建版本失败' },
-      { status: 500 }
-    );
+    console.error('获取版本历史失败:', error);
+    return NextResponse.json({ error: '获取版本历史失败' }, { status: 500 });
   }
 }
 
 /**
- * 获取文档的版本历史
+ * POST /api/collaboration/versions
+ * 保存新版本
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const { searchParams } = new URL(request.url);
-    const documentId = searchParams.get('documentId');
-
-    if (!documentId) {
-      return NextResponse.json(
-        { success: false, error: '缺少documentId参数' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
+    const userId = payload.userId;
+    const { chapterId, content, comment } = await request.json();
 
-    // 验证权限
-    const permissionResult = await pool.query(
-      `SELECT COUNT(*) as count
-      FROM workspace_documents wd
-      JOIN workspace_members wm ON wd.workspace_id = wm.workspace_id
-      WHERE wd.id = $1 AND wm.user_id = $2`,
-      [documentId, userId]
+    // 获取当前版本号
+    const currentVersion = await db.query(
+      `SELECT MAX(version_number) as max_version
+       FROM chapter_versions
+       WHERE chapter_id = $1`,
+      [chapterId]
     );
 
-    if (parseInt(permissionResult.rows[0].count) === 0) {
-      return NextResponse.json(
-        { success: false, error: '无权限' },
-        { status: 403 }
-      );
-    }
+    const nextVersion = (currentVersion.rows[0].max_version || 0) + 1;
 
-    // 获取版本历史
-    const versionsResult = await pool.query(
-      `SELECT
-        dv.id,
-        dv.version_number,
-        dv.message,
-        dv.created_at,
-        u.username,
-        u.avatar_url
-      FROM document_versions dv
-      JOIN users u ON dv.user_id = u.id
-      WHERE dv.document_id = $1
-      ORDER BY dv.version_number DESC
-      LIMIT 50`,
-      [documentId]
+    // 保存新版本
+    const result = await db.query(
+      `INSERT INTO chapter_versions
+       (chapter_id, version_number, content, word_count, created_by, comment, created_at)
+       VALUES ($1, $2, $3, LENGTH($4), $5, $6, NOW())
+       RETURNING version_id`,
+      [chapterId, nextVersion, content, content, userId, comment]
     );
 
     return NextResponse.json({
       success: true,
-      data: versionsResult.rows,
+      data: { versionId: result.rows[0].version_id, versionNumber: nextVersion },
     });
   } catch (error) {
-    console.error('获取版本历史失败:', error);
-    return NextResponse.json(
-      { success: false, error: '获取版本历史失败' },
-      { status: 500 }
-    );
+    console.error('保存版本失败:', error);
+    return NextResponse.json({ error: '保存版本失败' }, { status: 500 });
   }
 }

@@ -1,219 +1,257 @@
 /**
  * 个性化推荐 API
- * 基于用户行为数据提供个性化推荐
+ * 基于用户行为数据实现协同过滤算法
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 
 interface UserBehavior {
+  userId: number;
   toolId: string;
-  frequency: number;
-  lastUsed: Date;
-  avgRating?: number;
-  timeSpent?: number;
+  useCount: number;
+  lastUsedAt: Date;
+  rating?: number;
+  duration?: number; // 使用时长（秒）
 }
 
-interface RecommendationResult {
+interface UserInterest {
+  category: string;
+  score: number;
+}
+
+interface Recommendation {
   toolId: string;
-  toolName: string;
+  name: string;
+  description: string;
   category: string;
   score: number;
   reason: string;
 }
 
 /**
- * 收集用户行为数据
+ * 获取用户行为数据
  */
-async function collectUserBehavior(userId: number): Promise<UserBehavior[]> {
-  const pool = getPool();
-
-  // 获取用户使用工具的频率
-  const frequencyResult = await pool.query(
+async function getUserBehavior(userId: number): Promise<UserBehavior[]> {
+  const result = await db.query(
     `SELECT
-      tool_id as "toolId",
-      COUNT(*) as frequency,
-      MAX(created_at) as "lastUsed",
-      AVG(rating) as "avgRating",
-      AVG(time_spent) as "timeSpent"
-    FROM user_activity_logs
+      tool_id,
+      COUNT(*) as use_count,
+      MAX(created_at) as last_used_at,
+      AVG(rating) as avg_rating,
+      AVG(duration) as avg_duration
+    FROM user_tool_usage
     WHERE user_id = $1
-      AND created_at > NOW() - INTERVAL '30 days'
     GROUP BY tool_id
-    ORDER BY frequency DESC`,
+    ORDER BY use_count DESC, last_used_at DESC`,
     [userId]
   );
 
-  return frequencyResult.rows as UserBehavior[];
+  return result.rows.map((row) => ({
+    userId,
+    toolId: row.tool_id,
+    useCount: parseInt(row.use_count),
+    lastUsedAt: row.last_used_at,
+    rating: row.avg_rating ? parseFloat(row.avg_rating) : undefined,
+    duration: row.avg_duration ? parseFloat(row.avg_duration) : undefined,
+  }));
 }
 
 /**
- * 计算推荐分数
+ * 分析用户兴趣标签
  */
-function calculateRecommendationScore(
-  behavior: UserBehavior,
-  toolData: any,
-  userInterests: string[]
-): number {
-  let score = 0;
+function analyzeUserInterests(
+  behaviors: UserBehavior[]
+): Map<string, number> {
+  const interests = new Map<string, number>();
 
-  // 基于使用频率 (30%)
-  score += Math.min(behavior.frequency / 10, 1) * 30;
+  behaviors.forEach((behavior) => {
+    // 根据工具ID提取分类（假设工具ID格式为 "category-toolname"）
+    const category = behavior.toolId.split('-')[0] || 'general';
 
-  // 基于最近使用时间 (20%)
-  const daysSinceLastUse = Math.floor(
-    (Date.now() - behavior.lastUsed.getTime()) / (1000 * 60 * 60 * 24)
-  );
-  score += Math.max(0, (1 - daysSinceLastUse / 30)) * 20;
-
-  // 基于评分 (20%)
-  if (behavior.avgRating) {
-    score += (behavior.avgRating / 5) * 20;
-  }
-
-  // 基于停留时间 (10%)
-  if (behavior.timeSpent) {
-    score += Math.min(behavior.timeSpent / 300, 1) * 10; // 5分钟为满分
-  }
-
-  // 基于用户兴趣 (20%)
-  if (userInterests.includes(toolData.category)) {
-    score += 20;
-  }
-
-  // 新工具加分 (10%)
-  if (toolData.isNew) {
-    score += 10;
-  }
-
-  // 热门工具加分 (10%)
-  if (toolData.isHot) {
-    score += 10;
-  }
-
-  return Math.min(score, 100);
-}
-
-/**
- * 获取用户兴趣标签
- */
-async function getUserInterests(userId: number): Promise<string[]> {
-  const pool = getPool();
-
-  // 从用户偏好获取兴趣
-  const preferencesResult = await pool.query(
-    `SELECT interests FROM user_preferences WHERE user_id = $1`,
-    [userId]
-  );
-
-  if (preferencesResult.rows.length > 0) {
-    return preferencesResult.rows[0].interests || [];
-  }
-
-  // 从用户行为推断兴趣
-  const behaviorResult = await pool.query(
-    `SELECT
-      tc.id as category_id,
-      tc.name as category_name,
-      COUNT(*) as usage_count
-    FROM user_activity_logs ual
-    JOIN tool_categories tc ON ual.category_id = tc.id
-    WHERE ual.user_id = $1
-      AND ual.created_at > NOW() - INTERVAL '60 days'
-    GROUP BY tc.id, tc.name
-    ORDER BY usage_count DESC
-    LIMIT 5`,
-    [userId]
-  );
-
-  return behaviorResult.rows.map((row: any) => row.category_name);
-}
-
-/**
- * 生成个性化推荐
- */
-async function generateRecommendations(
-  userId: number,
-  limit: number = 10
-): Promise<RecommendationResult[]> {
-  const pool = getPool();
-
-  // 收集用户行为数据
-  const userBehaviors = await collectUserBehavior(userId);
-
-  // 获取用户兴趣
-  const userInterests = await getUserInterests(userId);
-
-  // 获取所有可用工具
-  const toolsResult = await pool.query(
-    `SELECT
-      t.id as tool_id,
-      t.name as tool_name,
-      t.category_id,
-      t.is_new as "isNew",
-      t.is_hot as "isHot",
-      tc.name as category_name
-    FROM tools t
-    JOIN tool_categories tc ON t.category_id = tc.id
-    WHERE t.is_active = true`
-  );
-
-  const recommendations: RecommendationResult[] = [];
-
-  for (const tool of toolsResult.rows) {
-    const behavior = userBehaviors.find(
-      (b: UserBehavior) => b.toolId === tool.tool_id
-    );
-
-    let score = 0;
-    let reason = '';
-
-    if (behavior) {
-      // 用户使用过的工具
-      score = calculateRecommendationScore(
-        behavior,
-        tool,
-        userInterests
-      );
-
-      if (behavior.frequency > 5) {
-        reason = '基于您的使用习惯';
-      } else if (behavior.avgRating && behavior.avgRating >= 4) {
-        reason = '您曾经给此工具高评分';
-      } else {
-        reason = '您最近使用过';
-      }
-    } else {
-      // 用户未使用过的工具
-      // 基于兴趣和热门程度推荐
-      if (userInterests.includes(tool.category_name)) {
-        score = 60 + Math.random() * 20;
-        reason = '基于您的创作兴趣';
-      } else if (tool.isHot) {
-        score = 50 + Math.random() * 20;
-        reason = '热门工具';
-      } else if (tool.isNew) {
-        score = 55 + Math.random() * 15;
-        reason = '新功能上线';
-      } else {
-        score = 30 + Math.random() * 20;
-        reason = '为您推荐';
-      }
+    // 计算兴趣分数
+    let score = behavior.useCount * 10;
+    if (behavior.rating) {
+      score += behavior.rating * 20;
+    }
+    if (behavior.duration) {
+      score += Math.min(behavior.duration / 60, 30); // 最多加30分
     }
 
-    recommendations.push({
-      toolId: tool.tool_id,
-      toolName: tool.tool_name,
-      category: tool.category_name,
-      score: Math.round(score),
-      reason,
+    // 时间衰减因子（最近使用的权重更高）
+    const daysSinceLastUse =
+      (Date.now() - behavior.lastUsedAt.getTime()) / (1000 * 60 * 60 * 24);
+    score *= Math.exp(-daysSinceLastUse / 30); // 30天半衰期
+
+    interests.set(category, (interests.get(category) || 0) + score);
+  });
+
+  // 归一化
+  const maxScore = Math.max(...interests.values(), 1);
+  interests.forEach((score, category) => {
+    interests.set(category, score / maxScore);
+  });
+
+  return interests;
+}
+
+/**
+ * 协同过滤算法
+ * 找到相似用户，推荐他们喜欢但当前用户未使用的工具
+ */
+async function collaborativeFiltering(
+  userId: number,
+  behaviors: UserBehavior[],
+  topN: number = 5
+): Promise<Recommendation[]> {
+  // 获取相似用户
+  const similarUsers = await db.query(
+    `WITH user_behaviors AS (
+      SELECT
+        user_id,
+        tool_id,
+        COUNT(*) as use_count,
+        AVG(rating) as avg_rating
+      FROM user_tool_usage
+      WHERE user_id != $1
+      GROUP BY user_id, tool_id
+    ),
+    similarity AS (
+      SELECT
+        ub1.user_id as user1,
+        ub2.user_id as user2,
+        SUM(ub1.use_count * ub2.use_count) /
+          (SQRT(SUM(ub1.use_count * ub1.use_count)) *
+           SQRT(SUM(ub2.use_count * ub2.use_count))) as similarity
+      FROM user_behaviors ub1
+      CROSS JOIN user_behaviors ub2
+      WHERE ub1.user_id = $1
+      GROUP BY ub1.user_id, ub2.user_id
+      HAVING COUNT(*) >= 2
+    )
+    SELECT
+      su.user2 as user_id,
+      su.similarity
+    FROM similarity su
+    ORDER BY su.similarity DESC
+    LIMIT 10`,
+    [userId]
+  );
+
+  const similarUserIds = similarUsers.rows
+    .filter((row) => parseFloat(row.similarity) > 0.3)
+    .map((row) => parseInt(row.user_id));
+
+  if (similarUserIds.length === 0) {
+    return [];
+  }
+
+  // 获取相似用户常用但当前用户未使用的工具
+  const recommendations = await db.query(
+    `SELECT
+      ut.tool_id,
+      ut.name,
+      ut.description,
+      ut.category,
+      COUNT(*) as use_count,
+      AVG(rating) as avg_rating
+    FROM user_tool_usage u
+    JOIN tools ut ON u.tool_id = ut.tool_id
+    WHERE u.user_id = ANY($1)
+      AND u.tool_id NOT IN (
+        SELECT DISTINCT tool_id
+        FROM user_tool_usage
+        WHERE user_id = $2
+      )
+    GROUP BY ut.tool_id, ut.name, ut.description, ut.category
+    ORDER BY use_count DESC, avg_rating DESC
+    LIMIT $3`,
+    [similarUserIds, userId, topN]
+  );
+
+  return recommendations.rows.map((row) => ({
+    toolId: row.tool_id,
+    name: row.name,
+    description: row.description,
+    category: row.category,
+    score: parseInt(row.use_count) * 0.5 + parseFloat(row.avg_rating) * 0.5,
+    reason: '与您创作风格相似的作者也在使用',
+  }));
+}
+
+/**
+ * 内容推荐算法
+ * 基于用户兴趣推荐同分类的工具
+ */
+async function contentBasedFiltering(
+  interests: Map<string, number>,
+  topN: number = 5
+): Promise<Recommendation[]> {
+  const sortedCategories = Array.from(interests.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  const recommendations: Recommendation[] = [];
+
+  for (const [category, score] of sortedCategories) {
+    const tools = await db.query(
+      `SELECT
+        tool_id,
+        name,
+        description,
+        category
+      FROM tools
+      WHERE category = $1
+        AND is_active = true
+      ORDER BY popularity DESC
+      LIMIT $2`,
+      [category, Math.ceil(topN / sortedCategories.length)]
+    );
+
+    tools.rows.forEach((tool) => {
+      recommendations.push({
+        toolId: tool.tool_id,
+        name: tool.name,
+        description: tool.description,
+        category: tool.category,
+        score: score * 100,
+        reason: `符合您对${category}类工具的偏好`,
+      });
     });
   }
 
-  // 按分数排序并返回前N个
-  recommendations.sort((a, b) => b.score - a.score);
+  return recommendations.slice(0, topN);
+}
 
-  return recommendations.slice(0, limit);
+/**
+ * 混合推荐算法
+ * 结合协同过滤和内容推荐
+ */
+async function hybridRecommendation(
+  userId: number,
+  topN: number = 10
+): Promise<Recommendation[]> {
+  const behaviors = await getUserBehavior(userId);
+  const interests = analyzeUserInterests(behaviors);
+
+  const collaborativeRecs = await collaborativeFiltering(userId, behaviors, Math.ceil(topN / 2));
+  const contentRecs = await contentBasedFiltering(interests, Math.ceil(topN / 2));
+
+  // 合并并去重
+  const allRecs = [...collaborativeRecs, ...contentRecs];
+  const uniqueRecs = new Map<string, Recommendation>();
+
+  allRecs.forEach((rec) => {
+    if (!uniqueRecs.has(rec.toolId) || uniqueRecs.get(rec.toolId)!.score < rec.score) {
+      uniqueRecs.set(rec.toolId, rec);
+    }
+  });
+
+  // 按分数排序并返回topN
+  return Array.from(uniqueRecs.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN);
 }
 
 /**
@@ -222,84 +260,114 @@ async function generateRecommendations(
  */
 export async function GET(request: NextRequest) {
   try {
-    // 验证用户身份
-    const token = getToken(request);
+    // 验证token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json(
-        { success: false, error: '未登录' },
+        { error: '未授权访问' },
         { status: 401 }
       );
     }
 
-    const userId = token.userId;
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json(
+        { error: 'Token无效或已过期' },
+        { status: 401 }
+      );
+    }
+
+    const userId = payload.userId;
 
     // 获取查询参数
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '10');
-    const category = searchParams.get('category');
+    const type = searchParams.get('type') || 'hybrid'; // hybrid, collaborative, content
 
-    // 生成推荐
-    let recommendations = await generateRecommendations(userId, limit * 2); // 生成更多以便过滤
+    let recommendations: Recommendation[] = [];
 
-    // 如果指定了分类，只返回该分类的推荐
-    if (category) {
-      recommendations = recommendations.filter((r) => r.category === category);
+    switch (type) {
+      case 'collaborative':
+        const behaviors = await getUserBehavior(userId);
+        recommendations = await collaborativeFiltering(userId, behaviors, limit);
+        break;
+      case 'content':
+        const interests = analyzeUserInterests(await getUserBehavior(userId));
+        recommendations = await contentBasedFiltering(interests, limit);
+        break;
+      case 'hybrid':
+      default:
+        recommendations = await hybridRecommendation(userId, limit);
+        break;
     }
-
-    // 限制返回数量
-    recommendations = recommendations.slice(0, limit);
 
     return NextResponse.json({
       success: true,
-      data: {
-        recommendations,
-        total: recommendations.length,
-      },
+      data: recommendations,
     });
   } catch (error) {
     console.error('获取推荐失败:', error);
     return NextResponse.json(
-      { success: false, error: '获取推荐失败' },
+      { error: '获取推荐失败', details: (error as Error).message },
       { status: 500 }
     );
   }
 }
 
 /**
- * POST /api/recommendation
- * 记录用户对推荐的反馈
+ * POST /api/recommendation/feedback
+ * 提交推荐反馈
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = getToken(request);
+    // 验证token
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json(
-        { success: false, error: '未登录' },
+        { error: '未授权访问' },
         { status: 401 }
       );
     }
 
-    const userId = token.userId;
-    const body = await request.json();
-    const { toolId, action, reason } = body;
-
-    // 验证参数
-    if (!toolId || !action) {
+    const payload = verifyToken(token);
+    if (!payload) {
       return NextResponse.json(
-        { success: false, error: '缺少必要参数' },
-        { status: 400 }
+        { error: 'Token无效或已过期' },
+        { status: 401 }
       );
     }
 
-    const pool = getPool();
+    const userId = payload.userId;
+    const { toolId, feedback } = await request.json();
 
     // 记录反馈
-    await pool.query(
-      `INSERT INTO recommendation_feedbacks
-        (user_id, tool_id, action, reason, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [userId, toolId, action, reason]
+    await db.query(
+      `INSERT INTO recommendation_feedback
+       (user_id, tool_id, feedback, created_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (user_id, tool_id)
+       DO UPDATE SET feedback = $3, updated_at = NOW()`,
+      [userId, toolId, feedback] // feedback: 1-有用, -1-无用, 0-中立
     );
+
+    // 更新用户兴趣模型
+    if (feedback !== 0) {
+      const tool = await db.query(
+        `SELECT category FROM tools WHERE tool_id = $1`,
+        [toolId]
+      );
+
+      if (tool.rows.length > 0) {
+        await db.query(
+          `INSERT INTO user_interests
+           (user_id, category, score, updated_at)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (user_id, category)
+           DO UPDATE SET score = user_interests.score + $3, updated_at = NOW()`,
+          [userId, tool.rows[0].category, feedback * 10]
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -308,7 +376,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('记录反馈失败:', error);
     return NextResponse.json(
-      { success: false, error: '记录反馈失败' },
+      { error: '记录反馈失败', details: (error as Error).message },
       { status: 500 }
     );
   }

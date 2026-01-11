@@ -1,256 +1,164 @@
 /**
- * 版权保护 API
- * 数字水印、时间戳、原创检测
+ * 版权保护 - 数字水印 API
+ * 实现数字水印、时间戳、原创检测等功能
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 import crypto from 'crypto';
 
 /**
- * 生成数字水印
- */
-function generateDigitalWatermark(userId: number, content: string): string {
-  // 使用用户ID、时间戳和内容哈希生成唯一水印
-  const timestamp = Date.now();
-  const contentHash = crypto
-    .createHash('sha256')
-    .update(content)
-    .digest('hex')
-    .substring(0, 16);
-
-  const watermarkData = `WATERMARK|${userId}|${timestamp}|${contentHash}`;
-  const watermark = crypto
-    .createHash('sha256')
-    .update(watermarkData)
-    .digest('hex')
-    .substring(0, 32);
-
-  return watermark;
-}
-
-/**
- * 验证数字水印
- */
-function verifyDigitalWatermark(
-  content: string,
-  watermark: string
-): { valid: boolean; userId?: number; timestamp?: number } {
-  try {
-    const data = Buffer.from(watermark, 'hex').toString();
-    const parts = data.split('|');
-
-    if (parts.length !== 4 || parts[0] !== 'WATERMARK') {
-      return { valid: false };
-    }
-
-    const userId = parseInt(parts[1]);
-    const timestamp = parseInt(parts[2]);
-    const contentHash = parts[3];
-
-    // 验证内容是否匹配
-    const currentHash = crypto
-      .createHash('sha256')
-      .update(content)
-      .digest('hex')
-      .substring(0, 16);
-
-    if (currentHash !== contentHash) {
-      return { valid: false };
-    }
-
-    return { valid: true, userId, timestamp };
-  } catch (error) {
-    return { valid: false };
-  }
-}
-
-/**
- * 检测内容原创性（简单实现）
- */
-async function checkOriginality(content: string, pool: any): Promise<{
-  isOriginal: boolean;
-  similarityScore: number;
-  matches?: any[];
-}> {
-  // 检查数据库中是否存在相似内容
-  const contentHash = crypto.createHash('md5').update(content).digest('hex');
-
-  const result = await pool.query(
-    `SELECT
-      id,
-      user_id,
-      similarity($1, content) as similarity
-    FROM copyright_records
-    WHERE similarity($1, content) > 0.8
-    LIMIT 10`,
-    [content]
-  );
-
-  if (result.rows.length === 0) {
-    return {
-      isOriginal: true,
-      similarityScore: 0,
-    };
-  }
-
-  return {
-    isOriginal: false,
-    similarityScore: Math.max(...result.rows.map((r: any) => r.similarity)),
-    matches: result.rows,
-  };
-}
-
-/**
  * POST /api/protection/watermark
- * 添加数字水印
+ * 生成数字水印
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
-    const body = await request.json();
-    const { content, documentId } = body;
-
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: '缺少内容' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    // 生成数字水印
-    const watermark = generateDigitalWatermark(userId, content);
+    const userId = payload.userId;
+    const { content, chapterId } = await request.json();
 
-    const pool = getPool();
+    // 生成唯一标识
+    const timestamp = Date.now().toString();
+    const signature = crypto
+      .createHash('sha256')
+      .update(`${userId}-${chapterId}-${timestamp}`)
+      .digest('hex');
+
+    // 嵌入水印（简单示例：在文本末尾添加隐藏字符）
+    const watermarkedContent = `${content}\u200B\u200B${signature}`;
 
     // 保存水印记录
-    await pool.query(
-      `INSERT INTO copyright_records
-        (user_id, document_id, content_hash, watermark, created_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       ON CONFLICT (user_id, document_id)
-       DO UPDATE SET
-         content_hash = $3,
-         watermark = $4,
-         updated_at = NOW()`,
+    await db.query(
+      `INSERT INTO copyright_protection
+       (user_id, chapter_id, content_hash, signature, watermark, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())`,
       [
         userId,
-        documentId || null,
-        crypto.createHash('md5').update(content).digest('hex'),
-        watermark,
+        chapterId,
+        crypto.createHash('sha256').update(content).digest('hex'),
+        signature,
+        watermarkedContent,
       ]
     );
 
     return NextResponse.json({
       success: true,
       data: {
-        watermark,
-        timestamp: Date.now(),
+        signature,
+        watermarkedContent,
+        timestamp,
       },
     });
   } catch (error) {
-    console.error('添加水印失败:', error);
-    return NextResponse.json(
-      { success: false, error: '添加水印失败' },
-      { status: 500 }
-    );
+    console.error('生成数字水印失败:', error);
+    return NextResponse.json({ error: '生成数字水印失败' }, { status: 500 });
   }
 }
 
 /**
- * GET /api/protection/watermark
+ * GET /api/protection/verify?signature=xxx
  * 验证数字水印
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const documentId = searchParams.get('documentId');
+    const signature = searchParams.get('signature');
 
-    if (!documentId) {
-      return NextResponse.json(
-        { success: false, error: '缺少documentId参数' },
-        { status: 400 }
-      );
+    if (!signature) {
+      return NextResponse.json({ error: '缺少signature参数' }, { status: 400 });
     }
 
-    const pool = getPool();
-
-    const result = await pool.query(
-      `SELECT * FROM copyright_records WHERE document_id = $1`,
-      [documentId]
+    const result = await db.query(
+      `SELECT
+        cp.content_hash,
+        cp.signature,
+        cp.created_at,
+        u.username as author_name
+      FROM copyright_protection cp
+      JOIN users u ON cp.user_id = u.user_id
+      WHERE cp.signature = $1`,
+      [signature]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json({
-        success: true,
-        data: {
-          hasWatermark: false,
-        },
+        success: false,
+        message: '未找到匹配的版权记录',
       });
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        hasWatermark: true,
-        watermark: result.rows[0].watermark,
-        createdAt: result.rows[0].created_at,
-        userId: result.rows[0].user_id,
+        verified: true,
+        author: result.rows[0].author_name,
+        contentHash: result.rows[0].content_hash,
+        timestamp: result.rows[0].created_at,
       },
     });
   } catch (error) {
-    console.error('验证水印失败:', error);
-    return NextResponse.json(
-      { success: false, error: '验证水印失败' },
-      { status: 500 }
-    );
+    console.error('验证数字水印失败:', error);
+    return NextResponse.json({ error: '验证数字水印失败' }, { status: 500 });
   }
 }
 
 /**
- * POST /api/protection/originality
- * 检测原创性
+ * POST /api/protection/detect
+ * 原创性检测
  */
-export async function PUT(request: NextRequest) {
+export async function detectOriginality(request: NextRequest) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { content } = body;
-
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: '缺少内容' },
-        { status: 400 }
-      );
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const pool = getPool();
-    const result = await checkOriginality(content, pool);
+    const { content } = await request.json();
+
+    // 简单的原创性检测（实际应该使用更复杂的算法）
+    const contentHash = crypto.createHash('sha256').update(content).digest('hex');
+
+    // 检查数据库中是否有相似内容
+    const result = await db.query(
+      `SELECT
+        content_hash,
+        similarity_score
+      FROM copyright_protection
+      WHERE similarity($1, content) > 0.8
+      ORDER BY similarity_score DESC
+      LIMIT 5`,
+      [content]
+    );
+
+    const originalityScore = result.rows.length > 0
+      ? Math.max(0, 1 - result.rows[0].similarity_score)
+      : 1.0;
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        originalityScore: Math.round(originalityScore * 100) / 100,
+        similarWorks: result.rows.length,
+        isOriginal: originalityScore >= 0.9,
+      },
     });
   } catch (error) {
-    console.error('检测原创性失败:', error);
-    return NextResponse.json(
-      { success: false, error: '检测原创性失败' },
-      { status: 500 }
-    );
+    console.error('原创性检测失败:', error);
+    return NextResponse.json({ error: '原创性检测失败' }, { status: 500 });
   }
 }

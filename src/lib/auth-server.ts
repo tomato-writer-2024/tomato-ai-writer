@@ -50,3 +50,41 @@ export function getToken(request: NextRequest): JwtPayload | null {
 export function isAuthenticated(request: NextRequest): boolean {
   return getToken(request) !== null;
 }
+
+/**
+ * 验证Token（从字符串）
+ */
+export function verifyToken(token: string): JwtPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    return decoded;
+  } catch (error) {
+    console.error('Token验证失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 生成Token
+ */
+export function generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+/**
+ * 刷新Token
+ */
+export function refreshToken(token: string): string | null {
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return null;
+  }
+
+  return generateToken({
+    userId: decoded.userId,
+    email: decoded.email,
+    username: decoded.username,
+    role: decoded.role,
+    membershipLevel: decoded.membershipLevel,
+  });
+}

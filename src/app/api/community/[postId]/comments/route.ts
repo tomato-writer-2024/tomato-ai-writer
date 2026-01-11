@@ -1,13 +1,15 @@
 /**
- * 评论 API
+ * 社区功能 - 评论 API
+ * 支持发表评论、回复评论、点赞评论
  */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { getToken } from '@/lib/auth-server';
+import { verifyToken } from '@/lib/auth-server';
+import { db } from '@/lib/db';
 
 /**
  * GET /api/community/[postId]/comments
- * 获取评论列表
+ * 获取帖子的评论列表
  */
 export async function GET(
   request: NextRequest,
@@ -21,21 +23,21 @@ export async function GET(
 
     const offset = (page - 1) * limit;
 
-    const pool = getPool();
-
-    const result = await pool.query(
+    const result = await db.query(
       `SELECT
-        pc.id,
-        pc.content,
-        pc.created_at,
-        u.id as user_id,
-        u.username,
-        u.avatar_url,
-        (SELECT COUNT(*) FROM comment_likes WHERE comment_id = pc.id) as likes_count
-      FROM post_comments pc
-      JOIN users u ON pc.user_id = u.id
-      WHERE pc.post_id = $1
-      ORDER BY pc.created_at ASC
+        c.comment_id,
+        c.content,
+        c.parent_id,
+        c.created_at,
+        u.username as author_name,
+        u.avatar_url as author_avatar,
+        COUNT(r.comment_id) as reply_count
+      FROM comments c
+      JOIN users u ON c.author_id = u.user_id
+      LEFT JOIN comments r ON c.comment_id = r.parent_id
+      WHERE c.post_id = $1 AND c.parent_id IS NULL
+      GROUP BY c.comment_id, u.username, u.avatar_url
+      ORDER BY c.created_at ASC
       LIMIT $2 OFFSET $3`,
       [postId, limit, offset]
     );
@@ -46,70 +48,52 @@ export async function GET(
     });
   } catch (error) {
     console.error('获取评论失败:', error);
-    return NextResponse.json(
-      { success: false, error: '获取评论失败' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: '获取评论失败' }, { status: 500 });
   }
 }
 
 /**
  * POST /api/community/[postId]/comments
- * 添加评论
+ * 发表评论
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ) {
   try {
-    const token = getToken(request);
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
-      return NextResponse.json(
-        { success: false, error: '未登录' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
-    const userId = token.userId;
+    const payload = verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Token无效' }, { status: 401 });
+    }
+
+    const userId = payload.userId;
     const { postId } = await params;
-    const body = await request.json();
-    const { content, parentId } = body;
+    const { content, parentId } = await request.json();
 
-    if (!content) {
-      return NextResponse.json(
-        { success: false, error: '缺少内容' },
-        { status: 400 }
-      );
-    }
-
-    const pool = getPool();
-
-    // 添加评论
-    const result = await pool.query(
-      `INSERT INTO post_comments
-        (post_id, user_id, content, parent_id, created_at)
+    const result = await db.query(
+      `INSERT INTO comments (post_id, author_id, parent_id, content, created_at)
        VALUES ($1, $2, $3, $4, NOW())
-       RETURNING *`,
-      [postId, userId, content, parentId || null]
+       RETURNING comment_id`,
+      [postId, userId, parentId || null, content]
     );
 
     // 更新帖子评论数
-    await pool.query(
-      `UPDATE community_posts
-       SET comments_count = comments_count + 1
-       WHERE id = $1`,
+    await db.query(
+      `UPDATE posts SET comment_count = comment_count + 1 WHERE post_id = $1`,
       [postId]
     );
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0],
+      data: { commentId: result.rows[0].comment_id },
     });
   } catch (error) {
-    console.error('添加评论失败:', error);
-    return NextResponse.json(
-      { success: false, error: '添加评论失败' },
-      { status: 500 }
-    );
+    console.error('发表评论失败:', error);
+    return NextResponse.json({ error: '发表评论失败' }, { status: 500 });
   }
 }
