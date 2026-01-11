@@ -8,6 +8,8 @@ import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Input, Textarea } from '@/components/Input';
 import Navigation from '@/components/Navigation';
+import FileUploader from '@/components/FileUploader';
+import { QuickExportButton } from '@/components/FileExporter';
 
 interface Novel {
   id: string;
@@ -28,6 +30,10 @@ export default function NewChapterPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+
+  // 文件导入导出相关
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [importedFilename, setImportedFilename] = useState('');
 
   // AI生成相关
   const [prompt, setPrompt] = useState('');
@@ -128,6 +134,13 @@ export default function NewChapterPage() {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleContentLoaded = (importedContent: string, filename: string) => {
+    setContent(content + '\n\n' + importedContent);
+    setImportedFilename(filename);
+    setShowFileUpload(false);
+    alert(`文件 "${filename}" 导入成功！内容已添加到章节末尾。`);
   };
 
   const handleAIGenerate = async () => {
@@ -234,16 +247,34 @@ export default function NewChapterPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardBody>
-                  <div className="mb-6 flex items-center gap-3">
-                    <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-3">
-                      <Plus className="text-white" size={24} />
+                  <div className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 p-3">
+                        <Plus className="text-white" size={24} />
+                      </div>
+                      <div>
+                        <h1 className="text-2xl font-bold gradient-text">新建章节</h1>
+                        {novel && (
+                          <p className="text-sm text-gray-600">作品：{novel.title}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h1 className="text-2xl font-bold gradient-text">新建章节</h1>
-                      {novel && (
-                        <p className="text-sm text-gray-600">作品：{novel.title}</p>
-                      )}
-                    </div>
+                    {content && (
+                      <div className="flex gap-2">
+                        <QuickExportButton
+                          content={content}
+                          format="docx"
+                          filename={title || `第${chapterNum}章`}
+                          disabled={isGenerating}
+                        />
+                        <QuickExportButton
+                          content={content}
+                          format="pdf"
+                          filename={title || `第${chapterNum}章`}
+                          disabled={isGenerating}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -283,6 +314,30 @@ export default function NewChapterPage() {
                         className="min-h-[500px] font-mono text-base leading-relaxed"
                         required
                       />
+                      <div className="mt-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setShowFileUpload(!showFileUpload)}
+                          className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700"
+                        >
+                          <Plus size={16} />
+                          {showFileUpload ? '隐藏' : '显示'}文件导入
+                        </button>
+                        {importedFilename && (
+                          <span className="text-sm text-green-600">
+                            ✓ 已导入: {importedFilename}
+                          </span>
+                        )}
+                      </div>
+                      {showFileUpload && (
+                        <div className="mt-3">
+                          <FileUploader
+                            onContentLoaded={handleContentLoaded}
+                            acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
+                            maxSize={10}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2">

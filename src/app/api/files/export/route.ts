@@ -1,110 +1,177 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractUserFromRequest } from '@/lib/auth';
-import { exportAsWord, exportAsTxt } from '@/lib/fileUtils';
-import { uploadFile, generatePresignedUrl } from '@/lib/storageService';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { jsPDF } from 'jspdf';
 
-/**
- * 文档导出API
- *
- * 支持导出的格式：
- * - Word文档 (.docx)
- * - 文本文件 (.txt)
- *
- * 用途：将编辑器中的内容导出为文档文件
- */
 export async function POST(request: NextRequest) {
-	try {
-		// 验证用户身份
-		const { user, error } = await extractUserFromRequest(request);
-		if (error) {
-			return NextResponse.json({ error }, { status: 401 });
-		}
+  try {
+    const body = await request.json();
+    const { content, format, filename } = body;
 
-		const { content, format, filename } = await request.json();
+    if (!content) {
+      return NextResponse.json(
+        { error: '内容不能为空' },
+        { status: 400 }
+      );
+    }
 
-		// 验证必要参数
-		if (!content || content.trim().length === 0) {
-			return NextResponse.json(
-				{ error: '没有内容可导出' },
-				{ status: 400 }
-			);
-		}
+    if (!format || !['txt', 'docx', 'pdf'].includes(format)) {
+      return NextResponse.json(
+        { error: '不支持的导出格式' },
+        { status: 400 }
+      );
+    }
 
-		if (!format || !['word', 'txt'].includes(format)) {
-			return NextResponse.json(
-				{ error: '不支持的导出格式。支持的格式：word, txt' },
-				{ status: 400 }
-			);
-		}
+    const safeFilename = (filename || 'export').replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
 
-		// 生成文件名
-		const defaultFilename = `export_${Date.now()}.${format === 'word' ? 'docx' : 'txt'}`;
-		const exportFilename = filename || defaultFilename;
+    // 根据格式生成文件
+    switch (format) {
+      case 'docx': {
+        // 将文本内容分割成段落
+        const paragraphs = content.split('\n').map((line: string) => {
+          return new Paragraph({
+            children: [
+              new TextRun({
+                text: line || ' ',  // 空行也要保留
+                size: 24,  // 12pt
+                font: '宋体',
+              }),
+            ],
+            spacing: {
+              after: 200,  // 段后间距
+            },
+          });
+        });
 
-		// 导出文件
-		let fileBuffer: Buffer;
-		let contentType: string;
+        const doc = new Document({
+          sections: [
+            {
+              properties: {},
+              children: paragraphs,
+            },
+          ],
+        });
 
-		if (format === 'word') {
-			const docx = await import('docx');
-			const { Document, Packer, Paragraph, TextRun } = docx;
+        const buffer = await Packer.toBuffer(doc);
 
-			// 处理内容：将连续换行符转换为段落
-			const paragraphs = content
-				.split('\n\n')
-				.filter((text: string) => text.trim().length > 0)
-				.map((text: string) => new Paragraph({
-					children: [new TextRun(text)],
-					spacing: {
-						after: 200,
-					},
-				}));
+        return new NextResponse(new Uint8Array(buffer), {
+          headers: {
+            'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Content-Disposition': `attachment; filename="${safeFilename}.docx"`,
+            'Content-Length': buffer.length.toString(),
+          },
+        });
+      }
 
-			const doc = new Document({
-				sections: [{
-					properties: {},
-					children: paragraphs,
-				}],
-			});
+      case 'pdf': {
+        // 创建PDF文档
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
 
-			const blob = await Packer.toBlob(doc);
-			fileBuffer = Buffer.from(await blob.arrayBuffer());
-			contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-		} else {
-			// TXT格式
-			fileBuffer = Buffer.from(content, 'utf-8');
-			contentType = 'text/plain';
-		}
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const margin = 20;
+        const maxWidth = pageWidth - 2 * margin;
+        const lineHeight = 7;
+        const fontSize = 12;
 
-		// 上传到对象存储
-		const storageFilename = `${user.id}_export_${Date.now()}_${exportFilename}`;
-		const fileKey = await uploadFile({
-			fileName: storageFilename,
-			fileContent: fileBuffer,
-			contentType,
-		});
+        pdf.setFontSize(fontSize);
+        pdf.setFont('courier');  // 使用等宽字体
 
-		// 生成下载URL
-		const downloadUrl = await generatePresignedUrl({
-			key: fileKey,
-			expireTime: 3600, // 1小时
-		});
+        // 分割文本成行
+        const lines: string[] = [];
+        const paragraphs = content.split('\n');
 
-		return NextResponse.json({
-			success: true,
-			data: {
-				url: downloadUrl,
-				filename: exportFilename,
-				fileSize: fileBuffer.length,
-				format,
-			},
-		});
-	} catch (error) {
-		console.error('文档导出失败:', error);
-		const errorMessage = error instanceof Error ? error.message : '文档导出失败，请稍后重试';
-		return NextResponse.json(
-			{ error: errorMessage },
-			{ status: 500 }
-		);
-	}
+        for (const paragraph of paragraphs) {
+          const words = paragraph.split('');
+          let currentLine = '';
+
+          for (const word of words) {
+            const testLine = currentLine + word;
+            const testWidth = pdf.getTextWidth(testLine);
+
+            if (testWidth > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          }
+
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+
+          // 段落之间添加空行
+          if (paragraph !== paragraphs[paragraphs.length - 1]) {
+            lines.push('');
+          }
+        }
+
+        // 添加文本到PDF，处理分页
+        let yPosition = margin;
+
+        for (const line of lines) {
+          if (yPosition > pageHeight - margin) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          if (line === '') {
+            yPosition += lineHeight / 2;  // 空行间距减半
+          } else {
+            pdf.text(line, margin, yPosition, {
+              maxWidth: maxWidth,
+              lineHeightFactor: 1.2,
+            });
+            yPosition += lineHeight;
+          }
+        }
+
+        const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+
+        return new NextResponse(new Blob([pdfBuffer]), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${safeFilename}.pdf"`,
+            'Content-Length': pdfBuffer.length.toString(),
+          },
+        });
+      }
+
+      case 'txt': {
+        const buffer = Buffer.from(content, 'utf-8');
+
+        return new NextResponse(buffer, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Disposition': `attachment; filename="${safeFilename}.txt"`,
+            'Content-Length': buffer.length.toString(),
+          },
+        });
+      }
+
+      default:
+        return NextResponse.json(
+          { error: '不支持的导出格式' },
+          { status: 400 }
+        );
+    }
+
+  } catch (error) {
+    console.error('File export error:', error);
+    return NextResponse.json(
+      { error: '文件导出失败，请重试' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    message: 'File export API - Use POST with JSON body',
+    supportedFormats: ['txt', 'docx', 'pdf'],
+  });
 }

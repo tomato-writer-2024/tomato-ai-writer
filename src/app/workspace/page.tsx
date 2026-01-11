@@ -11,6 +11,7 @@ import {
 } from '@/lib/toolCategories';
 import { BrandIcons } from '@/lib/brandIcons';
 import { getToken } from '@/lib/auth-client';
+import FileUploader from '@/components/FileUploader';
 import {
   BookOpen,
   Zap,
@@ -29,6 +30,7 @@ import {
   Grid3X3,
   List,
   ArrowUpRight,
+  Upload,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -43,6 +45,9 @@ export default function WorkspacePage() {
     todayWords: 0,
     memberLevel: '普通用户',
   });
+  const [importedContent, setImportedContent] = useState('');
+  const [importedFilename, setImportedFilename] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(!!getToken());
@@ -84,6 +89,15 @@ export default function WorkspacePage() {
         .filter((t): t is Tool => t !== null);
       setRecentTools(recentToolList.slice(0, 6));
     }
+  };
+
+  const handleContentLoaded = (content: string, filename: string) => {
+    setImportedContent(content);
+    setImportedFilename(filename);
+    // 将导入的内容保存到 localStorage，供其他页面使用
+    localStorage.setItem('importedContent', content);
+    localStorage.setItem('importedFilename', filename);
+    alert(`文件 "${filename}" 导入成功！内容已保存，可在各个工具中使用。`);
   };
 
   const handleToolClick = (tool: Tool) => {
@@ -188,6 +202,66 @@ export default function WorkspacePage() {
               change="🔥 坚持创作"
               color="orange"
             />
+          </div>
+        </div>
+
+        {/* 文件导入区 */}
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              📂 文件导入
+            </h2>
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Upload size={16} />
+              <span>支持 Word / PDF / TXT 格式</span>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-slate-800">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+                  上传您的草稿或参考资料，AI将自动解析文件内容，可用于后续的创作、润色或续写。
+                </p>
+                <FileUploader
+                  onContentLoaded={handleContentLoaded}
+                  acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
+                  maxSize={10}
+                />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-900 dark:text-slate-100">
+                  导入说明
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-0.5">✓</span>
+                    <span>支持批量导入多个文件</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-0.5">✓</span>
+                    <span>自动识别文件格式，智能提取文本内容</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-0.5">✓</span>
+                    <span>保留原有排版和段落结构</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-cyan-500 mt-0.5">✓</span>
+                    <span>最大支持 10MB 文件</span>
+                  </li>
+                </ul>
+                {importedFilename && (
+                  <div className="mt-4 rounded-lg bg-cyan-50 p-4 dark:bg-cyan-900/20">
+                    <p className="text-sm font-medium text-cyan-900 dark:text-cyan-100">
+                      ✓ 已导入: {importedFilename}
+                    </p>
+                    <p className="text-xs text-cyan-700 dark:text-cyan-300 mt-1">
+                      共 {importedContent.length} 个字符
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
