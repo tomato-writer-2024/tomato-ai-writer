@@ -91,7 +91,7 @@ const membershipPlans: MembershipPlan[] = [
   },
 ];
 
-const membershipNames = {
+const membershipNames: Record<string, string> = {
   FREE: '免费用户',
   BASIC: '基础会员',
   PREMIUM: '高级会员',
@@ -105,6 +105,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -120,6 +121,7 @@ export default function ProfilePage() {
 
   const loadUserProfile = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/user/profile');
       if (!response.ok) {
@@ -130,25 +132,33 @@ export default function ProfilePage() {
       if (result.success) {
         setUser(result.data);
         setFormData({
-          username: result.data.username,
-          email: result.data.email,
+          username: result.data.username || '',
+          email: result.data.email || '',
           phone: result.data.phone || '',
           location: result.data.location || '',
         });
+      } else {
+        throw new Error(result.error || '加载用户信息失败');
       }
-    } catch (error) {
-      console.error('加载用户信息失败:', error);
+    } catch (err) {
+      console.error('加载用户信息失败:', err);
+      setError(err instanceof Error ? err.message : '加载用户信息失败');
       // 使用localStorage中的用户信息作为fallback
       const userStr = localStorage.getItem('user');
       if (userStr) {
-        const localUser = JSON.parse(userStr);
-        setUser(localUser);
-        setFormData({
-          username: localUser.username,
-          email: localUser.email,
-          phone: localUser.phone || '',
-          location: localUser.location || '',
-        });
+        try {
+          const localUser = JSON.parse(userStr);
+          setUser(localUser);
+          setFormData({
+            username: localUser.username || '',
+            email: localUser.email || '',
+            phone: localUser.phone || '',
+            location: localUser.location || '',
+          });
+          setError(null);
+        } catch (e) {
+          console.error('解析本地用户信息失败:', e);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -173,10 +183,12 @@ export default function ProfilePage() {
         alert('用户信息保存成功！');
         setIsEditing(false);
         loadUserProfile(); // 重新加载用户信息
+      } else {
+        throw new Error(result.error || '保存用户信息失败');
       }
-    } catch (error) {
-      console.error('保存用户信息失败:', error);
-      alert('保存失败，请稍后重试');
+    } catch (err) {
+      console.error('保存用户信息失败:', err);
+      alert(err instanceof Error ? err.message : '保存失败，请稍后重试');
     } finally {
       setIsSaving(false);
     }
@@ -218,10 +230,12 @@ export default function ProfilePage() {
       if (result.success) {
         alert('头像上传成功！');
         loadUserProfile(); // 重新加载用户信息
+      } else {
+        throw new Error(result.error || '上传头像失败');
       }
-    } catch (error) {
-      console.error('上传头像失败:', error);
-      alert('上传失败，请稍后重试');
+    } catch (err) {
+      console.error('上传头像失败:', err);
+      alert(err instanceof Error ? err.message : '上传失败，请稍后重试');
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) {
@@ -236,26 +250,36 @@ export default function ProfilePage() {
   };
 
   const getStatCard = (title: string, value: string, icon: React.ReactNode, color: string) => (
-    <div className="flex items-center gap-4 rounded-xl bg-white p-6 shadow-md transition-all hover:shadow-lg">
+    <div className="flex items-center gap-4 rounded-xl bg-white p-6 shadow-md transition-all hover:shadow-lg dark:bg-slate-800">
       <div className={`rounded-xl bg-gradient-to-br ${color} p-3 shadow-md`}>
         {icon}
       </div>
       <div>
-        <p className="text-sm text-gray-600">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{title}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <Navigation />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* 错误提示 */}
+        {error && (
+          <div className="mb-8 rounded-xl bg-red-50 border border-red-200 p-4 dark:bg-red-900/20 dark:border-red-800">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
+              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+            </div>
+          </div>
+        )}
+
         {/* 页面标题 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
-          <p className="mt-2 text-gray-600">管理你的账户信息和会员服务</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">个人中心</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">管理你的账户信息和会员服务</p>
         </div>
 
         {/* 用户信息卡片 */}
@@ -274,9 +298,6 @@ export default function ProfilePage() {
                   ) : (
                     <User size={64} className="text-white" />
                   )}
-                </div>
-                <div className="absolute -bottom-2 -right-2">
-                  <BrandIcons.Membership level={user?.membership || 'FREE'} size={40} />
                 </div>
                 {/* 头像上传按钮 */}
                 <button
@@ -310,11 +331,11 @@ export default function ProfilePage() {
                   <>
                     <div className="mb-4 flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900">{user.username}</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user.username}</h2>
                         <div className="mt-2 flex flex-wrap items-center justify-center gap-3 md:justify-start">
                           <MembershipBadge level={user.membership} />
-                          <span className="text-sm text-gray-500">
-                            加入于 {new Date(user.joinDate).toLocaleDateString()}
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            加入于 {user.joinDate ? new Date(user.joinDate).toLocaleDateString() : '未知'}
                           </span>
                         </div>
                       </div>
@@ -330,7 +351,7 @@ export default function ProfilePage() {
                     </div>
 
                     {isEditing ? (
-                      <div className="space-y-4 rounded-lg bg-gray-50 p-4">
+                      <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-slate-800">
                         <div className="grid gap-4 md:grid-cols-2">
                           <Input
                             label="用户名"
@@ -390,21 +411,21 @@ export default function ProfilePage() {
                       <div className="flex flex-wrap gap-6 text-sm">
                         <div className="flex items-center gap-2">
                           <Mail size={18} className="text-gray-500" />
-                          <span className="text-gray-700">{user.email}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{user.email}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Phone size={18} className="text-gray-500" />
-                          <span className="text-gray-700">{user.phone || '未设置'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{user.phone || '未设置'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin size={18} className="text-gray-500" />
-                          <span className="text-gray-700">{user.location || '未设置'}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{user.location || '未设置'}</span>
                         </div>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="py-8 text-center text-gray-500">
+                  <div className="py-8 text-center text-gray-500 dark:text-gray-400">
                     无法加载用户信息
                   </div>
                 )}
@@ -436,7 +457,7 @@ export default function ProfilePage() {
             )}
             {getStatCard(
               '会员等级',
-              membershipNames[user.membership],
+              membershipNames[user.membership] || user.membership,
               <Crown size={24} className="text-white" />,
               'from-orange-500 to-orange-600'
             )}
@@ -459,15 +480,15 @@ export default function ProfilePage() {
                     <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 p-2">
                       <TrendingUp size={20} className="text-indigo-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">写作趋势</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">写作趋势</h3>
                   </div>
                   <div className="space-y-4">
                     <div>
                       <div className="mb-2 flex justify-between text-sm">
-                        <span className="text-gray-600">本周写作</span>
-                        <span className="font-semibold text-gray-900">12,500字</span>
+                        <span className="text-gray-600 dark:text-gray-400">本周写作</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">12,500字</span>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-200">
+                      <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600"
                           style={{ width: '65%' }}
@@ -476,10 +497,10 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <div className="mb-2 flex justify-between text-sm">
-                        <span className="text-gray-600">本月写作</span>
-                        <span className="font-semibold text-gray-900">45,600字</span>
+                        <span className="text-gray-600 dark:text-gray-400">本月写作</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">45,600字</span>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-200">
+                      <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-600"
                           style={{ width: '78%' }}
@@ -488,10 +509,10 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <div className="mb-2 flex justify-between text-sm">
-                        <span className="text-gray-600">年度写作</span>
-                        <span className="font-semibold text-gray-900">856,000字</span>
+                        <span className="text-gray-600 dark:text-gray-400">年度写作</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">856,000字</span>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-200">
+                      <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-600"
                           style={{ width: '85%' }}
@@ -508,23 +529,23 @@ export default function ProfilePage() {
                     <div className="rounded-lg bg-gradient-to-br from-green-100 to-emerald-100 p-2">
                       <BrandIcons.Quality size={20} className="text-green-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">质量分析</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">质量分析</h3>
                   </div>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                      <span className="text-sm text-gray-600">平均完读率</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-slate-800">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">平均完读率</span>
                       <span className="text-lg font-bold text-green-600">82%</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                      <span className="text-sm text-gray-600">最高评分</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-slate-800">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">最高评分</span>
                       <span className="text-lg font-bold text-indigo-600">9.5</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                      <span className="text-sm text-gray-600">签约作品</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-slate-800">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">签约作品</span>
                       <span className="text-lg font-bold text-purple-600">4部</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                      <span className="text-sm text-gray-600">爆款作品</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3 dark:bg-slate-800">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">爆款作品</span>
                       <span className="text-lg font-bold text-pink-600">2部</span>
                     </div>
                   </div>
@@ -537,12 +558,12 @@ export default function ProfilePage() {
             <div className="mb-8">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">会员套餐</h3>
-                  <p className="text-gray-600">选择适合你的会员计划</p>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">会员套餐</h3>
+                  <p className="text-gray-600 dark:text-gray-400">选择适合你的会员计划</p>
                 </div>
                 {!isLoading && user && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">当前套餐:</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">当前套餐:</span>
                     <MembershipBadge level={user.membership} />
                   </div>
                 )}
@@ -569,20 +590,20 @@ export default function ProfilePage() {
                     <CardBody className="flex h-full flex-col">
                       <div className="mb-6 text-center">
                         <div className="mb-3 flex justify-center">
-                          <BrandIcons.Membership level={plan.level} size={64} />
+                          <Crown size={64} className="text-gray-900 dark:text-white" />
                         </div>
-                        <h4 className="text-xl font-bold text-gray-900">{plan.name}</h4>
+                        <h4 className="text-xl font-bold text-gray-900 dark:text-white">{plan.name}</h4>
                         <div className="mt-2 flex items-baseline justify-center gap-1">
                           <span className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                             ¥{plan.price}
                           </span>
-                          <span className="text-sm text-gray-600">/月</span>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">/月</span>
                         </div>
                       </div>
 
                       <ul className="mb-6 flex-1 space-y-3">
                         {plan.features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600">
+                          <li key={index} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
                             <BrandIcons.Quality size={16} className="mt-0.5 flex-shrink-0 text-green-500" />
                             {feature}
                           </li>
@@ -617,13 +638,14 @@ export default function ProfilePage() {
                     <div className="rounded-lg bg-gradient-to-br from-blue-100 to-cyan-100 p-2">
                       <Lock size={20} className="text-blue-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">安全设置</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">安全设置</h3>
                   </div>
                   <div className="space-y-4">
                     <Button
                       variant="outline"
                       fullWidth
                       icon={<Lock size={18} />}
+                      onClick={() => window.location.href = '/forgot-password'}
                     >
                       修改密码
                     </Button>
@@ -651,23 +673,23 @@ export default function ProfilePage() {
                     <div className="rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 p-2">
                       <Bell size={20} className="text-purple-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">通知设置</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">通知设置</h3>
                   </div>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-                      <span className="text-sm font-medium text-gray-900">邮件通知</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-slate-800">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">邮件通知</span>
                       <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-indigo-600 transition-colors">
                         <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-                      <span className="text-sm font-medium text-gray-900">短信通知</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-slate-800">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">短信通知</span>
                       <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-300 transition-colors">
                         <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
                       </button>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-                      <span className="text-sm font-medium text-gray-900">系统消息</span>
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4 dark:bg-slate-800">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">系统消息</span>
                       <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-indigo-600 transition-colors">
                         <span className="translate-x-6 inline-block h-4 w-4 transform rounded-full bg-white transition-transform" />
                       </button>
@@ -682,7 +704,7 @@ export default function ProfilePage() {
                     <div className="rounded-lg bg-gradient-to-br from-orange-100 to-red-100 p-2">
                       <Download size={20} className="text-orange-600" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">数据导出</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">数据导出</h3>
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <Button
@@ -714,5 +736,27 @@ export default function ProfilePage() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// AlertCircle icon for error display
+function AlertCircle({ className, size = 24 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
   );
 }

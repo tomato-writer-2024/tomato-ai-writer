@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractUserFromRequest } from '@/lib/auth';
-import { userManager } from '@/storage/database';
+import { userManager, novelManager, contentStatsManager } from '@/storage/database';
 import { getAvatarUrl } from '@/lib/storageService';
 
 /**
@@ -20,17 +20,28 @@ export async function GET(request: NextRequest) {
 			avatarUrl = await getAvatarUrl(user.avatarUrl);
 		}
 
+		// 获取小说统计
+		const novelStats = await novelManager.getNovelStats(user.id);
+
+		// 获取内容统计
+		const overallStats = await contentStatsManager.getUserOverallStats(user.id);
+
+		// 计算平均评分（如果没有则使用默认值）
+		const averageRating = novelStats.averageRating || overallStats.averageQualityScore / 10 || 0;
+
 		// 返回用户信息（不包含敏感信息）
 		const userProfile = {
 			id: user.id,
 			email: user.email,
 			username: user.username,
-			phone: user.phone,
-			location: user.location,
-			avatarUrl,
-			membershipLevel: user.membershipLevel,
-			membershipExpireAt: user.membershipExpireAt,
-			createdAt: user.createdAt,
+			phone: user.phone || '',
+			location: user.location || '',
+			avatarUrl: avatarUrl || '',
+			membership: user.membershipLevel || 'FREE',
+			joinDate: user.createdAt,
+			totalWords: novelStats.totalWords || 0,
+			totalNovels: novelStats.totalNovels || 0,
+			averageRating: averageRating,
 		};
 
 		return NextResponse.json({
@@ -80,17 +91,28 @@ export async function PUT(request: NextRequest) {
 			avatarUrl = await getAvatarUrl(updatedUser.avatarUrl);
 		}
 
+		// 获取小说统计
+		const novelStats = await novelManager.getNovelStats(user.id);
+
+		// 获取内容统计
+		const overallStats = await contentStatsManager.getUserOverallStats(user.id);
+
+		// 计算平均评分
+		const averageRating = novelStats.averageRating || overallStats.averageQualityScore / 10 || 0;
+
 		// 返回更新后的用户信息
 		const userProfile = {
 			id: updatedUser.id,
 			email: updatedUser.email,
 			username: updatedUser.username,
-			phone: updatedUser.phone,
-			location: updatedUser.location,
-			avatarUrl,
-			membershipLevel: updatedUser.membershipLevel,
-			membershipExpireAt: updatedUser.membershipExpireAt,
-			createdAt: updatedUser.createdAt,
+			phone: updatedUser.phone || '',
+			location: updatedUser.location || '',
+			avatarUrl: avatarUrl || '',
+			membership: updatedUser.membershipLevel || 'FREE',
+			joinDate: updatedUser.createdAt,
+			totalWords: novelStats.totalWords || 0,
+			totalNovels: novelStats.totalNovels || 0,
+			averageRating: averageRating,
 		};
 
 		return NextResponse.json({
