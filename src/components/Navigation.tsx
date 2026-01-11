@@ -5,31 +5,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BrandIcons, BRAND_COLORS } from '@/lib/brandIcons';
 import { removeToken, getToken } from '@/lib/auth-client';
-import { Menu, X, User, FileText, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Menu, X, User, LogOut, Home, LayoutGrid, FileText, BarChart3, Settings, Sparkles, Crown } from 'lucide-react';
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
-  requireAuth?: boolean;
+  badge?: string;
 }
 
 const navItems: NavItem[] = [
-  { label: '角色设定', href: '/characters', icon: <BrandIcons.User size={20} />, requireAuth: true },
-  { label: '世界观', href: '/world-building', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
-  { label: '大纲生成', href: '/outline-generator', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
-  { label: '人物关系', href: '/relationship-map', icon: <BrandIcons.Zap size={20} />, requireAuth: true },
-  { label: '卡文诊断', href: '/writer-block', icon: <BrandIcons.Writing size={20} />, requireAuth: true },
-  { label: '爽点优化', href: '/satisfaction-engine', icon: <BrandIcons.Star size={20} />, requireAuth: true },
-  { label: '文风模拟', href: '/style-simulator', icon: <BrandIcons.Book size={20} />, requireAuth: true },
-  { label: '情节反转', href: '/plot-twist', icon: <BrandIcons.Crown size={20} />, requireAuth: true },
-  { label: '结局生成', href: '/ending-generator', icon: <BrandIcons.Award size={20} />, requireAuth: true },
-  { label: '书名生成', href: '/title-generator', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
-  { label: '封面描述', href: '/cover-generator', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
-  { label: '素材库', href: '/materials', icon: <BrandIcons.Sparkles size={20} />, requireAuth: true },
-  { label: '作品管理', href: '/works', icon: <BrandIcons.Book size={20} />, requireAuth: true },
-  { label: '数据统计', href: '/stats', icon: <BrandIcons.Stats size={20} />, requireAuth: true },
-  { label: '个人中心', href: '/profile', icon: <User size={20} />, requireAuth: true },
+  { label: '工作台', href: '/workspace', icon: <LayoutGrid size={20} /> },
+  { label: '我的作品', href: '/works', icon: <FileText size={20} /> },
+  { label: '数据统计', href: '/stats', icon: <BarChart3 size={20} /> },
+  { label: '个人中心', href: '/profile', icon: <User size={20} /> },
+];
+
+const quickActions: NavItem[] = [
+  { label: '智能续写', href: '/continue', icon: <Sparkles size={20} />, badge: '热' },
+  { label: '角色设定', href: '/characters', icon: <User size={20} /> },
+  { label: '大纲生成', href: '/outline-generator', icon: <FileText size={20} /> },
 ];
 
 export default function Navigation() {
@@ -47,7 +42,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200/50 bg-white/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 border-b border-slate-200/50 bg-white/90 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/90">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -61,7 +56,7 @@ export default function Navigation() {
               <BrandIcons.Logo size={28} className="text-white" />
             </div>
             <span
-              className="text-xl font-bold bg-clip-text text-transparent transition-all duration-300 group-hover:opacity-80"
+              className="hidden text-xl font-bold bg-clip-text text-transparent transition-all duration-300 group-hover:opacity-80 sm:block"
               style={{
                 backgroundImage: BRAND_COLORS.gradient,
               }}
@@ -80,17 +75,18 @@ export default function Navigation() {
                     href={item.href}
                     className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
                       pathname === item.href
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-indigo-600'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
+                        : 'text-slate-700 hover:bg-slate-100 hover:text-cyan-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-400'
                     }`}
                   >
                     {item.icon}
                     {item.label}
                   </Link>
                 ))}
+                <div className="mx-2 h-6 w-px bg-slate-300 dark:bg-slate-700" />
                 <button
                   onClick={handleLogout}
-                  className="ml-2 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+                  className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-red-50 hover:text-red-600 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                 >
                   <LogOut size={20} />
                   退出
@@ -105,8 +101,21 @@ export default function Navigation() {
                     background: BRAND_COLORS.gradient,
                   }}
                 >
-                  <BrandIcons.Zap size={18} />
+                  <Crown size={18} />
                   会员套餐
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  登录
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:shadow-lg"
+                >
+                  <Sparkles size={18} />
+                  免费注册
                 </Link>
               </div>
             )}
@@ -115,7 +124,7 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100"
+            className="md:hidden rounded-lg p-2 text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -124,10 +133,38 @@ export default function Navigation() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md">
+        <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
           <div className="space-y-1 px-4 py-3">
             {isAuthenticatedState ? (
               <>
+                {/* 快捷操作 */}
+                {quickActions.length > 0 && (
+                  <div className="mb-4">
+                    <p className="mb-2 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                      快捷操作
+                    </p>
+                    {quickActions.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.icon}
+                          {item.label}
+                        </div>
+                        {item.badge && (
+                          <span className="rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-2 py-0.5 text-xs font-medium text-white">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {/* 主导航 */}
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
@@ -135,8 +172,8 @@ export default function Navigation() {
                     onClick={() => setIsMenuOpen(false)}
                     className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
                       pathname === item.href
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white'
+                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
                     }`}
                   >
                     {item.icon}
@@ -148,10 +185,10 @@ export default function Navigation() {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50"
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition-all duration-200 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
                 >
                   <LogOut size={20} />
-                  退出
+                  退出登录
                 </button>
               </>
             ) : (
@@ -164,8 +201,23 @@ export default function Navigation() {
                     background: BRAND_COLORS.gradient,
                   }}
                 >
-                  <BrandIcons.Zap size={18} />
+                  <Crown size={18} />
                   会员套餐
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-slate-700 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  登录
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex w-full items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-3 text-sm font-medium text-white shadow-md"
+                >
+                  <Sparkles size={18} />
+                  免费注册
                 </Link>
               </div>
             )}
