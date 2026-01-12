@@ -10,7 +10,7 @@ import {
 import { BrandLogo } from '@/components/BrandLogo';
 import { getToken } from '@/lib/auth-client';
 import ImportExport from '@/components/ImportExport';
-import PageIcon, { PageIconCard } from '@/components/PageIcon';
+import PageIcon from '@/components/PageIcon';
 import {
   BookOpen,
   Zap,
