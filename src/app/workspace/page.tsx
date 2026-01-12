@@ -387,7 +387,9 @@ export default function WorkspacePage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div>
-                <FileUploader
+                <ImportExport
+                  mode="import"
+                  variant="compact"
                   onContentLoaded={handleContentLoaded}
                   acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
                   maxSize={10}

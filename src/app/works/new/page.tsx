@@ -18,6 +18,7 @@ import {
   Trash2,
   Download,
   Upload,
+  ArrowRight,
 } from 'lucide-react';
 import { getToken } from '@/lib/auth-client';
 import { toolCategories } from '@/lib/toolCategories';
