@@ -20,7 +20,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { getToken } from '@/lib/auth-client';
-import { ToolCategories } from '@/lib/toolCategories';
+import { toolCategories } from '@/lib/toolCategories';
 
 interface Novel {
   id?: string;
