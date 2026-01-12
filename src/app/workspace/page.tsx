@@ -7,37 +7,23 @@ import {
   type Tool,
   type ToolCategory,
 } from '@/lib/toolCategories';
-import { BrandLogo } from '@/components/BrandLogo';
-import { getToken } from '@/lib/auth-client';
 import ImportExport from '@/components/ImportExport';
-import PageIcon from '@/components/PageIcon';
+import { getToken } from '@/lib/auth-client';
+import BrandCard from '@/components/ui/BrandCard';
+import FeatureCard from '@/components/ui/FeatureCard';
 import {
   BookOpen,
   Zap,
   Sparkles,
   TrendingUp,
-  Crown,
   Flame,
-  Clock,
   FileText,
-  ChevronRight,
   Search,
+  Clock,
   LayoutGrid,
   List,
-  ArrowRight,
-  Upload,
-  Home,
-  Star,
-  Settings,
-  Bell,
-  Menu,
-  X,
-  PenTool,
-  Users,
-  Database,
-  Wand2,
-  Palette,
-  Lightbulb,
+  Plus,
+  Play,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -54,8 +40,6 @@ export default function WorkspacePage() {
   });
   const [importedContent, setImportedContent] = useState('');
   const [importedFilename, setImportedFilename] = useState('');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsAuthenticated(!!getToken());
@@ -98,536 +82,277 @@ export default function WorkspacePage() {
     }
   };
 
-  const handleContentLoaded = (content: string, filename: string) => {
-    setImportedContent(content);
-    setImportedFilename(filename);
-    localStorage.setItem('importedContent', content);
-    localStorage.setItem('importedFilename', filename);
-    alert(`文件 "${filename}" 导入成功！内容已保存，可在各个工具中使用。`);
-  };
-
   const handleToolClick = (tool: Tool) => {
-    const recent = localStorage.getItem('recentTools') || '[]';
-    const recentToolIds = JSON.parse(recent) as string[];
-    const newRecent = [tool.id, ...recentToolIds.filter((id: string) => id !== tool.id)].slice(0, 10);
-    localStorage.setItem('recentTools', JSON.stringify(newRecent));
+    const recent = localStorage.getItem('recentTools');
+    let recentToolIds: string[] = recent ? JSON.parse(recent) : [];
+
+    // 移除已存在的
+    recentToolIds = recentToolIds.filter((id) => id !== tool.id);
+
+    // 添加到开头
+    recentToolIds.unshift(tool.id);
+
+    // 只保留最近使用的8个工具
+    recentToolIds = recentToolIds.slice(0, 8);
+
+    localStorage.setItem('recentTools', JSON.stringify(recentToolIds));
+    setRecentTools([tool, ...recentTools.filter((t) => t.id !== tool.id)].slice(0, 8));
   };
 
-  const filteredCategories = toolCategories.map(category => ({
-    ...category,
-    tools: category.tools.filter(tool =>
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase())
-    ),
-  })).filter(category => selectedCategory === 'all' || category.id === selectedCategory)
-    .filter(category => category.tools.length > 0);
+  const filteredTools = selectedCategory === 'all'
+    ? toolCategories.flatMap((cat) => cat.tools)
+    : toolCategories.find((cat) => cat.id === selectedCategory)?.tools || [];
 
-  const getCategoryIcon = (category: ToolCategory) => {
-    const iconMap: Record<string, any> = {
-      character: Users,
-      plot: BookOpen,
-      writing: PenTool,
-      optimization: Star,
-      creative: Palette,
-      materials: Database,
-    };
-    const Icon = iconMap[category.id] || Sparkles;
-    return <Icon size={20} />;
-  };
+  const searchedTools = searchQuery
+    ? filteredTools.filter((tool) =>
+        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : filteredTools;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-red-50 via-orange-50/30 to-pink-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-      {/* 左侧侧边栏 */}
-      <aside
-        className={`
-          fixed left-0 top-0 z-40 h-screen w-72 bg-white/90 dark:bg-slate-900/90
-          border-r border-slate-200/50 dark:border-slate-800
-          transition-all duration-300 ease-in-out
-          ${sidebarCollapsed ? 'w-20' : 'w-72'}
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
-        style={{ backdropFilter: 'blur(12px)' }}
-      >
-        {/* Logo区域 */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-200/50 dark:border-slate-800 px-4">
-          <Link href="/" className="flex items-center gap-3">
-            <BrandLogo size="md" />
-          </Link>
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden lg:flex p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+    <div className="space-y-8">
+      {/* 欢迎区域 */}
+      <section>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              欢迎回来，创作者
+            </h1>
+            <p className="text-slate-600">
+              今天也是创作的好日子，开始你的创作之旅吧
+            </p>
+          </div>
+          <Link
+            href="/works/new"
+            className="hidden sm:inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#FF4757] to-[#5F27CD] text-white font-medium hover:shadow-lg hover:shadow-[#FF4757]/25 hover:scale-105 transition-all"
           >
-            {sidebarCollapsed ? <Menu size={20} /> : <Menu size={20} />}
-          </button>
+            <Plus className="h-5 w-5" />
+            <span>新建作品</span>
+          </Link>
         </div>
 
-        {/* 用户信息卡片 */}
-        {!sidebarCollapsed && (
-          <div className="p-4 border-b border-slate-200/50 dark:border-slate-800">
-            <div className="rounded-2xl bg-gradient-to-br from-brand/10 to-brand-dark/10 p-4 border border-brand/30 dark:border-brand/30">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-white">
-                  <Crown size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                    {userStats.memberLevel}
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    今日创作 {userStats.todayWords.toLocaleString()} 字
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center">
-                  <p className="text-lg font-bold text-brand dark:text-brand-light">
-                    {userStats.totalWords.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">总字数</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-brand-secondary dark:text-brand-secondary">
-                    {userStats.totalWorks}
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">作品</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
-                    7天
-                  </p>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">连续</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 数据统计 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FeatureCard
+            icon={FileText}
+            title="累计字数"
+            value={userStats.totalWords.toLocaleString()}
+            delay={0}
+          />
+          <FeatureCard
+            icon={BookOpen}
+            title="作品数量"
+            value={userStats.totalWorks.toLocaleString()}
+            delay={100}
+          />
+          <FeatureCard
+            icon={TrendingUp}
+            title="今日创作"
+            value={userStats.todayWords.toLocaleString()}
+            delay={200}
+          />
+        </div>
+      </section>
 
-        {/* 导航菜单 */}
-        <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-240px)]">
+      {/* 快速开始 */}
+      <section>
+        <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+          <Zap className="h-6 w-6 text-[#FF4757]" />
+          快速开始
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link
+            href="/writing/chapter"
+            onClick={() => handleToolClick({ id: 'chapter', name: '章节撰写', description: '', icon: PenTool })}
+            className="group"
+          >
+            <BrandCard
+              icon={Play}
+              title="章节撰写"
+              description="AI辅助撰写章节内容，支持多种风格和题材"
+              tags={['智能生成', '风格控制']}
+              gradient="from-[#FF4757] to-[#FF6B81]"
+              delay={0}
+            />
+          </Link>
+          <Link
+            href="/writing/polish"
+            onClick={() => handleToolClick({ id: 'polish', name: '精修润色', description: '', icon: Sparkles })}
+            className="group"
+          >
+            <BrandCard
+              icon={Sparkles}
+              title="精修润色"
+              description="自动润色和优化文本，提升文章质量"
+              tags={['语法检查', '情感增强']}
+              gradient="from-[#5F27CD] to-[#9B59B6]"
+              delay={100}
+            />
+          </Link>
+          <Link
+            href="/writing/continue"
+            onClick={() => handleToolClick({ id: 'continue', name: '智能续写', description: '', icon: FileText })}
+            className="group"
+          >
+            <BrandCard
+              icon={Clock}
+              title="智能续写"
+              description="基于上下文智能续写内容，避免卡文"
+              tags={['情节预测', '逻辑一致']}
+              gradient="from-[#00D2D3] to-[#3498DB]"
+              delay={200}
+            />
+          </Link>
+        </div>
+      </section>
+
+      {/* 最近使用 */}
+      {recentTools.length > 0 && (
+        <section>
+          <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <Clock className="h-6 w-6 text-[#FF4757]" />
+            最近使用
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recentTools.slice(0, 4).map((tool, index) => (
+              <Link
+                key={tool.id}
+                href={tool.href}
+                onClick={() => handleToolClick(tool)}
+                className="group"
+              >
+                <BrandCard
+                  icon={tool.icon}
+                  title={tool.name}
+                  description={tool.description}
+                  gradient="from-[#FF4757] to-[#5F27CD]"
+                  delay={index * 100}
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 全部工具 */}
+      <section>
+        {/* 搜索和筛选 */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1 flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-slate-200 focus-within:border-[#FF4757] focus-within:ring-2 focus-within:ring-[#FF4757]/10 transition-all">
+            <Search className="h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="搜索工具..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent text-sm text-slate-700 placeholder-slate-400 outline-none"
+            />
+          </div>
+          <div className="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'grid' ? 'bg-[#FF4757] text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <LayoutGrid className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg transition-colors ${
+                viewMode === 'list' ? 'bg-[#FF4757] text-white' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <List className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* 分类标签 */}
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3 rounded-xl
-              transition-all duration-200 group
-              ${selectedCategory === 'all'
-                ? 'bg-gradient-to-r from-brand to-brand-dark text-white shadow-lg shadow-brand/25'
-                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }
-            `}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              selectedCategory === 'all'
+                ? 'bg-gradient-to-r from-[#FF4757] to-[#5F27CD] text-white'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+            }`}
           >
-            <LayoutGrid size={20} />
-            {!sidebarCollapsed && <span className="font-medium">全部工具</span>}
+            全部
           </button>
-
           {toolCategories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-xl
-                transition-all duration-200 group
-                ${selectedCategory === category.id
-                  ? `bg-gradient-to-r ${category.gradient} text-white shadow-lg`
-                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }
-              `}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedCategory === category.id
+                  ? 'bg-gradient-to-r from-[#FF4757] to-[#5F27CD] text-white'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
             >
-              <div className={`
-                flex h-8 w-8 items-center justify-center rounded-lg
-                ${selectedCategory === category.id ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-700'}
-              `}>
-                {getCategoryIcon(category)}
-              </div>
-              {!sidebarCollapsed && (
-                <div className="flex-1 text-left">
-                  <div className="font-medium">{category.name}</div>
-                  {!sidebarCollapsed && (
-                    <div className="text-xs opacity-80">{category.tools.length} 个工具</div>
-                  )}
-                </div>
-              )}
-              {selectedCategory === category.id && !sidebarCollapsed && (
-                <ChevronRight size={16} className="opacity-60" />
-              )}
+              {category.name}
             </button>
           ))}
-        </nav>
-      </aside>
+        </div>
 
-      {/* 移动端遮罩 */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* 主内容区 */}
-      <main className="flex-1 lg:ml-72 transition-all duration-300">
-        {/* 顶部导航栏 */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200/50 dark:border-slate-800">
-          <div className="flex h-full items-center justify-between px-4 lg:px-6">
-            <div className="flex items-center gap-4 flex-1">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+        {/* 工具列表 */}
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchedTools.map((tool, index) => (
+              <Link
+                key={tool.id}
+                href={tool.href}
+                onClick={() => handleToolClick(tool)}
+                className="group"
               >
-                <Menu size={24} />
-              </button>
-
-              {/* 搜索框 */}
-              <div className="relative w-full max-w-lg">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="搜索工具或功能..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-12 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white transition-all"
+                <BrandCard
+                  icon={tool.icon}
+                  title={tool.name}
+                  description={tool.description}
+                  gradient="from-[#FF4757] to-[#5F27CD]"
+                  delay={index * 50}
                 />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Bell size={20} className="text-slate-600 dark:text-slate-400" />
-              </button>
-              <Link href="/settings" className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Settings size={20} className="text-slate-600 dark:text-slate-400" />
               </Link>
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
-                {userStats.memberLevel.substring(0, 1)}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* 内容区域 */}
-        <div className="p-4 lg:p-6">
-          {/* 工具操作栏 */}
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                {selectedCategory === 'all' ? '全部工具' : toolCategories.find(c => c.id === selectedCategory)?.name}
-              </h1>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                {filteredCategories.reduce((sum, cat) => sum + cat.tools.length, 0)} 个工具可用
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-xl transition-all ${
-                  viewMode === 'grid'
-                    ? 'bg-brand text-white shadow-lg shadow-brand/25'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                }`}
-              >
-                <LayoutGrid size={20} />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-xl transition-all ${
-                  viewMode === 'list'
-                    ? 'bg-brand text-white shadow-lg shadow-brand/25'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                }`}
-              >
-                <List size={20} />
-              </button>
-            </div>
-          </div>
-
-          {/* 快捷操作卡片 */}
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <QuickActionCard
-              title="开始创作"
-              description="创建新章节"
-              icon={<PenTool size={24} />}
-              href="/works/new"
-              gradient="from-brand to-brand-dark"
-            />
-            <QuickActionCard
-              title="导入草稿"
-              description="上传已有内容"
-              icon={<Upload size={24} />}
-              href="#import"
-              gradient="from-brand-secondary to-brand-accent"
-              isScroll
-            />
-            <QuickActionCard
-              title="智能续写"
-              description="AI辅助创作"
-              icon={<Wand2 size={24} />}
-              href="/continue"
-              gradient="from-brand-creative to-brand"
-            />
-            <QuickActionCard
-              title="我的作品"
-              description="管理创作"
-              icon={<BookOpen size={24} />}
-              href="/works"
-              gradient="from-emerald-500 to-teal-600"
-            />
-          </div>
-
-          {/* 文件导入区域 */}
-          <div id="import" className="mb-8 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg border border-slate-200/50 dark:border-slate-700/50 p-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
-                  <Upload size={18} className="text-white" />
-                </div>
-                文件导入
-              </h2>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                上传您的草稿或参考资料，AI将自动解析并可用于后续创作
-              </p>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <ImportExport
-                  mode="import"
-                  variant="compact"
-                  onContentLoaded={handleContentLoaded}
-                  acceptedTypes={['.txt', '.pdf', '.doc', '.docx']}
-                  maxSize={10}
-                />
-              </div>
-              <div className="space-y-4">
-                <div className="rounded-xl bg-slate-50 dark:bg-slate-700/50 p-4">
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                    <Lightbulb size={18} className="text-amber-500" />
-                    支持格式
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
-                      TXT
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
-                      PDF
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-white dark:bg-slate-600 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-500">
-                      Word
-                    </span>
-                  </div>
-                </div>
-                {importedFilename && (
-                  <div className="rounded-xl bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 p-4 border border-cyan-200 dark:border-cyan-800">
-                    <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 font-medium">
-                      <Sparkles size={16} />
-                      已导入文件
-                    </div>
-                    <p className="mt-1 text-sm text-slate-900 dark:text-slate-100 font-semibold">
-                      {importedFilename}
-                    </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                      {importedContent.length.toLocaleString()} 个字符
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 最近使用 */}
-          {recentTools.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-3">
-                <Clock size={24} className="text-purple-500" />
-                最近使用
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {recentTools.slice(0, 4).map((tool) => (
-                  <RecentToolCard key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 工具列表 */}
-          <div>
-            {filteredCategories.map((category) => (
-              <div key={category.id} className="mb-8">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${category.gradient} shadow-lg`}>
-                    {getCategoryIcon(category)}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                      {category.name}
-                    </h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{category.description}</p>
-                  </div>
-                </div>
-
-                {viewMode === 'grid' ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {category.tools.map((tool) => (
-                      <ToolCard key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {category.tools.map((tool) => (
-                      <ToolListItem key={tool.id} tool={tool} onClick={() => handleToolClick(tool)} />
-                    ))}
-                  </div>
-                )}
-              </div>
             ))}
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-// 快捷操作卡片
-function QuickActionCard({
-  title,
-  description,
-  icon,
-  href,
-  gradient,
-  isScroll = false,
-}: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  href: string;
-  gradient: string;
-  isScroll?: boolean;
-}) {
-  const handleClick = (e: React.MouseEvent) => {
-    if (isScroll) {
-      e.preventDefault();
-      const element = document.querySelector(href);
-      element?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  return (
-    <Link
-      href={href}
-      onClick={handleClick}
-      className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-6 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
-    >
-      <div className={`absolute right-0 top-0 h-24 w-24 bg-gradient-to-br ${gradient} opacity-10 rounded-bl-full transition-all duration-300 group-hover:scale-125`} />
-      <div className="relative">
-        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-lg`}>
-          {icon}
-        </div>
-        <h3 className="mb-1 font-bold text-slate-900 dark:text-slate-100">
-          {title}
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          {description}
-        </p>
-        <div className="absolute right-4 bottom-4 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1">
-          <ArrowRight className="h-5 w-5 text-slate-400" />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// 工具卡片
-function ToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
-  return (
-    <Link
-      href={tool.href}
-      onClick={onClick}
-      className="group relative overflow-hidden rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-5 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:border-[#FF4757] dark:hover:border-[#FF4757]"
-    >
-      <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 rounded-bl-full transition-all duration-300 group-hover:scale-150" />
-      <div className="relative">
-        <div className="mb-3">
-          <PageIcon pagePath={tool.href} size="lg" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
-        </div>
-        <h3 className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-          {tool.name}
-        </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
-          {tool.description}
-        </p>
-        <div className="flex items-center gap-2">
-          {tool.isHot && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-medium">
-              <Flame size={12} />
-              热门
-            </span>
-          )}
-          {tool.isNew && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FF4757]/10 dark:bg-[#FF4757]/30 text-[#FF4757] text-xs font-medium">
-              <Sparkles size={12} />
-              新功能
-            </span>
-          )}
-          {tool.isPro && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium">
-              <Crown size={12} />
-              专业版
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-// 工具列表项
-function ToolListItem({ tool, onClick }: { tool: Tool; onClick: () => void }) {
-  return (
-    <Link
-      href={tool.href}
-      onClick={onClick}
-      className="group flex items-center justify-between rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 transition-all duration-300 hover:shadow-lg hover:border-[#FF4757] dark:hover:border-[#FF4757]"
-    >
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="flex h-11 w-11 flex-shrink-0">
-          <PageIcon pagePath={tool.href} size="md" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-              {tool.name}
-            </h3>
-            {tool.isHot && <Flame size={14} className="text-orange-500 flex-shrink-0" />}
-            {tool.isNew && <Sparkles size={14} className="text-[#FF4757] flex-shrink-0" />}
-            {tool.isPro && <Crown size={14} className="text-amber-500 flex-shrink-0" />}
+        ) : (
+          <div className="space-y-4">
+            {searchedTools.map((tool) => (
+              <Link
+                key={tool.id}
+                href={tool.href}
+                onClick={() => handleToolClick(tool)}
+                className="group flex items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#FF4757]/30 hover:shadow-lg hover:shadow-[#FF4757]/10 transition-all"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#5F27CD] text-white group-hover:scale-110 transition-transform">
+                  <tool.icon className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#FF4757] transition-colors">
+                    {tool.name}
+                  </h3>
+                  <p className="text-sm text-slate-600">{tool.description}</p>
+                </div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 group-hover:bg-[#FF4757] text-slate-600 group-hover:text-white transition-all">
+                  <Play className="h-4 w-4" />
+                </div>
+              </Link>
+            ))}
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
-            {tool.description}
-          </p>
-        </div>
-      </div>
-      <ChevronRight className="h-5 w-5 text-slate-400 transition-transform duration-300 group-hover:translate-x-1 flex-shrink-0 ml-4" />
-    </Link>
-  );
-}
+        )}
+      </section>
 
-// 最近使用工具卡片
-function RecentToolCard({ tool, onClick }: { tool: Tool; onClick: () => void }) {
-  return (
-    <Link
-      href={tool.href}
-      onClick={onClick}
-      className="group flex items-center gap-3 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-4 border border-slate-200/50 dark:border-slate-700/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:border-[#FF4757] dark:hover:border-[#FF4757]"
-    >
-      <div className="flex h-10 w-10 flex-shrink-0">
-        <PageIcon pagePath={tool.href} size="md" variant="gradient" showBackground={false} rounded={true} hoverable={false} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-          {tool.name}
-        </h3>
-        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-          {tool.description}
-        </p>
-      </div>
-      <ArrowRight className="h-4 w-4 text-slate-400 transition-all duration-300 group-hover:translate-x-1 opacity-0 group-hover:opacity-100 flex-shrink-0" />
-    </Link>
+      {/* 导入导出 */}
+      <section className="rounded-2xl bg-white border border-slate-200 p-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">导入导出</h2>
+        <ImportExport
+          onImport={(content, filename) => {
+            setImportedContent(content);
+            setImportedFilename(filename);
+          }}
+        />
+      </section>
+    </div>
   );
 }
