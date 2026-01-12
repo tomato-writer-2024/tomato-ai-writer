@@ -11,7 +11,7 @@
     "migrate": "tsx src/scripts/migrate.ts",
     "init-db": "tsx src/scripts/init-database.ts",
     "init-admin": "tsx src/scripts/init-super-admin.ts",
-    "init-all": "pnpm run migrate && pnpm run init-admin"
+    "init-all": "npm run migrate && npm run init-admin"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
