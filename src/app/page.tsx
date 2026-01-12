@@ -17,8 +17,12 @@ import {
   Palette,
   Award,
   CheckCircle,
+  Edit3,
+  Brain,
+  Lightbulb,
+  BarChart3,
 } from 'lucide-react';
-import { BrandIcons } from '@/lib/brandIcons';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   StatCard,
   FeatureCard,
@@ -50,7 +54,7 @@ export default function Home() {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl shadow-lg transition-transform hover:scale-110">
-                <BrandIcons.Logo size={24} />
+                <BrandLogo size="md" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent">
                 番茄AI写作助手
@@ -167,41 +171,41 @@ export default function Home() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
           <FeatureCard
-            icon={<BrandIcons.Writing size={36} />}
+            icon={<Edit3 size={36} />}
             title="智能续写"
             description="AI智能续写，保持剧情连贯和风格一致"
             link="/continue"
             isNew
           />
           <FeatureCard
-            icon={<BrandIcons.AI size={36} />}
+            icon={<Brain size={36} />}
             title="爆款拆解"
             description="深度拆解爆款作品的成功要素"
             link="/explosive-analyze"
           />
           <FeatureCard
-            icon={<BrandIcons.Star size={36} />}
+            icon={<Star size={36} />}
             title="编辑审稿"
             description="模拟编辑审稿，提供专业修改建议"
             link="/editor-review"
             isPro
           />
           <FeatureCard
-            icon={<BrandIcons.Award size={36} />}
+            icon={<Award size={36} />}
             title="黄金开头"
             description="生成吸引读者的黄金3秒开头"
             link="/golden-start"
             isPro
           />
           <FeatureCard
-            icon={<BrandIcons.Crown size={36} />}
+            icon={<Crown size={36} />}
             title="爽感引擎"
             description="优化情节爽点，提升读者爽感"
             link="/satisfaction-engine"
             isNew
           />
           <FeatureCard
-            icon={<BrandIcons.Stats size={36} />}
+            icon={<BarChart3 size={36} />}
             title="数据统计"
             description="查看创作数据和统计分析"
             link="/stats"
@@ -407,7 +411,7 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl">
-                  <BrandIcons.Logo size={24} />
+                  <BrandLogo size="md" />
                 </div>
                 <span className="text-lg font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent">
                   番茄AI写作助手
