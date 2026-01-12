@@ -469,7 +469,7 @@ export default function ImportExport({
                   导出文件
                 </label>
                 <div className="flex items-center space-x-2 flex-wrap">
-                  {!isExporting && !exportedFormat ? (
+                  {(!isExporting && !exportedFormat) && (
                     <>
                       <ExportButton format="txt" onClick={() => handleExport('txt')} />
                       <ExportButton format="docx" onClick={() => handleExport('docx')} />
@@ -484,7 +484,7 @@ export default function ImportExport({
                     </div>
                   )}
 
-                  {exportedFormat && !isExporting && (
+                  {(exportedFormat && !isExporting) && (
                     <div className="flex items-center space-x-2 text-sm text-green-600">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>{exportedFormat.toUpperCase()} 导出成功！</span>
