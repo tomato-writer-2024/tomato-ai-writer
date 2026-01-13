@@ -122,7 +122,7 @@ if [ -n "$novel_id" ]; then
     test_api "创建章节" \
         "POST" \
         "/api/chapters" \
-        "{\"novelId\":\"$novel_id\",\"title\":\"第一章\",\"content\":\"这是第一章的内容\"}" \
+        "{\"novelId\":\"$novel_id\",\"chapterNum\":1,\"title\":\"第一章\",\"content\":\"这是第一章的内容\"}" \
         "$token"
 fi
 echo ""

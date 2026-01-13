@@ -2,7 +2,9 @@ import mammoth from 'mammoth';
 // @ts-ignore - Use dynamic import for pdf-parse to avoid default export issues
 const pdfParse = () => import('pdf-parse');
 import { Document, Packer, Paragraph, TextRun } from 'docx';
-import { jsPDF } from 'jspdf';
+
+// 暂时禁用PDF导出功能（jspdf依赖问题）
+// import { jsPDF } from 'jspdf';
 
 /**
  * 读取Word文档内容
@@ -173,10 +175,14 @@ export async function exportAsWord(content: string, filename: string = 'export.d
 
 /**
  * 导出为PDF文档
- * 注意：由于jsPDF默认不支持中文字体，PDF导出时中文会显示为方块
- * 建议使用Word或TXT格式导出中文内容
+ * 注意：PDF导出功能暂时禁用（jspdf依赖问题）
+ * 建议使用Word或TXT格式导出内容
  */
 export function exportAsPdf(content: string, filename: string = 'export.pdf'): void {
+  throw new Error('PDF导出功能暂时禁用，建议使用Word或TXT格式导出');
+
+  // 原导出逻辑已注释，待jspdf依赖修复后恢复
+  /*
   if (!content || content.trim().length === 0) {
     throw new Error('没有内容可导出，请先创作或导入内容');
   }
@@ -224,6 +230,7 @@ export function exportAsPdf(content: string, filename: string = 'export.pdf'): v
     console.error('PDF文档生成失败:', error);
     throw new Error('PDF文档生成失败，请重试');
   }
+  */
 }
 
 /**

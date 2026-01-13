@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
-import { jsPDF } from 'jspdf';
+
+// 暂时禁用PDF导出功能（jspdf依赖问题）
+// import { jsPDF } from 'jspdf';
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,6 +65,14 @@ export async function POST(request: NextRequest) {
       }
 
       case 'pdf': {
+        // PDF导出功能暂时禁用（jspdf依赖问题）
+        return NextResponse.json(
+          { error: 'PDF导出功能暂时禁用，建议使用Word或TXT格式导出' },
+          { status: 503 }
+        );
+
+        // 原导出逻辑已注释，待jspdf依赖修复后恢复
+        /*
         // 创建PDF文档
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -139,6 +149,7 @@ export async function POST(request: NextRequest) {
             'Content-Length': pdfBuffer.length.toString(),
           },
         });
+        */
       }
 
       case 'txt': {

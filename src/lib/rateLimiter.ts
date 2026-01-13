@@ -175,6 +175,14 @@ export async function checkRateLimit(
   request: Request,
   config: RateLimitConfig
 ): Promise<{ allowed: boolean; error?: string; remaining?: number; resetTime?: number }> {
+  // 开发环境禁用限流
+  if (process.env.NODE_ENV === 'development' || process.env.DISABLE_RATE_LIMIT === 'true') {
+    return {
+      allowed: true,
+      remaining: config.maxRequests,
+    };
+  }
+
   // 从请求中获取IP地址
   const forwarded = request.headers.get('x-forwarded-for');
   const realIp = request.headers.get('x-real-ip');

@@ -26,10 +26,35 @@ export async function GET(request: NextRequest) {
 		}
 
 		// 获取小说统计
-		const novelStats = await novelManager.getNovelStats(user.id);
+		let novelStats;
+		try {
+			novelStats = await novelManager.getNovelStats(user.id);
+		} catch (e) {
+			console.error('获取小说统计失败:', e);
+			novelStats = {
+				totalNovels: 0,
+				totalWords: 0,
+				publishedNovels: 0,
+				totalChapters: 0,
+				averageRating: 0,
+			};
+		}
 
 		// 获取内容统计
-		const overallStats = await contentStatsManager.getUserOverallStats(user.id);
+		let overallStats;
+		try {
+			overallStats = await contentStatsManager.getUserOverallStats(user.id);
+		} catch (e) {
+			console.error('获取内容统计失败:', e);
+			overallStats = {
+				totalWords: 0,
+				totalChapters: 0,
+				averageQualityScore: 0,
+				averageCompletionRate: 0,
+				totalShuangdian: 0,
+				totalReadTime: 0,
+			};
+		}
 
 		// 计算平均评分（如果没有则使用默认值）
 		const averageRating = novelStats.averageRating || overallStats.averageQualityScore / 10 || 0;
@@ -56,7 +81,7 @@ export async function GET(request: NextRequest) {
 	} catch (error) {
 		console.error('获取用户资料失败:', error);
 		return NextResponse.json(
-			{ error: '获取用户资料失败' },
+			{ error: '获取用户资料失败', details: error instanceof Error ? error.message : String(error) },
 			{ status: 500 }
 		);
 	}

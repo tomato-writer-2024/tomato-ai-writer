@@ -93,7 +93,7 @@ async function createTestUser(userConfig: typeof TEST_USERS[0]) {
 
     if (existing.rows.length > 0) {
       console.log(`  ⏭️  用户已存在，跳过创建: ${userConfig.email}`);
-      return existing.rows[0].id;
+      return existing.rows[0].id as string;
     }
 
     // 创建用户
@@ -141,8 +141,8 @@ async function createTestNovel(userId: string) {
     await db.execute(sql`
       INSERT INTO novels (
         id, user_id, title, description, genre, status,
-        word_count, originality_score, quality_score, completion_rate,
-        created_at, updated_at, is_deleted
+        word_count, chapter_count, average_rating, completion_rate,
+        is_published, created_at, updated_at, is_deleted
       ) VALUES (
         ${novelId},
         ${userId},
@@ -151,9 +151,10 @@ async function createTestNovel(userId: string) {
         '玄幻',
         '连载中',
         0,
-        85,
-        88,
         0,
+        0.0,
+        0,
+        false,
         ${now},
         ${now},
         false
@@ -180,8 +181,8 @@ async function createTestChapter(novelId: string, userId: string) {
   try {
     await db.execute(sql`
       INSERT INTO chapters (
-        id, novel_id, user_id, chapter_number, title, content, word_count,
-        originality_score, quality_score, completion_rate, status,
+        id, novel_id, user_id, chapter_num, title, content, word_count,
+        quality_score, completion_rate, shuangdian_count, is_published,
         created_at, updated_at, is_deleted
       ) VALUES (
         ${chapterId},
@@ -191,17 +192,17 @@ async function createTestChapter(novelId: string, userId: string) {
         '第一章',
         '这是第一章的测试内容。在一个遥远的星球上，有一个勇敢的少年...',
         100,
-        80,
         85,
         90,
-        'DRAFT',
+        0,
+        false,
         ${now},
         ${now},
         false
       )
     `);
 
-    console.log(`    ✅ 创建测试章节: ${chapterId}`);
+    console.log(`      ✅ 创建测试章节: ${chapterId}`);
     return chapterId;
   } catch (error) {
     console.error(`    ❌ 创建测试章节失败`, error);
@@ -244,7 +245,9 @@ async function main() {
       if (['test.writer@example.com', 'test.premium@example.com'].includes(userConfig.email)) {
         console.log('\n  创建测试数据...');
         const novelId = await createTestNovel(userId);
-        await createTestChapter(novelId, userId);
+        // 暂时跳过章节创建，待修复字段类型问题后启用
+        // await createTestChapter(novelId, userId);
+        console.log(`    ⏭️  章节创建暂时跳过（待修复字段类型问题）`);
       }
     }
 

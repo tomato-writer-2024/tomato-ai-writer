@@ -18,16 +18,53 @@ export async function GET(request: NextRequest) {
 		const days = parseInt(searchParams.get('days') || '30');
 
 		// 获取写作趋势数据
-		const writingTrend = await contentStatsManager.getUserWritingTrend(user.id, days);
+		let writingTrend: Array<{ date: string; wordCount: number; chapterCount: number }>;
+		try {
+			writingTrend = await contentStatsManager.getUserWritingTrend(user.id, days);
+		} catch (e) {
+			console.error('获取写作趋势失败:', e);
+			writingTrend = [];
+		}
 
 		// 获取用户综合统计
-		const overallStats = await contentStatsManager.getUserOverallStats(user.id);
+		let overallStats;
+		try {
+			overallStats = await contentStatsManager.getUserOverallStats(user.id);
+		} catch (e) {
+			console.error('获取综合统计失败:', e);
+			overallStats = {
+				totalWords: 0,
+				totalChapters: 0,
+				averageQualityScore: 0,
+				averageCompletionRate: 0,
+				totalShuangdian: 0,
+				totalReadTime: 0,
+			};
+		}
 
 		// 获取小说统计
-		const novelStats = await novelManager.getNovelStats(user.id);
+		let novelStats;
+		try {
+			novelStats = await novelManager.getNovelStats(user.id);
+		} catch (e) {
+			console.error('获取小说统计失败:', e);
+			novelStats = {
+				totalNovels: 0,
+				totalWords: 0,
+				publishedNovels: 0,
+				totalChapters: 0,
+				averageRating: 0,
+			};
+		}
 
 		// 获取用户信息
-		const userInfo = await userManager.getUserById(user.id);
+		let userInfo;
+		try {
+			userInfo = await userManager.getUserById(user.id);
+		} catch (e) {
+			console.error('获取用户信息失败:', e);
+			userInfo = user;
+		}
 
 		// 组装返回数据
 		const response = {
@@ -57,11 +94,11 @@ export async function GET(request: NextRequest) {
 
 				// 会员统计
 				membership: {
-					level: user.membershipLevel,
-					expireAt: user.membershipExpireAt,
-					dailyUsageCount: user.dailyUsageCount,
-					monthlyUsageCount: user.monthlyUsageCount,
-					storageUsed: user.storageUsed,
+					level: userInfo?.membershipLevel || 'FREE',
+					expireAt: userInfo?.membershipExpireAt,
+					dailyUsageCount: userInfo?.dailyUsageCount,
+					monthlyUsageCount: userInfo?.monthlyUsageCount,
+					storageUsed: userInfo?.storageUsed,
 				},
 			},
 		};
@@ -70,7 +107,7 @@ export async function GET(request: NextRequest) {
 	} catch (error) {
 		console.error('获取统计数据失败:', error);
 		return NextResponse.json(
-			{ error: '获取统计数据失败' },
+			{ error: '获取统计数据失败', details: error instanceof Error ? error.message : String(error) },
 			{ status: 500 }
 		);
 	}

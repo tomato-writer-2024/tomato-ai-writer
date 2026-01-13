@@ -7,11 +7,11 @@ import { S3Storage } from 'coze-coding-dev-sdk';
 
 // 初始化对象存储客户端
 const storage = new S3Storage({
-	endpointUrl: process.env.COZE_BUCKET_ENDPOINT_URL,
-	accessKey: '',
-	secretKey: '',
-	bucketName: process.env.COZE_BUCKET_NAME,
-	region: 'cn-beijing',
+	endpointUrl: process.env.S3_ENDPOINT || process.env.COZE_BUCKET_ENDPOINT_URL,
+	accessKey: process.env.S3_ACCESS_KEY || '',
+	secretKey: process.env.S3_SECRET_KEY || '',
+	bucketName: process.env.S3_BUCKET || process.env.COZE_BUCKET_NAME,
+	region: process.env.S3_REGION || 'us-east-1',
 });
 
 /**
