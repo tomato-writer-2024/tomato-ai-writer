@@ -1,118 +1,157 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { Pool } from 'pg';
 
 /**
- * 诊断API
- * 用于检查Vercel部署的所有配置和连接状态
+ * 诊断 Supabase Connection Pooling 配置
  */
-export async function GET(request: NextRequest) {
-  const diagnosticInfo: any = {
-    timestamp: new Date().toISOString(),
-    environment: {},
-    configuration: {},
-    checks: {},
-  };
+export async function GET(request: Request) {
+  const diagnostics = [];
 
+  console.log('===== Supabase Connection Pooling 诊断 =====');
+
+  // 诊断1：尝试连接到 Direct Connection（IPv6）
   try {
-    // 1. 环境变量检查
-    diagnosticInfo.environment = {
-      nodeEnv: process.env.NODE_ENV,
-      vercelEnv: process.env.VERCEL_ENV,
-      vercelUrl: process.env.VERCEL_URL,
-      databaseUrl: process.env.DATABASE_URL ? '已配置（部分隐藏）' : '未配置',
-      jwtSecret: process.env.JWT_SECRET ? '已配置（隐藏）' : '未配置',
-      doubaoApiKey: process.env.DOUBAO_API_KEY ? '已配置（隐藏）' : '未配置',
-    };
+    console.log('诊断1：测试 Direct Connection (IPv6)');
+    const pool = new Pool({
+      connectionString: 'postgresql://postgres:Tomato2024!%40%23%24@db.jtibmdmfvusjlhiuqyrn.supabase.co:5432/postgres?sslmode=no-verify',
+      connectionTimeoutMillis: 5000,
+    });
 
-    diagnosticInfo.configuration = {
-      baseUrl: process.env.NEXT_PUBLIC_BASE_URL || '未配置',
-      appName: process.env.NEXT_PUBLIC_APP_NAME || '未配置',
-    };
+    const client = await pool.connect();
+    const result = await client.query('SELECT version()');
+    await client.release();
+    await pool.end();
 
-    // 2. 数据库连接测试
-    diagnosticInfo.checks.database = {
-      status: '未测试',
-      error: null,
-      details: null,
-    };
-
-    try {
-      const { getDb } = await import('coze-coding-dev-sdk');
-      const db = await getDb();
-
-      // 测试数据库连接
-      const connectionTest = await db.execute('SELECT 1 as test');
-      diagnosticInfo.checks.database = {
-        status: '连接成功',
-        details: {
-          queryResult: connectionTest.rows[0],
-          connectionTest: 'PASS',
-        },
-      };
-
-      // 检查users表是否存在
-      const tableTest = await db.execute(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_name = 'users'
-        )
-      `);
-      diagnosticInfo.checks.database.tables = {
-        users: tableTest.rows[0].exists ? '存在' : '不存在',
-      };
-
-      // 检查指定用户
-      const email = '208343256@qq.com';
-      const escapedEmail = email.replace(/'/g, "''");
-      const userTest = await db.execute(`
-        SELECT id, email, username, role, is_super_admin, is_active, is_banned
-        FROM users WHERE email = '${escapedEmail}'
-      `);
-      diagnosticInfo.checks.database.adminUser = userTest.rows.length > 0 ? {
-        status: '存在',
-        data: {
-          id: userTest.rows[0].id,
-          email: userTest.rows[0].email,
-          username: userTest.rows[0].username,
-          role: userTest.rows[0].role,
-          is_super_admin: userTest.rows[0].is_super_admin,
-          is_active: userTest.rows[0].is_active,
-          is_banned: userTest.rows[0].is_banned,
-        }
-      } : { status: '不存在' };
-
-    } catch (error: any) {
-      diagnosticInfo.checks.database = {
-        status: '连接失败',
-        error: error.message,
-        stack: error.stack,
-      };
-    }
-
-    // 3. JWT配置检查
-    diagnosticInfo.checks.jwt = {
-      status: process.env.JWT_SECRET ? '已配置' : '未配置',
-      length: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
-      valid: process.env.JWT_SECRET ? (process.env.JWT_SECRET.length >= 32 ? '有效' : '过短，建议至少32位') : '无效',
-    };
-
-    // 4. API端点测试
-    diagnosticInfo.checks.apiEndpoints = {
-      login: '/api/auth/login',
-      userStats: '/api/user/stats',
-      databaseStructure: '/api/debug/database-structure',
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: diagnosticInfo,
+    diagnostics.push({
+      test: 'Direct Connection (IPv6)',
+      status: '成功',
+      message: 'IPv6 连接正常（但这在沙箱环境中不可用）',
+      version: result.rows[0].version.substring(0, 100),
     });
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
+    diagnostics.push({
+      test: 'Direct Connection (IPv6)',
+      status: '失败',
       error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString(),
-    }, { status: 500 });
+      hint: '这是预期的，因为沙箱环境不支持 IPv6',
+    });
   }
+
+  // 诊断2：测试 Connection Pooling (port 6543)
+  try {
+    console.log('诊断2：测试 Connection Pooling (port 6543)');
+    const pool = new Pool({
+      connectionString: 'postgresql://postgres:Tomato2024!%40%23%24@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=no-verify',
+      connectionTimeoutMillis: 5000,
+    });
+
+    const client = await pool.connect();
+    const result = await client.query('SELECT version()');
+    await client.release();
+    await pool.end();
+
+    diagnostics.push({
+      test: 'Connection Pooling (port 6543)',
+      status: '成功',
+      message: 'Connection Pooling 工作正常',
+      version: result.rows[0].version.substring(0, 100),
+    });
+  } catch (error: any) {
+    const hint = error.code === 'XX000'
+      ? 'Connection Pooling 未启用或未生效。请在 Supabase Dashboard 中启用 Connection Pooling 并等待 2-3 分钟。'
+      : error.code === 'SELF_SIGNED_CERT_IN_CHAIN'
+      ? 'SSL 证书问题（已用 sslmode=no-verify 解决）'
+      : '其他错误';
+
+    diagnostics.push({
+      test: 'Connection Pooling (port 6543)',
+      status: '失败',
+      error: error.message,
+      code: error.code,
+      hint,
+    });
+  }
+
+  // 诊断3：测试 Session Pooling (port 5432 with pooler)
+  try {
+    console.log('诊断3：测试 Session Pooling (port 5432)');
+    const pool = new Pool({
+      connectionString: 'postgresql://postgres:Tomato2024!%40%23%24@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=no-verify',
+      connectionTimeoutMillis: 5000,
+    });
+
+    const client = await pool.connect();
+    const result = await client.query('SELECT version()');
+    await client.release();
+    await pool.end();
+
+    diagnostics.push({
+      test: 'Session Pooling (port 5432)',
+      status: '成功',
+      message: 'Session Pooling 工作正常',
+      version: result.rows[0].version.substring(0, 100),
+    });
+  } catch (error: any) {
+    const hint = error.code === 'XX000'
+      ? 'Session Pooling 未启用。可能需要使用 Connection Pooling (port 6543)。'
+      : error.code === 'SELF_SIGNED_CERT_IN_CHAIN'
+      ? 'SSL 证书问题（已用 sslmode=no-verify 解决）'
+      : '其他错误';
+
+    diagnostics.push({
+      test: 'Session Pooling (port 5432)',
+      status: '失败',
+      error: error.message,
+      code: error.code,
+      hint,
+    });
+  }
+
+  // 生成建议
+  const recommendations = [];
+  const poolingSuccess = diagnostics.find((d: any) => d.test.includes('Connection Pooling') && d.status === '成功');
+  const sessionSuccess = diagnostics.find((d: any) => d.test.includes('Session Pooling') && d.status === '成功');
+
+  if (poolingSuccess) {
+    recommendations.push({
+      type: '推荐',
+      message: '使用 Connection Pooling (port 6543)，支持 Transaction 模式',
+      connectionString: 'postgresql://postgres:Tomato2024!%40%23%24@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=no-verify',
+    });
+  } else if (sessionSuccess) {
+    recommendations.push({
+      type: '推荐',
+      message: '使用 Session Pooling (port 5432)',
+      connectionString: 'postgresql://postgres:Tomato2024!%40%23%24@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=no-verify',
+    });
+  } else {
+    recommendations.push({
+      type: '紧急',
+      message: '请在 Supabase Dashboard 中启用 Connection Pooling',
+      steps: [
+        '1. 进入项目 Settings → Database',
+        '2. 找到 Connection pooling 部分',
+        '3. 点击 Enable 启用',
+        '4. 等待 2-3 分钟让配置生效',
+        '5. 重新运行此诊断测试',
+      ],
+    });
+    recommendations.push({
+      type: '临时方案',
+      message: '使用 Mock 模式让系统先运行起来',
+      steps: [
+        '1. Mock 模式已实现，可以使用',
+        '2. 后续启用 Connection Pooling 后可切换到真实数据库',
+      ],
+    });
+  }
+
+  return NextResponse.json({
+    success: poolingSuccess !== undefined || sessionSuccess !== undefined,
+    diagnostics,
+    recommendations,
+    nextSteps: poolingSuccess || sessionSuccess
+      ? ['数据库连接成功，可以创建超级管理员账户']
+      : ['启用 Supabase Connection Pooling', '等待配置生效（2-3分钟）', '重新运行诊断'],
+  });
 }
