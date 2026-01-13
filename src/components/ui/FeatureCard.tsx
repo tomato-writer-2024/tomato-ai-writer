@@ -22,12 +22,12 @@ export default function FeatureCard({
   return (
     <div
       className={`
-        relative overflow-hidden rounded-2xl bg-white p-6
+        group relative overflow-hidden rounded-2xl bg-white p-6 sm:p-8
         border border-slate-200
         hover:border-[#FF4757]/30
         hover:shadow-xl hover:shadow-[#FF4757]/15
+        hover:-translate-y-1
         transition-all duration-300
-        animate-fadeInUp
       `}
       style={{
         animationDelay: `${delay}ms`,
@@ -35,10 +35,10 @@ export default function FeatureCard({
       }}
     >
       {/* 渐变背景装饰 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#FF4757]/5 to-[#5F27CD]/5 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#FF4757]/5 to-[#6366F1]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
       {/* 图标 */}
-      <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#5F27CD] text-white">
+      <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#6366F1] text-white shadow-lg shadow-[#FF4757]/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
         <Icon className="h-6 w-6" />
       </div>
 
@@ -46,7 +46,7 @@ export default function FeatureCard({
       <p className="relative text-sm font-medium text-slate-600">{title}</p>
 
       {/* 数值 */}
-      <p className="relative mt-1 text-3xl font-bold text-slate-900">{value}</p>
+      <p className="relative mt-1 text-3xl sm:text-4xl font-bold text-slate-900">{value}</p>
 
       {/* 趋势 */}
       {trend && (

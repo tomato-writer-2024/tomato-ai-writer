@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X, LucideIcon, MessageSquare } from 'lucide-react';
+import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X, LucideIcon, MessageSquare, Zap } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavItem {
@@ -38,7 +38,7 @@ const navigation: Array<NavItem | NavGroup> = [
     name: '资源中心',
     items: [
       { name: '素材库', href: '/materials', icon: Database },
-      { name: '写作模板', href: '/templates', icon: FileEdit },
+      { name: '写作模板', href: '/templates', icon: Zap },
     ],
   },
 ];
@@ -77,20 +77,20 @@ export default function Sidebar() {
         {/* Logo区域 */}
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-4">
           {!isCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#5F27CD] shadow-lg shadow-[#FF4757]/30">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#6366F1] shadow-lg shadow-[#FF4757]/30">
                 <PenTool className="h-5 w-5 text-white" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-900">番茄AI</h1>
                 <p className="text-xs text-slate-500">写作助手</p>
               </div>
-            </div>
+            </Link>
           )}
           {isCollapsed && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#5F27CD] shadow-lg shadow-[#FF4757]/30">
+            <Link href="/" className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#6366F1] shadow-lg shadow-[#FF4757]/30">
               <PenTool className="h-5 w-5 text-white" />
-            </div>
+            </Link>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -111,11 +111,11 @@ export default function Sidebar() {
         </div>
 
         {/* 导航菜单 */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-brand">
           {/* 主导航 */}
           <div className="space-y-1">
             {navigation.slice(0, 2).map((item) => {
-              if ('items' in item) return null; // 跳过分组项
+              if ('items' in item) return null;
               const Icon = item.icon;
               return (
                 <Link
@@ -124,10 +124,11 @@ export default function Sidebar() {
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                     ${isActive(item.href)
-                      ? 'bg-gradient-to-r from-[#FF4757] to-[#5F27CD] text-white shadow-lg shadow-[#FF4757]/20'
+                      ? 'bg-gradient-to-r from-[#FF4757] to-[#6366F1] text-white shadow-lg shadow-[#FF4757]/20'
                       : 'text-slate-700 hover:bg-slate-100'
                     }
                   `}
+                  title={isCollapsed ? item.name : ''}
                 >
                   <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'flex-shrink-0'}`} />
                   {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
@@ -155,7 +156,7 @@ export default function Sidebar() {
                       className={`
                         flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                         ${isActive(item.href)
-                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
+                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#6366F1]/10 text-[#FF4757] border border-[#FF4757]/20'
                           : 'text-slate-700 hover:bg-slate-100'
                         }
                       `}
@@ -189,7 +190,7 @@ export default function Sidebar() {
                       className={`
                         flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                         ${isActive(item.href)
-                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
+                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#6366F1]/10 text-[#FF4757] border border-[#FF4757]/20'
                           : 'text-slate-700 hover:bg-slate-100'
                         }
                       `}
@@ -221,7 +222,7 @@ export default function Sidebar() {
                     className={`
                       flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
                       ${isActive(item.href)
-                        ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
+                        ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#6366F1]/10 text-[#FF4757] border border-[#FF4757]/20'
                         : 'text-slate-700 hover:bg-slate-100'
                       }
                     `}
@@ -250,9 +251,9 @@ export default function Sidebar() {
       {/* 移动端打开按钮 */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="md:hidden fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg border border-slate-200"
+        className="fixed bottom-6 left-6 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FF4757] to-[#6366F1] text-white shadow-xl shadow-[#FF4757]/30 md:hidden hover:scale-110 transition-transform"
       >
-        <Menu className="h-5 w-5 text-slate-700" />
+        <Menu className="h-6 w-6" />
       </button>
     </>
   );

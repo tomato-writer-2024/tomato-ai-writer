@@ -17,7 +17,7 @@ export default function BrandCard({
   title,
   description,
   tags,
-  gradient = 'from-[#FF4757] to-[#5F27CD]',
+  gradient = 'from-[#FF4757] to-[#6366F1]',
   onClick,
   delay = 0,
 }: BrandCardProps) {
@@ -28,14 +28,14 @@ export default function BrandCard({
     <div
       onClick={onClick}
       className={`
-        group relative overflow-hidden rounded-2xl bg-white p-6
+        group relative overflow-hidden rounded-2xl bg-white p-6 sm:p-8
         border border-slate-200
         hover:border-[#FF4757]/30
         hover:shadow-2xl hover:shadow-[#FF4757]/20
         transition-all duration-300
         cursor-pointer
         hover:scale-[1.02]
-        animate-fadeInUp
+        hover:-translate-y-1
       `}
       style={{
         animationDelay: `${delay}ms`,
@@ -46,7 +46,7 @@ export default function BrandCard({
       <div
         className={`
           absolute inset-0 bg-gradient-to-br ${gradient} opacity-0
-          group-hover:opacity-[0.03] transition-opacity duration-300
+          group-hover:opacity-[0.05] transition-opacity duration-300
         `}
       />
 
@@ -55,7 +55,8 @@ export default function BrandCard({
         className={`
           mb-4 flex h-14 w-14 items-center justify-center rounded-2xl
           bg-gradient-to-br ${gradient} shadow-lg shadow-[#FF4757]/30
-          group-hover:scale-110 transition-transform duration-300
+          group-hover:scale-110 group-hover:rotate-3
+          transition-all duration-300
         `}
       >
         {isLucideIcon && IconComponent ? (
@@ -66,10 +67,10 @@ export default function BrandCard({
       </div>
 
       {/* 内容区域 */}
-      <h3 className="mb-2 text-xl font-bold text-slate-900 group-hover:text-[#FF4757] transition-colors">
+      <h3 className="mb-2 text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#FF4757] transition-colors">
         {title}
       </h3>
-      <p className="mb-4 text-sm text-slate-600 leading-relaxed">{description}</p>
+      <p className="mb-4 text-sm sm:text-base text-slate-600 leading-relaxed">{description}</p>
 
       {/* 标签 */}
       {tags && tags.length > 0 && (
@@ -80,7 +81,7 @@ export default function BrandCard({
               className="
                 px-2.5 py-1 text-xs font-medium text-slate-600
                 bg-slate-100 rounded-lg
-                group-hover:bg-gradient-to-r group-hover:from-[#FF4757]/10 group-hover:to-[#5F27CD]/10
+                group-hover:bg-gradient-to-r group-hover:from-[#FF4757]/10 group-hover:to-[#6366F1]/10
                 transition-colors
               "
             >
@@ -92,7 +93,7 @@ export default function BrandCard({
 
       {/* 箭头指示器 */}
       <div className="absolute bottom-6 right-6 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4757] to-[#5F27CD] text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#FF4757] to-[#6366F1] text-white shadow-lg shadow-[#FF4757]/30">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
