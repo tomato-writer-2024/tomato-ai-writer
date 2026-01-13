@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
+import * as pdfjs from 'pdfjs-dist';
+
+// 初始化PDF.js worker（使用CDN）
+const pdfjsWorker = typeof window === 'undefined'
+  ? `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
+  : undefined;
+
+if (typeof window === 'undefined' && pdfjsWorker) {
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +23,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 验证文件大小（10MB）
-    const maxSize = 10 * 1024 * 1024;
+    // 验证文件大小（20MB）
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: '文件大小不能超过10MB' },
+        { error: '文件大小不能超过20MB' },
         { status: 400 }
       );
     }
@@ -31,15 +41,42 @@ export async function POST(request: NextRequest) {
     // 根据文件类型解析
     switch (extension) {
       case 'pdf': {
-        // PDF功能暂时禁用，返回503错误
-        return NextResponse.json(
-          {
-            error: 'PDF文件解析功能暂时不可用',
-            message: '请将PDF文件转换为Word（.docx）或TXT格式后再上传',
-            status: 'service_unavailable'
-          },
-          { status: 503 }
-        );
+        try {
+          const buffer = Buffer.from(await file.arrayBuffer());
+          const pdf = await pdfjs.getDocument({
+            data: buffer,
+            // 使用CMapReaderFactory确保中文字符正常显示
+            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/cmaps/`,
+            cMapPacked: true,
+          }).promise;
+
+          let fullText = '';
+
+          // 逐页提取文本
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+
+            // 提取文本并保持基本格式
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(' ');
+
+            fullText += pageText + '\n\n';
+          }
+
+          content = fullText.trim();
+        } catch (error) {
+          console.error('PDF parsing error:', error);
+          return NextResponse.json(
+            {
+              error: 'PDF解析失败',
+              message: '请确保PDF文件不是扫描件，且使用标准编码',
+            },
+            { status: 400 }
+          );
+        }
+        break;
       }
 
       case 'doc': {
@@ -71,7 +108,7 @@ export async function POST(request: NextRequest) {
 
       default:
         return NextResponse.json(
-          { error: '不支持的文件格式，仅支持Word（.doc/.docx）和TXT' },
+          { error: '不支持的文件格式，仅支持PDF、Word（.doc/.docx）和TXT' },
           { status: 400 }
         );
     }
@@ -80,6 +117,7 @@ export async function POST(request: NextRequest) {
     content = content
       .replace(/\r\n/g, '\n')  // 统一换行符
       .replace(/\r/g, '\n')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')  // 合并多余空行
       .trim();
 
     if (!content) {
@@ -95,6 +133,7 @@ export async function POST(request: NextRequest) {
       filename,
       size: file.size,
       type: extension,
+      charCount: content.length,
     });
 
   } catch (error) {
@@ -109,8 +148,13 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: 'File parsing API - Use POST with multipart/form-data',
-    supportedFormats: ['txt', 'doc', 'docx'],
-    maxSize: '10MB',
-    note: 'PDF格式暂时不支持，请使用Word或TXT格式',
+    supportedFormats: ['pdf', 'txt', 'doc', 'docx'],
+    maxSize: '20MB',
+    features: {
+      pdf: '支持标准PDF文件（非扫描件）',
+      docx: '支持Word文档',
+      doc: '支持旧版Word文档（建议转为.docx）',
+      txt: '支持纯文本文件',
+    },
   });
 }

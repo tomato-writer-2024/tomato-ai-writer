@@ -189,6 +189,29 @@ export class MembershipOrderManager {
 			failedOrders: orders.filter(o => o.paymentStatus === 'FAILED').length,
 		};
 	}
+
+	/**
+	 * 更新订单备注（用于存储支付凭证等额外信息）
+	 */
+	async updateOrderNotes(id: string, notes: string): Promise<MembershipOrder | null> {
+		return this.updateOrder(id, { notes });
+	}
+
+	/**
+	 * 更新订单状态（通用方法）
+	 */
+	async updateOrderStatus(id: string, status: string): Promise<MembershipOrder | null> {
+		return this.updatePaymentStatus(id, status);
+	}
+
+	/**
+	 * 获取待审核订单
+	 */
+	async getPendingReviewOrders(): Promise<MembershipOrder[]> {
+		return this.getOrders({
+			filters: { paymentStatus: 'PENDING_REVIEW' as any },
+		});
+	}
 }
 
 export const membershipOrderManager = new MembershipOrderManager();

@@ -33,6 +33,7 @@ export const membershipOrders = pgTable("membership_orders", {
 	transactionId: varchar("transaction_id", { length: 100 }),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	paidAt: timestamp("paid_at", { withTimezone: true, mode: 'string' }),
+	notes: text("notes"),
 }, (table) => [
 	index("membership_orders_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
 	index("membership_orders_payment_status_idx").using("btree", table.paymentStatus.asc().nullsLast().op("text_ops")),
@@ -724,6 +725,7 @@ export const updateMembershipOrderSchema = createCoercedInsertSchema(membershipO
 		paymentStatus: true,
 		transactionId: true,
 		paidAt: true,
+		notes: true,
 	})
 	.partial();
 
