@@ -16,8 +16,13 @@ export async function GET(request: NextRequest) {
 
 		// 获取头像URL
 		let avatarUrl = '';
-		if (user.avatarUrl) {
-			avatarUrl = await getAvatarUrl(user.avatarUrl);
+		try {
+			if (user.avatarUrl) {
+				avatarUrl = await getAvatarUrl(user.avatarUrl);
+			}
+		} catch (e) {
+			console.error('获取头像URL失败:', e);
+			// 继续执行，头像URL失败不影响其他功能
 		}
 
 		// 获取小说统计

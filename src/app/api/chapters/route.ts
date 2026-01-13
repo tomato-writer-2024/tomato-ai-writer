@@ -61,10 +61,13 @@ export async function POST(request: NextRequest) {
 		}
 
 		const body = await request.json();
-		const { novelId, chapterNum, title, content, wordCount } = body;
+		const { novelId, chapterNum, chapterNumber, title, content, wordCount } = body;
+
+		// 兼容字段名：chapterNumber 和 chapterNum
+		const finalChapterNumber = chapterNumber || chapterNum;
 
 		// 验证必要字段
-		if (!novelId || !chapterNum || !title || !content) {
+		if (!novelId || !finalChapterNumber || !title || !content) {
 			return NextResponse.json(
 				{ error: '小说ID、章节号、标题和内容不能为空' },
 				{ status: 400 }
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
 		const chapter = await chapterManager.createChapter({
 			novelId,
 			userId: user.id,
-			chapterNum,
+			chapterNum: finalChapterNumber,
 			title: title.trim(),
 			content,
 			wordCount: wordCount || content.length,
