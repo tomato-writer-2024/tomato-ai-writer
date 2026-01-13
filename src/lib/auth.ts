@@ -97,6 +97,11 @@ export function verifyToken(token: string): JwtPayload | null {
 }
 
 /**
+ * 验证访问令牌（别名，用于测试）
+ */
+export const verifyAccessToken = verifyToken;
+
+/**
  * 生成随机字符串
  */
 export function generateRandomString(length: number = 32): string {

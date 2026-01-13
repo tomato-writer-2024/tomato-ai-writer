@@ -1,91 +1,33 @@
 /**
- * 内存缓存系统
- * 用于提升API响应速度，减少重复计算和数据库查询
+ * 缓存策略实现
+ *
+ * 实现多层缓存策略：
+ * 1. 内存缓存（开发环境）
+ * 2. Redis缓存（生产环境，需要配置）
+ * 3. 浏览器缓存（通过HTTP头）
  */
 
 interface CacheEntry<T> {
   value: T;
   timestamp: number;
-  expiresAt: number;
+  ttl: number;
 }
 
 class MemoryCache {
-  private cache: Map<string, CacheEntry<any>>;
-  private cleanupInterval: NodeJS.Timeout | null;
-
-  constructor() {
-    this.cache = new Map();
-    this.cleanupInterval = null;
-
-    // 每分钟清理一次过期缓存
-    this.startCleanup();
-  }
-
-  /**
-   * 启动清理任务
-   */
-  private startCleanup() {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-    }
-
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 60 * 1000); // 每分钟清理一次
-  }
-
-  /**
-   * 清理过期缓存
-   */
-  private cleanup() {
-    const now = Date.now();
-    let cleaned = 0;
-
-    for (const [key, entry] of this.cache.entries()) {
-      if (entry.expiresAt < now) {
-        this.cache.delete(key);
-        cleaned++;
-      }
-    }
-
-    if (cleaned > 0) {
-      console.log(`[Cache] Cleaned up ${cleaned} expired entries`);
-    }
-  }
-
-  /**
-   * 设置缓存
-   * @param key 缓存键
-   * @param value 缓存值
-   * @param ttl 过期时间（秒），默认1小时
-   */
-  public set<T>(key: string, value: T, ttl: number = 3600): void {
-    const now = Date.now();
-    const expiresAt = now + ttl * 1000;
-
-    this.cache.set(key, {
-      value,
-      timestamp: now,
-      expiresAt,
-    });
-  }
+  private cache: Map<string, CacheEntry<any>> = new Map();
 
   /**
    * 获取缓存
-   * @param key 缓存键
-   * @returns 缓存值，如果不存在或已过期则返回null
    */
-  public get<T>(key: string): T | null {
+  get<T>(key: string): T | null {
     const entry = this.cache.get(key);
 
     if (!entry) {
       return null;
     }
 
-    const now = Date.now();
-
     // 检查是否过期
-    if (entry.expiresAt < now) {
+    if (Date.now() - entry.timestamp > entry.ttl) {
       this.cache.delete(key);
       return null;
     }
@@ -94,186 +36,216 @@ class MemoryCache {
   }
 
   /**
-   * 删除缓存
-   * @param key 缓存键
+   * 设置缓存
    */
-  public delete(key: string): boolean {
-    return this.cache.delete(key);
+  set<T>(key: string, value: T, ttl: number = 60 * 1000): void {
+    this.cache.set(key, {
+      value,
+      timestamp: Date.now(),
+      ttl,
+    });
   }
 
   /**
-   * 检查缓存是否存在
-   * @param key 缓存键
+   * 删除缓存
    */
-  public has(key: string): boolean {
-    const entry = this.cache.get(key);
-
-    if (!entry) {
-      return false;
-    }
-
-    const now = Date.now();
-
-    if (entry.expiresAt < now) {
-      this.cache.delete(key);
-      return false;
-    }
-
-    return true;
+  delete(key: string): void {
+    this.cache.delete(key);
   }
 
   /**
    * 清空所有缓存
    */
-  public clear(): void {
+  clear(): void {
     this.cache.clear();
   }
 
   /**
-   * 获取缓存大小
+   * 清理过期缓存
    */
-  public size(): number {
-    return this.cache.size;
-  }
-
-  /**
-   * 获取所有缓存键
-   */
-  public keys(): string[] {
-    return Array.from(this.cache.keys());
-  }
-
-  /**
-   * 获取缓存统计信息
-   */
-  public getStats(): {
-    size: number;
-    keys: string[];
-    entries: Array<{ key: string; timestamp: number; expiresAt: number; ttl: number }>;
-  } {
+  cleanup(): void {
     const now = Date.now();
-    const entries = Array.from(this.cache.entries()).map(([key, entry]) => ({
-      key,
-      timestamp: entry.timestamp,
-      expiresAt: entry.expiresAt,
-      ttl: Math.max(0, Math.floor((entry.expiresAt - now) / 1000)),
-    }));
-
-    return {
-      size: this.cache.size,
-      keys: this.keys(),
-      entries,
-    };
-  }
-
-  /**
-   * 获取或设置缓存（如果不存在则通过函数获取）
-   */
-  public async getOrSet<T>(
-    key: string,
-    factory: () => Promise<T>,
-    ttl: number = 3600
-  ): Promise<T> {
-    const cached = this.get<T>(key);
-
-    if (cached !== null) {
-      return cached;
-    }
-
-    const value = await factory();
-    this.set(key, value, ttl);
-
-    return value;
-  }
-
-  /**
-   * 批量删除缓存（支持通配符）
-   */
-  public deletePattern(pattern: string): number {
-    const regex = new RegExp(pattern.replace('*', '.*'));
-    let deleted = 0;
-
-    for (const key of this.cache.keys()) {
-      if (regex.test(key)) {
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
         this.cache.delete(key);
-        deleted++;
       }
-    }
-
-    return deleted;
-  }
-
-  /**
-   * 停止清理任务
-   */
-  public stop(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
     }
   }
 }
 
-// 导出单例实例
-export const cache = new MemoryCache();
+// 内存缓存实例（开发环境使用）
+const memoryCache = new MemoryCache();
+
+// 每小时清理一次过期缓存
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    memoryCache.cleanup();
+  }, 60 * 60 * 1000);
+}
 
 /**
- * 缓存配置
+ * Redis缓存配置（生产环境使用）
+ */
+interface RedisCacheConfig {
+  enabled: boolean;
+  url?: string;
+  password?: string;
+  maxRetries?: number;
+}
+
+/**
+ * 缓存策略配置
  */
 export const CACHE_CONFIG = {
-  // 用户信息缓存
-  user: {
-    ttl: 300, // 5分钟
+  // 不同类型数据的默认TTL（毫秒）
+  TTL: {
+    // 用户信息：5分钟
+    USER_INFO: 5 * 60 * 1000,
+    // 小说详情：10分钟
+    NOVEL_DETAILS: 10 * 60 * 1000,
+    // 章节内容：30分钟
+    CHAPTER_CONTENT: 30 * 60 * 1000,
+    // 素材库：1小时
+    MATERIALS: 60 * 60 * 1000,
+    // 统计数据：5分钟
+    STATS: 5 * 60 * 1000,
+    // 系统配置：1小时
+    SYSTEM_CONFIG: 60 * 60 * 1000,
+    // 默认：1分钟
+    DEFAULT: 60 * 1000,
   },
 
-  // 小说信息缓存
-  novel: {
-    ttl: 600, // 10分钟
+  // 缓存键前缀
+  KEYS: {
+    USER: 'user',
+    NOVEL: 'novel',
+    CHAPTER: 'chapter',
+    MATERIAL: 'material',
+    STATS: 'stats',
+    SYSTEM: 'system',
   },
-
-  // 章节信息缓存
-  chapter: {
-    ttl: 300, // 5分钟
-  },
-
-  // 双视角评分缓存
-  rating: {
-    ttl: 86400, // 24小时
-  },
-
-  // 提示词缓存
-  prompt: {
-    ttl: 3600, // 1小时
-  },
-
-  // 测试结果缓存
-  testResult: {
-    ttl: 3600, // 1小时
-  },
-
-  // API响应缓存
-  apiResponse: {
-    ttl: 60, // 1分钟
-  },
-};
+} as const;
 
 /**
  * 生成缓存键
  */
-export function generateCacheKey(
-  prefix: string,
-  parts: (string | number | null | undefined)[]
-): string {
-  const validParts = parts.filter(p => p !== null && p !== undefined) as (string | number)[];
-  return `${prefix}:${validParts.join(':')}`;
+export function generateCacheKey(prefix: string, parts: (string | number)[]): string {
+  return `${prefix}:${parts.join(':')}`;
 }
 
 /**
- * 缓存装饰器（用于异步函数）
+ * 获取缓存
  */
-export function cached<T extends (...args: any[]) => Promise<any>>(
-  keyGenerator: (...args: Parameters<T>) => string,
-  ttl: number = 3600
+export async function getCache<T>(key: string): Promise<T | null> {
+  try {
+    // 开发环境使用内存缓存
+    if (process.env.NODE_ENV === 'development') {
+      return memoryCache.get<T>(key);
+    }
+
+    // 生产环境使用Redis（如果已配置）
+    if (process.env.REDIS_URL) {
+      // TODO: 集成Redis客户端
+      // const redis = await getRedisClient();
+      // const value = await redis.get(key);
+      // return value ? JSON.parse(value) : null;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Cache get error:', error);
+    return null;
+  }
+}
+
+/**
+ * 设置缓存
+ */
+export async function setCache<T>(
+  key: string,
+  value: T,
+  ttl: number = CACHE_CONFIG.TTL.DEFAULT
+): Promise<void> {
+  try {
+    // 开发环境使用内存缓存
+    if (process.env.NODE_ENV === 'development') {
+      memoryCache.set(key, value, ttl);
+      return;
+    }
+
+    // 生产环境使用Redis（如果已配置）
+    if (process.env.REDIS_URL) {
+      // TODO: 集成Redis客户端
+      // const redis = await getRedisClient();
+      // await redis.setex(key, Math.floor(ttl / 1000), JSON.stringify(value));
+      return;
+    }
+  } catch (error) {
+    console.error('Cache set error:', error);
+  }
+}
+
+/**
+ * 删除缓存
+ */
+export async function deleteCache(key: string): Promise<void> {
+  try {
+    // 开发环境使用内存缓存
+    if (process.env.NODE_ENV === 'development') {
+      memoryCache.delete(key);
+      return;
+    }
+
+    // 生产环境使用Redis（如果已配置）
+    if (process.env.REDIS_URL) {
+      // TODO: 集成Redis客户端
+      // const redis = await getRedisClient();
+      // await redis.del(key);
+      return;
+    }
+  } catch (error) {
+    console.error('Cache delete error:', error);
+  }
+}
+
+/**
+ * 清空缓存（按前缀）
+ */
+export async function clearCache(prefix: string): Promise<void> {
+  try {
+    // 开发环境使用内存缓存
+    if (process.env.NODE_ENV === 'development') {
+      // 遍历所有缓存键，删除匹配前缀的
+      const keys = Array.from((memoryCache as any).cache.keys()) as string[];
+      for (const key of keys) {
+        if (key.startsWith(prefix)) {
+          memoryCache.delete(key);
+        }
+      }
+      return;
+    }
+
+    // 生产环境使用Redis（如果已配置）
+    if (process.env.REDIS_URL) {
+      // TODO: 集成Redis客户端
+      // const redis = await getRedisClient();
+      // const keys = await redis.keys(`${prefix}*`);
+      // if (keys.length > 0) {
+      //   await redis.del(...keys);
+      // }
+      return;
+    }
+  } catch (error) {
+    console.error('Cache clear error:', error);
+  }
+}
+
+/**
+ * 带缓存的函数装饰器
+ */
+export function withCache<T>(
+  keyPrefix: string,
+  ttl: number = CACHE_CONFIG.TTL.DEFAULT
 ) {
   return function (
     target: any,
@@ -282,16 +254,24 @@ export function cached<T extends (...args: any[]) => Promise<any>>(
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: Parameters<T>): Promise<ReturnType<T>> {
-      const key = keyGenerator(...args);
-      const cached = cache.get<ReturnType<T>>(key);
+    descriptor.value = async function (...args: any[]) {
+      // 生成缓存键
+      const key = generateCacheKey(
+        keyPrefix,
+        [propertyKey, ...args.map(arg => JSON.stringify(arg))]
+      );
 
-      if (cached !== null) {
+      // 尝试从缓存获取
+      const cached = await getCache<T>(key);
+      if (cached) {
         return cached;
       }
 
+      // 执行原函数
       const result = await originalMethod.apply(this, args);
-      cache.set(key, result, ttl);
+
+      // 缓存结果
+      await setCache(key, result, ttl);
 
       return result;
     };
@@ -301,108 +281,59 @@ export function cached<T extends (...args: any[]) => Promise<any>>(
 }
 
 /**
- * 清理用户相关缓存
+ * API响应缓存中间件
  */
-export function clearUserCache(userId: string): void {
-  const patterns = [
-    `user:${userId}:*`,
-    `novel:*:userId:${userId}`,
-    `chapter:*:userId:${userId}`,
-    `rating:*:userId:${userId}`,
-  ];
-
-  for (const pattern of patterns) {
-    cache.deletePattern(pattern);
-  }
-}
-
-/**
- * 清理小说相关缓存
- */
-export function clearNovelCache(novelId: string): void {
-  const patterns = [
-    `novel:${novelId}:*`,
-    `chapter:*:novelId:${novelId}`,
-    `rating:*:novelId:${novelId}`,
-  ];
-
-  for (const pattern of patterns) {
-    cache.deletePattern(pattern);
-  }
-}
-
-/**
- * 清理章节相关缓存
- */
-export function clearChapterCache(chapterId: string): void {
-  const patterns = [
-    `chapter:${chapterId}:*`,
-    `rating:*:chapterId:${chapterId}`,
-  ];
-
-  for (const pattern of patterns) {
-    cache.deletePattern(pattern);
-  }
-}
-
-/**
- * 缓存命中率统计
- */
-class CacheStats {
-  private hits: number = 0;
-  private misses: number = 0;
-
-  public hit(): void {
-    this.hits++;
-  }
-
-  public miss(): void {
-    this.misses++;
-  }
-
-  public getHitRate(): number {
-    const total = this.hits + this.misses;
-    if (total === 0) {
-      return 0;
+export function withApiCache(ttl: number = CACHE_CONFIG.TTL.DEFAULT) {
+  return async (
+    request: Request,
+    handler: () => Promise<Response>
+  ): Promise<Response> => {
+    // 只缓存GET请求
+    if (request.method !== 'GET') {
+      return handler();
     }
-    return (this.hits / total) * 100;
-  }
 
-  public getStats(): { hits: number; misses: number; hitRate: number } {
-    return {
-      hits: this.hits,
-      misses: this.misses,
-      hitRate: this.getHitRate(),
-    };
-  }
+    // 生成缓存键
+    const url = new URL(request.url);
+    const key = generateCacheKey('api', [
+      url.pathname,
+      url.searchParams.toString(),
+    ]);
 
-  public reset(): void {
-    this.hits = 0;
-    this.misses = 0;
-  }
+    // 尝试从缓存获取
+    const cached = await getCache<{ response: Response; data: any }>(key);
+    if (cached) {
+      // 返回缓存的响应，添加缓存头
+      return new Response(JSON.stringify(cached.data), {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cache': 'HIT',
+          'Cache-Control': `public, max-age=${Math.floor(ttl / 1000)}`,
+        },
+      });
+    }
+
+    // 执行handler
+    const response = await handler();
+
+    // 只缓存成功的响应
+    if (response.ok) {
+      const data = await response.clone().json();
+      await setCache(key, { response, data }, ttl);
+
+      // 添加缓存头
+      const headers = new Headers(response.headers);
+      headers.set('X-Cache', 'MISS');
+      headers.set('Cache-Control', `public, max-age=${Math.floor(ttl / 1000)}`);
+
+      return new Response(JSON.stringify(data), {
+        status: response.status,
+        headers,
+      });
+    }
+
+    return response;
+  };
 }
 
-export const cacheStats = new CacheStats();
-
-/**
- * 包装缓存操作，自动统计命中率
- */
-export function cachedWithStats<T>(key: string, factory: () => T, ttl?: number): T {
-  const cached = cache.get<T>(key);
-
-  if (cached !== null) {
-    cacheStats.hit();
-    return cached;
-  }
-
-  cacheStats.miss();
-  const result = factory();
-
-  if (ttl !== undefined) {
-    cache.set(key, result, ttl);
-  } else {
-    cache.set(key, result);
-  }
-
-  return result;
-}
+export { memoryCache };
