@@ -78,7 +78,7 @@ export default function HomePage() {
                   <span>开始创作</span>
                 </Link>
                 <Link
-                  href="/writing/chapter"
+                  href="/templates"
                   className="
                     inline-flex items-center justify-center gap-2 px-8 py-4
                     rounded-xl bg-white/20 backdrop-blur-sm text-white font-semibold border border-white/30
@@ -141,7 +141,7 @@ export default function HomePage() {
                 tags={['智能续写', '风格控制', '自动排版']}
                 gradient="from-[#FF4757] to-[#FF6B81]"
                 delay={0}
-                onClick={() => (window.location.href = '/writing/chapter')}
+                onClick={() => (window.location.href = '/works')}
               />
               <BrandCard
                 icon={Sparkles}
@@ -150,7 +150,7 @@ export default function HomePage() {
                 tags={['语法检查', '风格调整', '情感增强']}
                 gradient="from-[#5F27CD] to-[#9B59B6]"
                 delay={100}
-                onClick={() => (window.location.href = '/writing/polish')}
+                onClick={() => (window.location.href = '/editor-review')}
               />
               <BrandCard
                 icon={FileEdit}
@@ -159,7 +159,7 @@ export default function HomePage() {
                 tags={['情节预测', '角色保持', '逻辑一致']}
                 gradient="from-[#00D2D3] to-[#3498DB]"
                 delay={200}
-                onClick={() => (window.location.href = '/writing/continue')}
+                onClick={() => (window.location.href = '/continue')}
               />
               <BrandCard
                 icon={BookOpen}
@@ -168,7 +168,7 @@ export default function HomePage() {
                 tags={['热点分析', '节奏把控', '爽点设计']}
                 gradient="from-[#F39C12] to-[#E67E22]"
                 delay={300}
-                onClick={() => (window.location.href = '/writing/analyze')}
+                onClick={() => (window.location.href = '/explosive-analyze')}
               />
               <BrandCard
                 icon={Database}
@@ -186,7 +186,7 @@ export default function HomePage() {
                 tags={['钩子设计', '悬念营造', '快速入戏']}
                 gradient="from-[#FF4757] to-[#E84118]"
                 delay={500}
-                onClick={() => (window.location.href = '/writing/golden-start')}
+                onClick={() => (window.location.href = '/golden-start')}
               />
             </div>
           </section>
