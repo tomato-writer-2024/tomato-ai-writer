@@ -1,10 +1,5 @@
 import mammoth from 'mammoth';
-// @ts-ignore - Use dynamic import for pdf-parse to avoid default export issues
-const pdfParse = () => import('pdf-parse');
 import { Document, Packer, Paragraph, TextRun } from 'docx';
-
-// 暂时禁用PDF导出功能（jspdf依赖问题）
-// import { jsPDF } from 'jspdf';
 
 /**
  * 读取Word文档内容
@@ -24,31 +19,6 @@ export async function readWordFile(file: File): Promise<string> {
     console.error('Word文件读取失败:', error);
     throw new Error(
       'Word文件读取失败，请确保：\n1. 文件格式正确（.docx格式）\n2. 文件未损坏\n3. 文件未加密'
-    );
-  }
-}
-
-/**
- * 读取PDF文档内容
- */
-export async function readPdfFile(file: File): Promise<string> {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const pdf = await pdfParse();
-    // @ts-ignore
-    const data = await pdf(buffer);
-
-    // 检查读取结果是否为空
-    if (!data.text || data.text.trim().length === 0) {
-      throw new Error('PDF文件内容为空或无法提取文本');
-    }
-
-    return data.text;
-  } catch (error) {
-    console.error('PDF文件读取失败:', error);
-    throw new Error(
-      'PDF文件读取失败，请确保：\n1. 文件格式正确\n2. 文件未损坏\n3. 文件未加密\n4. 文件包含可提取的文本（非扫描图片）'
     );
   }
 }
@@ -123,13 +93,13 @@ export async function readFileContent(file: File): Promise<string> {
     return readWordFile(file);
   } else if (fileName.endsWith('.pdf') ||
              fileType === 'application/pdf') {
-    return readPdfFile(file);
+    throw new Error('PDF文件读取功能暂时不可用，请使用Word（.docx）或TXT格式');
   } else if (fileName.endsWith('.txt') ||
              fileType === 'text/plain') {
     return readTxtFile(file);
   } else {
     throw new Error(
-      '不支持的文件格式。\n\n支持的格式：\n• Word文档（.docx）\n• PDF文档（.pdf）\n• 文本文件（.txt）'
+      '不支持的文件格式。\n\n支持的格式：\n• Word文档（.docx）\n• 文本文件（.txt）\n\n注意：PDF文件读取功能暂时不可用'
     );
   }
 }

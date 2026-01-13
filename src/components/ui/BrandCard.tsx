@@ -3,7 +3,7 @@
 import { LucideIcon } from 'lucide-react';
 
 interface BrandCardProps {
-  icon: LucideIcon;
+  icon: LucideIcon | string;
   title: string;
   description: string;
   tags?: string[];
@@ -13,7 +13,7 @@ interface BrandCardProps {
 }
 
 export default function BrandCard({
-  icon: Icon,
+  icon,
   title,
   description,
   tags,
@@ -21,6 +21,9 @@ export default function BrandCard({
   onClick,
   delay = 0,
 }: BrandCardProps) {
+  const isLucideIcon = typeof icon !== 'string';
+  const IconComponent = isLucideIcon ? icon : null;
+
   return (
     <div
       onClick={onClick}
@@ -55,7 +58,11 @@ export default function BrandCard({
           group-hover:scale-110 transition-transform duration-300
         `}
       >
-        <Icon className="h-7 w-7 text-white" />
+        {isLucideIcon && IconComponent ? (
+          <IconComponent className="h-7 w-7 text-white" />
+        ) : (
+          <span className="text-3xl">{typeof icon === 'string' ? icon : '✨'}</span>
+        )}
       </div>
 
       {/* 内容区域 */}

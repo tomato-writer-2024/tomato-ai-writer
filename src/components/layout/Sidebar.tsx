@@ -2,10 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X } from 'lucide-react';
+import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X, LucideIcon } from 'lucide-react';
 import { useState } from 'react';
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  current?: boolean;
+}
+
+interface NavGroup {
+  name: string;
+  items: Array<{
+    name: string;
+    href: string;
+    icon: LucideIcon;
+  }>;
+}
+
+const navigation: Array<NavItem | NavGroup> = [
   { name: '首页', href: '/', icon: Home, current: false },
   { name: '工作台', href: '/workspace', icon: LayoutDashboard, current: false },
   {
@@ -98,6 +114,7 @@ export default function Sidebar() {
           {/* 主导航 */}
           <div className="space-y-1">
             {navigation.slice(0, 2).map((item) => {
+              if ('items' in item) return null; // 跳过分组项
               const Icon = item.icon;
               return (
                 <Link
@@ -126,25 +143,28 @@ export default function Sidebar() {
               </p>
             )}
             <div className="space-y-1">
-              {navigation[2].items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                      ${isActive(item.href)
-                        ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
-                        : 'text-slate-700 hover:bg-slate-100'
-                      }
-                    `}
-                    title={isCollapsed ? item.name : ''}
-                  >
-                    <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'flex-shrink-0'}`} />
-                    {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-                  </Link>
-                );
+              {navigation.map((group) => {
+                if (!('items' in group) || group.name !== '创作工具') return null;
+                return group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                        ${isActive(item.href)
+                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                      title={isCollapsed ? item.name : ''}
+                    >
+                      <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'flex-shrink-0'}`} />
+                      {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+                    </Link>
+                  );
+                });
               })}
             </div>
           </div>
@@ -157,25 +177,28 @@ export default function Sidebar() {
               </p>
             )}
             <div className="space-y-1">
-              {navigation[3].items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`
-                      flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
-                      ${isActive(item.href)
-                        ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
-                        : 'text-slate-700 hover:bg-slate-100'
-                      }
-                    `}
-                    title={isCollapsed ? item.name : ''}
-                  >
-                    <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'flex-shrink-0'}`} />
-                    {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-                  </Link>
-                );
+              {navigation.map((group) => {
+                if (!('items' in group) || group.name !== '资源中心') return null;
+                return group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`
+                        flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
+                        ${isActive(item.href)
+                          ? 'bg-gradient-to-r from-[#FF4757]/10 to-[#5F27CD]/10 text-[#FF4757] border border-[#FF4757]/20'
+                          : 'text-slate-700 hover:bg-slate-100'
+                        }
+                      `}
+                      title={isCollapsed ? item.name : ''}
+                    >
+                      <Icon className={`h-5 w-5 ${isCollapsed ? '' : 'flex-shrink-0'}`} />
+                      {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+                    </Link>
+                  );
+                });
               })}
             </div>
           </div>

@@ -24,6 +24,7 @@ import {
   List,
   Plus,
   Play,
+  PenTool,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -164,7 +165,7 @@ export default function WorkspacePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
             href="/writing/chapter"
-            onClick={() => handleToolClick({ id: 'chapter', name: '章节撰写', description: '', icon: PenTool })}
+            onClick={() => handleToolClick({ id: 'chapter', name: '章节撰写', description: '', href: '/writing/chapter', icon: '✍️' })}
             className="group"
           >
             <BrandCard
@@ -178,7 +179,7 @@ export default function WorkspacePage() {
           </Link>
           <Link
             href="/writing/polish"
-            onClick={() => handleToolClick({ id: 'polish', name: '精修润色', description: '', icon: Sparkles })}
+            onClick={() => handleToolClick({ id: 'polish', name: '精修润色', description: '', href: '/writing/polish', icon: '✨' })}
             className="group"
           >
             <BrandCard
@@ -192,7 +193,7 @@ export default function WorkspacePage() {
           </Link>
           <Link
             href="/writing/continue"
-            onClick={() => handleToolClick({ id: 'continue', name: '智能续写', description: '', icon: FileText })}
+            onClick={() => handleToolClick({ id: 'continue', name: '智能续写', description: '', href: '/writing/continue', icon: '🚀' })}
             className="group"
           >
             <BrandCard
@@ -223,7 +224,7 @@ export default function WorkspacePage() {
                 className="group"
               >
                 <BrandCard
-                  icon={tool.icon}
+                  icon={tool.icon || '✨'}
                   title={tool.name}
                   description={tool.description}
                   gradient="from-[#FF4757] to-[#5F27CD]"
@@ -307,7 +308,7 @@ export default function WorkspacePage() {
                 className="group"
               >
                 <BrandCard
-                  icon={tool.icon}
+                  icon={tool.icon || '✨'}
                   title={tool.name}
                   description={tool.description}
                   gradient="from-[#FF4757] to-[#5F27CD]"
@@ -326,7 +327,7 @@ export default function WorkspacePage() {
                 className="group flex items-center gap-4 p-6 rounded-2xl bg-white border border-slate-200 hover:border-[#FF4757]/30 hover:shadow-lg hover:shadow-[#FF4757]/10 transition-all"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#FF4757] to-[#5F27CD] text-white group-hover:scale-110 transition-transform">
-                  <tool.icon className="h-6 w-6" />
+                  <span className="text-2xl">{tool.icon || '✨'}</span>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#FF4757] transition-colors">
@@ -347,7 +348,7 @@ export default function WorkspacePage() {
       <section className="rounded-2xl bg-white border border-slate-200 p-6">
         <h2 className="text-xl font-bold text-slate-900 mb-4">导入导出</h2>
         <ImportExport
-          onImport={(content, filename) => {
+          onContentLoaded={(content: string, filename: string) => {
             setImportedContent(content);
             setImportedFilename(filename);
           }}
