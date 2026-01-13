@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     console.log('测试方案2：Connection Pooling（端口6543）');
     const pool2 = new Pool({
       connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 3000,
+      connectionTimeoutMillis: 10000,
     });
     const client2 = await pool2.connect();
     const result2 = await client2.query('SELECT version()');
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
     const connectionString = process.env.DATABASE_URL?.replace(':6543', ':5432');
     const pool3 = new Pool({
       connectionString,
-      connectionTimeoutMillis: 3000,
+      connectionTimeoutMillis: 10000,
     });
     const client3 = await pool3.connect();
     const result3 = await client3.query('SELECT version()');
