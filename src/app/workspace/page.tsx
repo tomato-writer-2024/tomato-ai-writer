@@ -50,10 +50,16 @@ export default function WorkspacePage() {
 
   const loadUserStats = async () => {
     try {
+      const token = getToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/user/stats', {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
       if (response.ok) {
         const result = await response.json();
