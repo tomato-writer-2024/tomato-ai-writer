@@ -50,10 +50,21 @@
    - 等待2-3分钟，部署完成
 
 5. **初始化数据库**
-   访问以下URL初始化数据库：
+
+   **方法1：在本地执行迁移（推荐）**
+   ```bash
+   # 配置环境变量
+   vercel env pull .env.local
+
+   # 执行数据库迁移
+   npm run migrate
+   ```
+
+   **方法2：通过API检查（仅检查）**
    ```
    https://tomato-ai-writer.vercel.app/api/init-database
    ```
+   此API仅检查表是否存在，不会创建表。
 
 6. **创建管理员**
    访问以下URL创建超级管理员：

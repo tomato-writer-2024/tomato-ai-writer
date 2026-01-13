@@ -59,12 +59,35 @@ WECHAT_REDIRECT_URI=https://tomato-ai-writer.vercel.app/auth/wechat/callback
 
 ### 第二步：初始化生产数据库
 
-创建数据库初始化API，用于在Vercel环境中自动初始化数据库表结构：
+**方法1：使用Drizzle Kit（推荐）**
+
+在本地项目目录执行：
+```bash
+npm run migrate
+```
+
+**方法2：使用Vercel CLI（远程执行）**
 
 ```bash
-# 访问以下URL初始化数据库（只需一次）
+# 安装Vercel CLI
+npm i -g vercel
+
+# 登录Vercel
+vercel login
+
+# 执行数据库迁移
+vercel env pull .env.local
+npm run migrate
+```
+
+**方法3：通过API检查表结构（仅检查，不创建）**
+
+访问以下URL检查数据库表是否已创建：
+```bash
 https://tomato-ai-writer.vercel.app/api/init-database
 ```
+
+如果表不存在，API会返回初始化指导信息。
 
 ### 第三步：创建超级管理员
 
