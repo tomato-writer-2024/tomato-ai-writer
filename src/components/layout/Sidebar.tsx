@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X, LucideIcon } from 'lucide-react';
+import { Home, PenTool, BookOpen, FileEdit, Sparkles, Database, LayoutDashboard, Settings, Menu, X, LucideIcon, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 interface NavItem {
@@ -28,6 +28,7 @@ const navigation: Array<NavItem | NavGroup> = [
     name: '创作工具',
     items: [
       { name: '章节撰写', href: '/works', icon: PenTool },
+      { name: '对话写作', href: '/dialogue', icon: MessageSquare },
       { name: '精修润色', href: '/editor-review', icon: Sparkles },
       { name: '智能续写', href: '/continue', icon: FileEdit },
       { name: '爆款拆解', href: '/explosive-analyze', icon: BookOpen },

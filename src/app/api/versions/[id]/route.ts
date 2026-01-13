@@ -13,7 +13,7 @@ import { db } from '@/lib/db';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const versionId = params.id;
+    const { id: versionId } = await params;
 
     // 查询版本详情
     const result = await db.query(
@@ -57,7 +57,7 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -70,7 +70,7 @@ export async function POST(
       return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const versionId = params.id;
+    const { id: versionId } = await params;
 
     // 查询要恢复的版本
     const versionResult = await db.query(
@@ -127,7 +127,7 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -140,7 +140,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Token无效' }, { status: 401 });
     }
 
-    const versionId = params.id;
+    const { id: versionId } = await params;
 
     // 删除版本
     await db.query(`DELETE FROM content_versions WHERE id = $1`, [versionId]);
