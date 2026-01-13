@@ -22,9 +22,10 @@ const navItems: NavItem[] = [
 ];
 
 const quickActions: NavItem[] = [
-  { label: '智能续写', href: '/continue', icon: <Sparkles size={20} />, badge: '热' },
+  { label: '对话写作', href: '/dialogue', icon: <Sparkles size={20} />, badge: '新' },
+  { label: '智能续写', href: '/continue', icon: <FileText size={20} />, badge: '热' },
   { label: '角色设定', href: '/characters', icon: <User size={20} /> },
-  { label: '大纲生成', href: '/outline-generator', icon: <FileText size={20} /> },
+  { label: '写作模板', href: '/templates', icon: <FileText size={20} /> },
 ];
 
 export default function Navigation() {
