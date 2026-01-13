@@ -163,7 +163,7 @@ export default function TestVercelPage() {
               {Object.entries(diagnostic?.data?.checks?.apiEndpoints || {}).map(([key, value]) => (
                 <div key={key} className="flex items-center gap-2">
                   <span className="text-gray-600 w-24">{key}:</span>
-                  <code className="bg-white px-2 py-1 rounded text-sm font-mono text-blue-600">{value}</code>
+                  <code className="bg-white px-2 py-1 rounded text-sm font-mono text-blue-600">{String(value)}</code>
                 </div>
               ))}
             </div>
