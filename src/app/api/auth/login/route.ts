@@ -61,9 +61,47 @@ async function handler(request: NextRequest) {
       );
     }
 
-    // 查找用户（使用userManager的参数化查询，安全防SQL注入）
+    // 查找用户（支持Mock模式和数据库模式）
     console.log(`[${requestId}] 查找用户: ${email}`);
-    const user = await userManager.getUserByEmail(email);
+
+    let user = null;
+
+    // 尝试从Mock数据中查找用户
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      const usersFile = path.join(process.cwd(), '.mock-data', 'users.json');
+      const usersData = await fs.readFile(usersFile, 'utf-8');
+      const users = JSON.parse(usersData);
+
+      const mockUser = users.find((u: any) => u.email === email);
+      if (mockUser) {
+        console.log(`[${requestId}] 从Mock数据中找到用户`);
+        user = {
+          id: mockUser.id,
+          email: mockUser.email,
+          username: mockUser.username,
+          passwordHash: mockUser.passwordHash,
+          role: mockUser.role,
+          membershipLevel: mockUser.membershipLevel,
+          membershipExpireAt: mockUser.membershipExpireAt,
+          isSuperAdmin: mockUser.isSuperAdmin,
+          isActive: true,
+          isBanned: false,
+          createdAt: mockUser.createdAt,
+          updatedAt: mockUser.updatedAt,
+        };
+      }
+    } catch (error) {
+      // Mock数据不存在或读取失败，使用数据库
+      console.log(`[${requestId}] Mock数据不存在，使用数据库查找用户`);
+    }
+
+    // 如果Mock数据中没有找到，使用数据库查找
+    if (!user) {
+      user = await userManager.getUserByEmail(email);
+    }
 
     if (!user) {
       console.log(`[${requestId}] 用户不存在: ${email}`);

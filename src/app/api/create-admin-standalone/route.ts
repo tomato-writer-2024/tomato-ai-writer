@@ -11,6 +11,7 @@ import bcrypt from 'bcryptjs';
  */
 export async function GET(request: Request) {
   console.log('===== 独立创建管理员API开始 =====');
+  console.log('测试：开始执行API函数');
 
   try {
     // 手动解析 URL 参数
@@ -33,9 +34,37 @@ export async function GET(request: Request) {
       hasPassword: !!password,
     });
 
+    // 解析DATABASE_URL
+    let connectionString = process.env.DATABASE_URL || '';
+
+    // 检测到Supabase域名，直接返回错误
+    if (connectionString.includes('db.jtibmdmfvusjlhiuqyrn.supabase.co')) {
+      console.error('检测到Supabase域名：该域名只有IPv6地址，当前环境不支持IPv6连接');
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: '数据库连接失败：该Supabase项目只有IPv6地址',
+          details: {
+            message: '当前沙箱环境不支持IPv6连接，需要使用IPv4地址',
+            solution: '请从Supabase Dashboard获取IPv4连接字符串',
+            steps: [
+              '1. 登录Supabase Dashboard',
+              '2. 进入项目Settings > Database',
+              '3. 找到"Connection String"部分',
+              '4. 选择"IPv4"或"Direct Connection (IPv4)"',
+              '5. 复制连接字符串，替换.env.local中的DATABASE_URL'
+            ],
+            alternative: '或者，您可以在支持IPv6的环境中运行此项目'
+          }
+        },
+        { status: 500 }
+      );
+    }
+
     // 创建数据库连接池
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: connectionString,
       connectionTimeoutMillis: 5000,
     });
 
