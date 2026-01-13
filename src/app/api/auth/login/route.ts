@@ -85,19 +85,20 @@ async function handler(request: NextRequest) {
       allKeys: Object.keys(user),
       passwordHashExists: 'password_hash' in user,
       passwordHashValue: user.password_hash,
-      passwordHashCamelExists: 'passwordHash' in user,
-      passwordHashCamelValue: user.passwordHash,
-      isActive: user.is_active,
-      isBanned: user.is_banned,
-      isSuperAdmin: user.is_super_admin,
+      is_active: user.is_active,
+      is_banned: user.is_banned,
+      is_super_admin: user.is_super_admin,
     });
 
-    console.log(`[${requestId}] 找到用户:`, {
+    console.log(`[${requestId}] 用户详细信息:`, {
       userId: user.id,
       email: user.email,
-      isActive: user.is_active,
-      isBanned: user.is_banned,
-      isSuperAdmin: user.is_super_admin,
+      username: user.username,
+      role: user.role,
+      membershipLevel: user.membership_level,
+      is_active: user.is_active,
+      is_banned: user.is_banned,
+      is_super_admin: user.is_super_admin,
     });
 
     // 验证密码
@@ -182,7 +183,7 @@ async function handler(request: NextRequest) {
       userId: String(user.id),
       email: String(user.email),
       role: user.role as UserRole,
-      membershipLevel: user.membershipLevel as MembershipLevel,
+      membershipLevel: user.membership_level as MembershipLevel,
     });
 
     const refreshToken = generateRefreshToken({
@@ -214,13 +215,13 @@ async function handler(request: NextRequest) {
           email: user.email,
           username: user.username,
           role: user.role,
-          membershipLevel: user.membershipLevel,
-          membershipExpireAt: user.membershipExpireAt,
-          dailyUsageCount: user.dailyUsageCount,
-          monthlyUsageCount: user.monthlyUsageCount,
-          storageUsed: user.storageUsed,
-          createdAt: user.createdAt,
-          lastLoginAt: user.lastLoginAt,
+          membershipLevel: user.membership_level,
+          membershipExpireAt: user.membership_expire_at,
+          dailyUsageCount: user.daily_usage_count,
+          monthlyUsageCount: user.monthly_usage_count,
+          storageUsed: user.storage_used,
+          createdAt: user.created_at,
+          lastLoginAt: user.last_login_at,
         },
       },
     });
