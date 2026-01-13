@@ -20,7 +20,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         <TopNav />
 
         {/* 内容区域 */}
-        <main className="px-6 py-8">{children}</main>
+        <main className="px-4 sm:px-6 md:px-8 py-6 sm:py-8 max-w-7xl mx-auto">{children}</main>
       </div>
     </div>
   );

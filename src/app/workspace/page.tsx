@@ -164,8 +164,8 @@ export default function WorkspacePage() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Link
-            href="/writing/chapter"
-            onClick={() => handleToolClick({ id: 'chapter', name: '章节撰写', description: '', href: '/writing/chapter', icon: '✍️' })}
+            href="/works"
+            onClick={() => handleToolClick({ id: 'works', name: '章节撰写', description: '', href: '/works', icon: '✍️' })}
             className="group"
           >
             <BrandCard
@@ -178,8 +178,8 @@ export default function WorkspacePage() {
             />
           </Link>
           <Link
-            href="/writing/polish"
-            onClick={() => handleToolClick({ id: 'polish', name: '精修润色', description: '', href: '/writing/polish', icon: '✨' })}
+            href="/editor-review"
+            onClick={() => handleToolClick({ id: 'editor-review', name: '精修润色', description: '', href: '/editor-review', icon: '✨' })}
             className="group"
           >
             <BrandCard
@@ -192,8 +192,8 @@ export default function WorkspacePage() {
             />
           </Link>
           <Link
-            href="/writing/continue"
-            onClick={() => handleToolClick({ id: 'continue', name: '智能续写', description: '', href: '/writing/continue', icon: '🚀' })}
+            href="/continue"
+            onClick={() => handleToolClick({ id: 'continue', name: '智能续写', description: '', href: '/continue', icon: '🚀' })}
             className="group"
           >
             <BrandCard
