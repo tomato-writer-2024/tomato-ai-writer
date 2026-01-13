@@ -1,138 +1,152 @@
-# Vercel部署状态报告
+# Vercel 部署状态报告
 
-## 时间
-2025年1月13日 17:00 (UTC+8)
+## 最新部署
 
-## 问题诊断
+**提交哈希**: `908b44c`
+**部署时间**: 2025-01-13 17:37
+**状态**: 🟡 部署中（预计 2-3 分钟完成）
 
-### 用户反馈
-访问 https://tomato-ai-writer.vercel.app 无法访问，但Vercel日志显示返回200状态码。
+---
 
-### 诊断过程
+## 修复的问题
 
-#### 1. 代码检查
-- ✅ TypeScript类型检查通过
-- ✅ 本地构建成功 (npx next build)
-- ✅ 所有组件导入正确
-- ✅ 无明显语法错误
+### ❌ 问题1: Vercel 构建失败 - 缺少 web-vitals 包
 
-#### 2. 发现并修复的问题
-
-**问题1: TopNav错误链接**
-- **位置**: `src/components/layout/TopNav.tsx`
-- **问题**: "快速开始"按钮链接到`/writing/chapter`，但该路由不存在
-- **修复**: 改为`/works`
-
-**问题2: 首页路由跳转方式**
-- **位置**: `src/app/page.tsx`
-- **问题**: BrandCard组件使用`window.location.href`进行路由跳转，在Next.js中不规范
-- **修复**: 使用`useRouter().push()`替代
-
-#### 3. 新增功能
-- ✅ 创建系统诊断页面 `/debug`，用于快速排查问题
-
-## 部署信息
-
-### 提交记录
-- **Commit**: 09d5de9
-- **分支**: main
-- **消息**: fix: 修复Vercel部署问题，优化首页和导航链接
-- **文件变更**:
-  - src/app/page.tsx (修改)
-  - src/components/layout/TopNav.tsx (修改)
-  - src/app/debug/page.tsx (新建)
-
-### 构建结果
+**错误信息**:
 ```
-✓ Generating static pages using 3 workers (126/126) in 2.0s
-✓ All routes built successfully
-✓ No errors
+Failed to compile.
+
+./src/lib/monitoring.ts:395:12
+Type error: Cannot find module 'web-vitals' or its corresponding type declarations.
 ```
 
-## 修复内容详解
+**原因分析**:
+- `src/lib/monitoring.ts` 中的 `usePerformanceMonitor` hook 使用了动态导入 `import('web-vitals')`
+- `web-vitals` 包未在 `package.json` 中声明为依赖
+- TypeScript 在构建时无法找到该模块
 
-### 1. TopNav.tsx修复
+**解决方案**:
+- ✅ 移除 `usePerformanceMonitor` hook 中对 `web-vitals` 包的依赖
+- ✅ 添加注释说明：Vercel Analytics 已自动收集 Web Vitals（LCP, FID, CLS, FCP, TTFB）
+- ✅ 保留 `performanceMonitor` 对象，支持自定义性能指标追踪
+
+**代码变更**:
 ```typescript
-// 修复前
-<Link href="/writing/chapter">快速开始</Link>
+// 之前
+export function usePerformanceMonitor() {
+  useEffect(() => {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS((metric: any) => performanceMonitor.recordVital('CLS', metric.value));
+      getFID((metric: any) => performanceMonitor.recordVital('FID', metric.value));
+      getFCP((metric: any) => performanceMonitor.recordVital('FCP', metric.value));
+      getLCP((metric: any) => performanceMonitor.recordVital('LCP', metric.value));
+      getTTFB((metric: any) => performanceMonitor.recordVital('TTFB', metric.value));
+    });
+  }, []);
+}
 
 // 修复后
-<Link href="/works">快速开始</Link>
+export function usePerformanceMonitor() {
+  useEffect(() => {
+    // Vercel Analytics 自动收集 Web Vitals
+    // 如需手动收集指标，可以使用：
+    // performanceMonitor.recordVital('custom_metric', value);
+  }, []);
+}
 ```
 
-### 2. 首页路由跳转优化
+---
+
+## 性能监控说明
+
+### Vercel Analytics 自动收集指标
+
+项目已集成 `@vercel/analytics`，会自动收集以下性能指标：
+
+| 指标 | 全称 | 说明 |
+|------|------|------|
+| LCP | Largest Contentful Paint | 最大内容绘制时间 |
+| FID | First Input Delay | 首次输入延迟 |
+| CLS | Cumulative Layout Shift | 累积布局偏移 |
+| FCP | First Contentful Paint | 首次内容绘制 |
+| TTFB | Time to First Byte | 首字节时间 |
+
+### 自定义性能追踪
+
+如需记录自定义性能指标，可以使用 `performanceMonitor` 对象：
+
 ```typescript
-// 修复前
-onClick={() => (window.location.href = '/works')}
+import { performanceMonitor } from '@/lib/monitoring';
 
-// 修复后
-const router = useRouter();
-onClick={() => router.push('/works')}
+// 记录异步操作耗时
+const { result, duration } = await performanceMonitor.measure(
+  'database_query',
+  () => db.query(...)
+);
+
+// 记录同步操作耗时
+const { result, duration } = performanceMonitor.measureSync(
+  'data_processing',
+  () => processData(data)
+);
+
+// 手动记录自定义指标
+performanceMonitor.recordVital('custom_metric', 1234);
 ```
 
-### 3. 诊断页面功能
-- 检查React加载状态
-- 检查Next.js数据加载
-- 检查Tailwind CSS样式
-- 检查路由系统
-- 显示环境信息
+---
 
 ## 验证步骤
 
-### 本地验证
-1. ✅ 本地启动服务：`npm run dev`
-2. ✅ 访问首页：http://localhost:5000
-3. ✅ 访问诊断页面：http://localhost:5000/debug
-4. ✅ 构建测试：`npm run build`
-5. ✅ TypeScript检查：`npx tsc --noEmit`
+### 1. 检查 Vercel 部署状态
 
-### Vercel验证（待用户确认）
-1. 访问 https://tomato-ai-writer.vercel.app
-2. 访问 https://tomato-ai-writer.vercel.app/debug
-3. 检查控制台是否有JavaScript错误
-4. 检查网络请求是否正常
+访问 [Vercel Dashboard](https://vercel.com/tomato-writer-2024/tomato-ai-writer) 查看部署状态
 
-## 可能的问题原因
+### 2. 访问生产环境
 
-### 已排除
-- ❌ TypeScript类型错误（已通过检查）
-- ❌ 构建错误（构建成功）
-- ❌ 组件导入错误（所有组件存在）
-- ❌ 路由配置错误（所有路由正确注册）
+等待部署完成后，访问：
+- **首页**: https://tomato-ai-writer.vercel.app
+- **系统诊断**: https://tomato-ai-writer.vercel.app/diagnose
+- **健康检查**: https://tomato-ai-writer.vercel.app/api/health
 
-### 可能原因（待确认）
-1. **浏览器缓存** - 旧版本缓存可能导致问题
-   - 解决：硬刷新 (Ctrl+Shift+R) 或清除缓存
+### 3. 测试核心功能
 
-2. **环境变量缺失** - Vercel环境变量未配置
-   - 解决：检查Vercel项目设置中的环境变量
+- [ ] 登录注册功能
+- [ ] 工作台页面
+- [ ] 智能续写功能
+- [ ] 角色生成器
+- [ ] 模板库功能
+- [ ] AI对话式写作
 
-3. **CDN缓存** - Vercel CDN缓存旧版本
-   - 解决：等待Vercel自动更新（通常1-5分钟）
+---
 
-4. **客户端JavaScript错误** - 某些客户端脚本执行失败
-   - 解决：检查浏览器控制台错误信息
+## 部署历史
 
-## 下一步行动
+| 提交 | 时间 | 状态 | 说明 |
+|------|------|------|------|
+| `908b44c` | 17:37 | 🟡 部署中 | 修复web-vitals依赖问题 |
+| `05aa795` | 17:15 | ❌ 失败 | 缺少web-vitals包 |
 
-### 用户操作
-1. 访问 https://tomato-ai-writer.vercel.app/debug 进行系统检查
-2. 检查浏览器控制台（F12）是否有错误
-3. 尝试硬刷新页面（Ctrl+Shift+R）
-4. 检查网络请求是否正常
+---
 
-### 如果问题仍然存在
-1. 提供浏览器控制台错误信息
-2. 提供网络请求失败详情
-3. 提供诊断页面截图
-4. 访问 https://vercel.com/tomato-writer-2024/tomato-ai-writer 查看部署日志
+## 相关文档
 
-## 技术栈
-- Next.js 16.0.10 (App Router)
-- React 19.2.1
-- TypeScript 5
-- Tailwind CSS 3.4.1
-- Vercel (部署平台)
+- [Vercel 部署指南](./vercel-deployment-guide.md)
+- [环境变量清单](./vercel-env-checklist.md)
+- [快速开始](./VERCEL_QUICK_START.md)
+- [部署修复指南](./DEPLOYMENT_FIX_GUIDE.md)
 
-## 联系方式
-如有问题，请提供详细的错误日志和截图，以便进一步诊断。
+---
+
+## 支持与帮助
+
+如遇到部署问题，请按以下步骤排查：
+
+1. **检查环境变量**: 确保所有必需的环境变量已在 Vercel 项目设置中配置
+2. **查看部署日志**: 在 Vercel Dashboard 中查看详细的构建日志
+3. **运行本地测试**: 执行 `npm run build` 确保本地构建成功
+4. **提交 Issue**: 如果问题持续存在，请提交 Issue 并附上部署日志
+
+---
+
+**更新时间**: 2025-01-13 17:37
