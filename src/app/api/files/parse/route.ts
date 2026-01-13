@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as pdf from 'pdf-parse';
 import mammoth from 'mammoth';
 
 export async function POST(request: NextRequest) {
@@ -32,10 +31,15 @@ export async function POST(request: NextRequest) {
     // 根据文件类型解析
     switch (extension) {
       case 'pdf': {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const pdfData = await (pdf as any)(buffer);
-        content = pdfData.text;
-        break;
+        // PDF功能暂时禁用，返回503错误
+        return NextResponse.json(
+          {
+            error: 'PDF文件解析功能暂时不可用',
+            message: '请将PDF文件转换为Word（.docx）或TXT格式后再上传',
+            status: 'service_unavailable'
+          },
+          { status: 503 }
+        );
       }
 
       case 'doc': {
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
 
       default:
         return NextResponse.json(
-          { error: '不支持的文件格式，仅支持PDF、Word（.doc/.docx）和TXT' },
+          { error: '不支持的文件格式，仅支持Word（.doc/.docx）和TXT' },
           { status: 400 }
         );
     }
@@ -105,7 +109,8 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: 'File parsing API - Use POST with multipart/form-data',
-    supportedFormats: ['txt', 'pdf', 'doc', 'docx'],
+    supportedFormats: ['txt', 'doc', 'docx'],
     maxSize: '10MB',
+    note: 'PDF格式暂时不支持，请使用Word或TXT格式',
   });
 }
