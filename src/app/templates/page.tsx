@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Button, { GradientButton } from '@/components/Button';
 import Card, { CardBody } from '@/components/Card';
 import { Badge } from '@/components/Badge';
-import { Navigation } from '@/components/Navigation';
+import Navigation from '@/components/Navigation';
 import { BrandIcons } from '@/lib/brandIcons';
 import { FileText, Sparkles, Zap, BookOpen, Target, ChevronRight, Copy, Check } from 'lucide-react';
 
