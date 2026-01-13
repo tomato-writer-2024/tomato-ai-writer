@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import mammoth from 'mammoth';
-import * as pdfjs from 'pdfjs-dist';
 
-// 初始化PDF.js worker（使用CDN）
-const pdfjsWorker = typeof window === 'undefined'
-  ? `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`
-  : undefined;
-
-if (typeof window === 'undefined' && pdfjsWorker) {
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-}
+// PDF解析功能暂时禁用，因为pdfjs-dist在服务器端需要DOM环境支持
+// 如果需要PDF解析，可以考虑：
+// 1. 使用专门的PDF解析服务
+// 2. 使用pdf-parse等Node.js原生支持的库
+// 3. 在客户端解析PDF后提交到服务器
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,42 +37,14 @@ export async function POST(request: NextRequest) {
     // 根据文件类型解析
     switch (extension) {
       case 'pdf': {
-        try {
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const pdf = await pdfjs.getDocument({
-            data: buffer,
-            // 使用CMapReaderFactory确保中文字符正常显示
-            cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/cmaps/`,
-            cMapPacked: true,
-          }).promise;
-
-          let fullText = '';
-
-          // 逐页提取文本
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-
-            // 提取文本并保持基本格式
-            const pageText = textContent.items
-              .map((item: any) => item.str)
-              .join(' ');
-
-            fullText += pageText + '\n\n';
-          }
-
-          content = fullText.trim();
-        } catch (error) {
-          console.error('PDF parsing error:', error);
-          return NextResponse.json(
-            {
-              error: 'PDF解析失败',
-              message: '请确保PDF文件不是扫描件，且使用标准编码',
-            },
-            { status: 400 }
-          );
-        }
-        break;
+        // PDF解析功能暂时禁用
+        return NextResponse.json(
+          {
+            error: 'PDF解析功能暂时不可用',
+            message: 'PDF解析需要DOM环境支持，请将PDF转换为Word（.docx）或TXT格式后上传',
+          },
+          { status: 503 }
+        );
       }
 
       case 'doc': {
@@ -148,13 +116,13 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: 'File parsing API - Use POST with multipart/form-data',
-    supportedFormats: ['pdf', 'txt', 'doc', 'docx'],
+    supportedFormats: ['txt', 'doc', 'docx'],
     maxSize: '20MB',
     features: {
-      pdf: '支持标准PDF文件（非扫描件）',
       docx: '支持Word文档',
       doc: '支持旧版Word文档（建议转为.docx）',
       txt: '支持纯文本文件',
+      note: 'PDF解析功能暂时不可用，请转换为Word或TXT格式',
     },
   });
 }
