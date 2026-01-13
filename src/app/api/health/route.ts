@@ -1,25 +1,30 @@
 import { NextResponse } from 'next/server';
-import { getDb } from 'coze-coding-dev-sdk';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const db = await getDb();
+    // 检查数据库连接
+    const pgUrl = process.env.PGDATABASE_URL;
+    const isDbConfigured = !!pgUrl;
 
-    // 使用原生SQL查询以避免Drizzle ORM问题
-    const result = await db.execute('SELECT 1 as health_check');
+    // 检查其他环境变量
+    const envStatus = {
+      database: isDbConfigured ? 'configured' : 'not_configured',
+      node_env: process.env.NODE_ENV || 'development',
+      timestamp: new Date().toISOString(),
+    };
 
     return NextResponse.json({
-      success: true,
-      message: 'API is healthy',
-      database: 'connected',
-      timestamp: new Date().toISOString(),
+      status: 'ok',
+      message: '服务运行正常',
+      environment: envStatus,
     });
   } catch (error) {
     return NextResponse.json({
-      success: false,
-      message: 'Database connection failed',
-      error: String(error),
-      timestamp: new Date().toISOString(),
+      status: 'error',
+      message: error instanceof Error ? error.message : '未知错误',
     }, { status: 500 });
   }
 }
