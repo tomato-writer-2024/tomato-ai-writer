@@ -40,9 +40,6 @@ const nextConfig = {
   // 生产环境优化
   productionBrowserSourceMaps: false,
 
-  // SWC压缩
-  swcMinify: true,
-
   // 输出配置
   output: 'standalone',
 
