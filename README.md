@@ -102,7 +102,24 @@ pnpm run build
 
 > **不会代码的个人开发者也能轻松部署！0成本，完全免费！**
 
-### 快速部署文档
+### Vercel部署（推荐，5分钟搞定）
+
+🔥 **最简单、最快速的部署方式，适合所有用户！**
+
+| 文档 | 说明 | 路径 |
+|------|------|------|
+| 🚀 Vercel快速开始 | 5分钟快速部署到Vercel，完全免费 | [docs/VERCEL_QUICK_START.md](docs/VERCEL_QUICK_START.md) |
+| 📖 Vercel完整部署指南 | 详细的Vercel部署教程，包含故障排查 | [docs/vercel-deployment-guide.md](docs/vercel-deployment-guide.md) |
+| ✅ 环境变量清单 | Vercel环境变量配置检查清单 | [docs/vercel-env-checklist.md](docs/vercel-env-checklist.md) |
+
+**为什么选择Vercel？**
+- ✅ 完全免费（Hobby计划）
+- ✅ 自动HTTPS
+- ✅ 全球CDN加速
+- ✅ 一键部署，无需配置服务器
+- ✅ 自动扩展，无需手动运维
+
+### 本地部署
 
 | 文档 | 说明 | 路径 |
 |------|------|------|
@@ -154,19 +171,23 @@ pnpm run build
 
 ### 常见问题
 
+**Q：部署到Vercel后无法登录？**
+A：请按照以下步骤排查：
+1. 访问 `https://tomato-ai-writer.vercel.app/api/diagnose` 检查配置
+2. 访问 `https://tomato-ai-writer.vercel.app/test-vercel` 查看详细报告
+3. 确认超级管理员账户是否存在
+4. 检查 `DATABASE_URL` 和 `JWT_SECRET` 环境变量是否正确配置
+
 **Q：完全不懂代码，能完成部署吗？**
-A：完全可以！部署指南专为不会代码的个人开发者编写，所有步骤都有详细说明。
+A：完全可以！Vercel快速部署指南专为不会代码的个人开发者编写，所有步骤都有详细说明。
 
 **Q：整个流程需要花钱吗？**
-A：不需要！所有服务都是免费的，总成本为0元。
+A：不需要！Vercel的Hobby计划完全免费，Supabase也有免费计划，总成本为0元。
 
 **Q：可以使用手机完成部署吗？**
-A：建议使用电脑，因为需要操作GitHub、配置环境变量、使用浏览器开发者工具（F12）。
+A：建议使用电脑，因为需要操作GitHub、配置环境变量。
 
-**Q：微信审核需要多长时间？**
-A：通常为1-3个工作日。如果着急上线，可以先使用Mock模式，等审核通过后再切换。
-
-更多常见问题：请查看 [完整部署指南 - 常见问题解答](docs/ZERO_COST_DEPLOYMENT_GUIDE.md#常见问题解答)
+更多常见问题：请查看 [Vercel部署常见问题](docs/vercel-deployment-guide.md#常见问题排查)
 
 ## 使用指南
 
