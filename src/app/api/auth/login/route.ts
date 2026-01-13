@@ -65,6 +65,7 @@ async function handler(request: NextRequest) {
     console.log(`[${requestId}] 查找用户: ${email}`);
 
     let user = null;
+    let isMockUser = false;
 
     // 尝试从Mock数据中查找用户
     try {
@@ -92,6 +93,7 @@ async function handler(request: NextRequest) {
           createdAt: mockUser.createdAt,
           updatedAt: mockUser.updatedAt,
         };
+        isMockUser = true;
       }
     } catch (error) {
       // Mock数据不存在或读取失败，使用数据库
@@ -101,19 +103,22 @@ async function handler(request: NextRequest) {
     // 如果Mock数据中没有找到，使用数据库查找
     if (!user) {
       user = await userManager.getUserByEmail(email);
+      isMockUser = false;
     }
 
     if (!user) {
       console.log(`[${requestId}] 用户不存在: ${email}`);
 
-      // 记录失败的登录尝试
-      await authManager.logSecurityEvent({
-        userId: null,
-        action: 'LOGIN',
-        details: JSON.stringify({ email, reason: 'User not found' }),
-        ipAddress: clientIp,
-        status: 'FAILED',
-      });
+      // 记录失败的登录尝试（仅在非Mock模式下）
+      if (!isMockUser) {
+        await authManager.logSecurityEvent({
+          userId: null,
+          action: 'LOGIN',
+          details: JSON.stringify({ email, reason: 'User not found' }),
+          ipAddress: clientIp,
+          status: 'FAILED',
+        });
+      }
 
       return NextResponse.json(
         { success: false, error: '邮箱或密码错误' },
@@ -137,14 +142,16 @@ async function handler(request: NextRequest) {
     if (!isPasswordValid) {
       console.log(`[${requestId}] 密码验证失败`);
 
-      // 记录失败的登录尝试
-      await authManager.logSecurityEvent({
-        userId: user.id,
-        action: 'LOGIN',
-        details: JSON.stringify({ email, reason: 'Invalid password' }),
-        ipAddress: clientIp,
-        status: 'FAILED',
-      });
+      // 记录失败的登录尝试（仅在非Mock模式下）
+      if (!isMockUser) {
+        await authManager.logSecurityEvent({
+          userId: user.id,
+          action: 'LOGIN',
+          details: JSON.stringify({ email, reason: 'Invalid password' }),
+          ipAddress: clientIp,
+          status: 'FAILED',
+        });
+      }
 
       return NextResponse.json(
         { success: false, error: '邮箱或密码错误' },
@@ -162,16 +169,18 @@ async function handler(request: NextRequest) {
         banReason: user.banReason,
       });
 
-      await authManager.logSecurityEvent({
-        userId: user.id,
-        action: 'LOGIN',
-        details: JSON.stringify({
-          email,
-          reason: `User is ${!user.isActive ? 'inactive' : 'banned'}`,
-        }),
-        ipAddress: clientIp,
-        status: 'FAILED',
-      });
+      if (!isMockUser) {
+        await authManager.logSecurityEvent({
+          userId: user.id,
+          action: 'LOGIN',
+          details: JSON.stringify({
+            email,
+            reason: `User is ${!user.isActive ? 'inactive' : 'banned'}`,
+          }),
+          ipAddress: clientIp,
+          status: 'FAILED',
+        });
+      }
 
       return NextResponse.json(
         { success: false, error: `账号已被封禁：${user.banReason || '未知原因'}` },
@@ -179,20 +188,25 @@ async function handler(request: NextRequest) {
       );
     }
 
-    // 检测异常登录行为
-    console.log(`[${requestId}] 检测异常登录行为...`);
-    const abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
+    // 检测异常登录行为（仅在非Mock模式下）
+    let abnormalCheck = { isAbnormal: false };
+    if (!isMockUser) {
+      console.log(`[${requestId}] 检测异常登录行为...`);
+      abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
+    }
 
     if (abnormalCheck.isAbnormal) {
       console.log(`[${requestId}] 检测到异常登录:`, abnormalCheck);
 
-      await authManager.logSecurityEvent({
-        userId: user.id,
-        action: 'LOGIN',
-        details: JSON.stringify({ email, reason: abnormalCheck.reason }),
-        ipAddress: clientIp,
-        status: 'FAILED',
-      });
+      if (!isMockUser) {
+        await authManager.logSecurityEvent({
+          userId: user.id,
+          action: 'LOGIN',
+          details: JSON.stringify({ email, reason: abnormalCheck.reason }),
+          ipAddress: clientIp,
+          status: 'FAILED',
+        });
+      }
 
       return NextResponse.json(
         { success: false, error: abnormalCheck.reason },
@@ -202,8 +216,10 @@ async function handler(request: NextRequest) {
 
     console.log(`[${requestId}] 登录检查通过，生成token...`);
 
-    // 更新最后登录时间
-    await userManager.updateLastLogin(user.id);
+    // 更新最后登录时间（仅在非Mock模式下）
+    if (!isMockUser) {
+      await userManager.updateLastLogin(user.id);
+    }
 
     // 生成token
     const accessToken = generateAccessToken({
@@ -220,14 +236,16 @@ async function handler(request: NextRequest) {
 
     console.log(`[${requestId}] Token生成成功`);
 
-    // 记录成功的登录
-    await authManager.logSecurityEvent({
-      userId: user.id,
-      action: 'LOGIN',
-      details: JSON.stringify({ email }),
-      ipAddress: clientIp,
-      status: 'SUCCESS',
-    });
+    // 记录成功的登录（仅在非Mock模式下）
+    if (!isMockUser) {
+      await authManager.logSecurityEvent({
+        userId: user.id,
+        action: 'LOGIN',
+        details: JSON.stringify({ email }),
+        ipAddress: clientIp,
+        status: 'SUCCESS',
+      });
+    }
 
     // 返回响应
     const response = NextResponse.json(
@@ -255,13 +273,27 @@ async function handler(request: NextRequest) {
   } catch (error) {
     console.error(`[${requestId}] 登录请求失败:`, error);
 
-    await authManager.logSecurityEvent({
-      userId: null,
-      action: 'LOGIN',
-      details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' } as any),
-      ipAddress: getClientIp(request),
-      status: 'FAILED',
-    });
+    // 记录错误日志（仅在非Mock模式下，即当isMockUser为true时表示这是Mock模式）
+    // 由于无法在这里访问isMockUser，我们尝试判断错误类型
+    const isMockModeError = error instanceof Error && (
+      error.message.includes('Mock') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('ENOTFOUND')
+    );
+
+    if (!isMockModeError) {
+      try {
+        await authManager.logSecurityEvent({
+          userId: null,
+          action: 'LOGIN',
+          details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' } as any),
+          ipAddress: getClientIp(request),
+          status: 'FAILED',
+        });
+      } catch (e) {
+        // 忽略日志记录错误
+      }
+    }
 
     return NextResponse.json(
       { success: false, error: '服务器错误，请稍后重试' },
