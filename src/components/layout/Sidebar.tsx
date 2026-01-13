@@ -27,10 +27,10 @@ const navigation: Array<NavItem | NavGroup> = [
   {
     name: '创作工具',
     items: [
-      { name: '章节撰写', href: '/writing/chapter', icon: PenTool },
-      { name: '精修润色', href: '/writing/polish', icon: Sparkles },
-      { name: '智能续写', href: '/writing/continue', icon: FileEdit },
-      { name: '爆款拆解', href: '/writing/analyze', icon: BookOpen },
+      { name: '章节撰写', href: '/works', icon: PenTool },
+      { name: '精修润色', href: '/editor-review', icon: Sparkles },
+      { name: '智能续写', href: '/continue', icon: FileEdit },
+      { name: '爆款拆解', href: '/explosive-analyze', icon: BookOpen },
     ],
   },
   {
