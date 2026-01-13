@@ -3,9 +3,7 @@ import {
   userManager,
   authManager,
 } from '@/storage/database';
-import { getDb } from 'coze-coding-dev-sdk';
 import {
-  hashPassword,
   verifyPassword,
   generateAccessToken,
   generateRefreshToken,
@@ -13,8 +11,8 @@ import {
   getUserAgent,
 } from '@/lib/auth';
 import { UserRole, MembershipLevel } from '@/lib/types/user';
-import { withMiddleware, errorResponse, successResponse } from '@/lib/apiMiddleware';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
+import { runMiddleware } from '@/lib/apiMiddleware';
 
 /**
  * 用户登录API
@@ -53,13 +51,21 @@ async function handler(request: NextRequest) {
       );
     }
 
-    // 查找用户（使用参数化查询）
-    console.log(`[${requestId}] 查找用户: ${email}`);
-    const db = await getDb();
-    const escapedEmail = email.replace(/'/g, "''");
-    const userResult = await db.execute(`SELECT * FROM users WHERE email = '${escapedEmail}'`);
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log(`[${requestId}] 邮箱格式不正确: ${email}`);
+      return NextResponse.json(
+        { success: false, error: '邮箱格式不正确' },
+        { status: 400 }
+      );
+    }
 
-    if (userResult.rows.length === 0) {
+    // 查找用户（使用userManager的参数化查询，安全防SQL注入）
+    console.log(`[${requestId}] 查找用户: ${email}`);
+    const user = await userManager.getUserByEmail(email);
+
+    if (!user) {
       console.log(`[${requestId}] 用户不存在: ${email}`);
 
       // 记录失败的登录尝试
@@ -77,41 +83,25 @@ async function handler(request: NextRequest) {
       );
     }
 
-    const user = userResult.rows[0];
-
     console.log(`[${requestId}] 找到用户:`, {
       userId: user.id,
       email: user.email,
-      allKeys: Object.keys(user),
-      passwordHashExists: 'password_hash' in user,
-      passwordHashValue: user.password_hash,
-      is_active: user.is_active,
-      is_banned: user.is_banned,
-      is_super_admin: user.is_super_admin,
-    });
-
-    console.log(`[${requestId}] 用户详细信息:`, {
-      userId: user.id,
-      email: user.email,
-      username: user.username,
       role: user.role,
-      membershipLevel: user.membership_level,
-      is_active: user.is_active,
-      is_banned: user.is_banned,
-      is_super_admin: user.is_super_admin,
+      membershipLevel: user.membershipLevel,
+      isActive: user.isActive,
+      isBanned: user.isBanned,
     });
 
     // 验证密码
     console.log(`[${requestId}] 验证密码...`);
-    const passwordHash = user.password_hash as string;
-    const isPasswordValid = await verifyPassword(password, passwordHash);
+    const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
       console.log(`[${requestId}] 密码验证失败`);
 
       // 记录失败的登录尝试
       await authManager.logSecurityEvent({
-        userId: String(user.id),
+        userId: user.id,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: 'Invalid password' }),
         ipAddress: clientIp,
@@ -127,40 +117,39 @@ async function handler(request: NextRequest) {
     console.log(`[${requestId}] 密码验证成功`);
 
     // 检查用户状态
-    const isActive = user.is_active as boolean;
-    const isBanned = user.is_banned as boolean;
-    const banReason = user.ban_reason as string | null | undefined;
-
-    if (!isActive || isBanned) {
+    if (!user.isActive || user.isBanned) {
       console.log(`[${requestId}] 用户状态异常:`, {
-        isActive: isActive,
-        isBanned: isBanned,
-        banReason: banReason,
+        isActive: user.isActive,
+        isBanned: user.isBanned,
+        banReason: user.banReason,
       });
 
       await authManager.logSecurityEvent({
-        userId: String(user.id),
+        userId: user.id,
         action: 'LOGIN',
-        details: JSON.stringify({ email, reason: 'User is banned or inactive' }),
+        details: JSON.stringify({
+          email,
+          reason: `User is ${!user.isActive ? 'inactive' : 'banned'}`,
+        }),
         ipAddress: clientIp,
         status: 'FAILED',
       });
 
       return NextResponse.json(
-        { success: false, error: `账号已被封禁：${banReason || '未知原因'}` },
+        { success: false, error: `账号已被封禁：${user.banReason || '未知原因'}` },
         { status: 403 }
       );
     }
 
     // 检测异常登录行为
     console.log(`[${requestId}] 检测异常登录行为...`);
-    const abnormalCheck = await authManager.detectAbnormalLogin(String(user.id), clientIp);
+    const abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
 
     if (abnormalCheck.isAbnormal) {
       console.log(`[${requestId}] 检测到异常登录:`, abnormalCheck);
 
       await authManager.logSecurityEvent({
-        userId: String(user.id),
+        userId: user.id,
         action: 'LOGIN',
         details: JSON.stringify({ email, reason: abnormalCheck.reason }),
         ipAddress: clientIp,
@@ -176,85 +165,110 @@ async function handler(request: NextRequest) {
     console.log(`[${requestId}] 登录检查通过，生成token...`);
 
     // 更新最后登录时间
-    await userManager.updateLastLogin(String(user.id));
+    await userManager.updateLastLogin(user.id);
 
     // 生成token
     const accessToken = generateAccessToken({
-      userId: String(user.id),
-      email: String(user.email),
+      userId: user.id,
+      email: user.email,
       role: user.role as UserRole,
-      membershipLevel: user.membership_level as MembershipLevel,
+      membershipLevel: user.membershipLevel as MembershipLevel,
     });
 
     const refreshToken = generateRefreshToken({
-      userId: String(user.id),
-      email: String(user.email),
+      userId: user.id,
+      email: user.email,
     });
 
     console.log(`[${requestId}] Token生成成功`);
 
     // 记录成功的登录
     await authManager.logSecurityEvent({
-      userId: String(user.id),
+      userId: user.id,
       action: 'LOGIN',
       details: JSON.stringify({ email }),
       ipAddress: clientIp,
       status: 'SUCCESS',
     });
 
-    console.log(`[${requestId}] ===== 登录成功 =====`);
-
-    // 返回用户信息（不包含敏感信息）
-    return NextResponse.json({
-      success: true,
-      data: {
-        token: accessToken,
-        refreshToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
-          membershipLevel: user.membership_level,
-          membershipExpireAt: user.membership_expire_at,
-          dailyUsageCount: user.daily_usage_count,
-          monthlyUsageCount: user.monthly_usage_count,
-          storageUsed: user.storage_used,
-          createdAt: user.created_at,
-          lastLoginAt: user.last_login_at,
+    // 返回响应
+    const response = NextResponse.json(
+      {
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            role: user.role,
+            membershipLevel: user.membershipLevel,
+            membershipExpireAt: user.membershipExpireAt,
+            isActive: user.isActive,
+          },
+          token: accessToken,
+          refreshToken: refreshToken,
         },
       },
-    });
+      { status: 200 }
+    );
+
+    console.log(`[${requestId}] ===== 登录请求完成 =====`);
+    return response;
   } catch (error) {
-    console.error(`[${requestId}] 登录错误:`, error);
-    console.error(`[${requestId}] 错误详情:`, {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
+    console.error(`[${requestId}] 登录请求失败:`, error);
+
+    await authManager.logSecurityEvent({
+      userId: null,
+      action: 'LOGIN',
+      details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' } as any),
+      ipAddress: getClientIp(request),
+      status: 'FAILED',
     });
 
-    try {
-      await authManager.logSecurityEvent({
-        userId: null,
-        action: 'LOGIN',
-        details: JSON.stringify({ error: String(error) }),
-        ipAddress: getClientIp(request),
-        status: 'FAILED',
-      });
-    } catch (logError) {
-      console.error(`[${requestId}] 记录安全日志失败:`, logError);
-    }
-
-    return errorResponse(
-      '登录失败，请稍后重试: ' + (error instanceof Error ? error.message : String(error)),
-      500,
-      500
+    return NextResponse.json(
+      { success: false, error: '服务器错误，请稍后重试' },
+      { status: 500 }
     );
   }
 }
 
-// 使用中间件包装：严格限流 + 禁用CSRF保护（公开API不需要CSRF保护）
-export const POST = withMiddleware(handler, {
-	rateLimit: RATE_LIMIT_CONFIGS.STRICT,
-	enableCsrf: false, // 登录API是公开的，不需要CSRF保护
-});
+/**
+ * POST /api/auth/login
+ * 用户登录
+ */
+export async function POST(request: NextRequest) {
+  // 执行中间件检查
+  const middlewareResult = await runMiddleware(request, {
+    rateLimit: RATE_LIMIT_CONFIGS.STRICT,
+  });
+
+  if (middlewareResult) {
+    return middlewareResult;
+  }
+
+  return handler(request);
+}
+
+/**
+ * GET /api/auth/login
+ * 返回登录接口信息
+ */
+export async function GET() {
+  return NextResponse.json({
+    endpoint: '/api/auth/login',
+    method: 'POST',
+    description: '用户登录接口',
+    parameters: {
+      email: '用户邮箱',
+      password: '用户密码',
+    },
+    response: {
+      success: 'boolean',
+      data: {
+        user: '用户信息',
+        token: '访问令牌',
+        refreshToken: '刷新令牌',
+      },
+    },
+  });
+}

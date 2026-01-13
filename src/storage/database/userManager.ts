@@ -85,6 +85,15 @@ export class UserManager {
 	}
 
 	/**
+	 * 根据用户名获取用户
+	 */
+	async getUserByUsername(username: string): Promise<User | null> {
+		const db = await getDb();
+		const [user] = await db.select().from(users).where(eq(users.username, username));
+		return user || null;
+	}
+
+	/**
 	 * 根据微信OpenID获取用户
 	 */
 	async getUserByWechatOpenId(openId: string): Promise<User | null> {
