@@ -388,17 +388,16 @@ import { useEffect } from 'react';
 
 /**
  * 性能监控Hook
+ *
+ * 注意：Vercel Analytics 已经自动收集 Web Vitals（LCP, FID, CLS, FCP, TTFB）
+ * 无需手动导入 web-vitals 包
+ * 如需自定义性能追踪，可以使用 performanceMonitor 对象
  */
 export function usePerformanceMonitor() {
   useEffect(() => {
-    // 导入web-vitals库
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS((metric: any) => performanceMonitor.recordVital('CLS', metric.value));
-      getFID((metric: any) => performanceMonitor.recordVital('FID', metric.value));
-      getFCP((metric: any) => performanceMonitor.recordVital('FCP', metric.value));
-      getLCP((metric: any) => performanceMonitor.recordVital('LCP', metric.value));
-      getTTFB((metric: any) => performanceMonitor.recordVital('TTFB', metric.value));
-    });
+    // Vercel Analytics 自动收集 Web Vitals
+    // 如需手动收集指标，可以使用：
+    // performanceMonitor.recordVital('custom_metric', value);
   }, []);
 }
 
