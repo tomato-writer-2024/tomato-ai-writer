@@ -24,7 +24,7 @@ export default function TopNav() {
         <div className="flex items-center gap-4">
           {/* 快速开始按钮 */}
           <Link
-            href="/writing/chapter"
+            href="/works"
             className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF4757] to-[#5F27CD] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#FF4757]/25 transition-all hover:scale-105"
           >
             <Zap className="h-4 w-4" />

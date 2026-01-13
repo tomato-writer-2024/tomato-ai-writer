@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import TopNav from '@/components/layout/TopNav';
 import BrandCard from '@/components/ui/BrandCard';
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       {/* 侧边栏 */}
@@ -147,7 +149,7 @@ export default function HomePage() {
                 tags={['智能续写', '风格控制', '自动排版']}
                 gradient="from-[#FF4757] to-[#FF6B81]"
                 delay={0}
-                onClick={() => (window.location.href = '/works')}
+                onClick={() => router.push('/works')}
               />
               <BrandCard
                 icon={MessageSquare}
@@ -156,7 +158,7 @@ export default function HomePage() {
                 tags={['多轮对话', '流式输出', '上下文记忆']}
                 gradient="from-[#6366F1] to-[#8B5CF6]"
                 delay={100}
-                onClick={() => (window.location.href = '/dialogue')}
+                onClick={() => router.push('/dialogue')}
               />
               <BrandCard
                 icon={Sparkles}
@@ -165,7 +167,7 @@ export default function HomePage() {
                 tags={['语法检查', '风格调整', '情感增强']}
                 gradient="from-[#8B5CF6] to-[#9B59B6]"
                 delay={200}
-                onClick={() => (window.location.href = '/editor-review')}
+                onClick={() => router.push('/editor-review')}
               />
               <BrandCard
                 icon={FileEdit}
@@ -174,7 +176,7 @@ export default function HomePage() {
                 tags={['情节预测', '角色保持', '逻辑一致']}
                 gradient="from-[#06B6D4] to-[#3B82F6]"
                 delay={300}
-                onClick={() => (window.location.href = '/continue')}
+                onClick={() => router.push('/continue')}
               />
               <BrandCard
                 icon={BookOpen}
@@ -183,7 +185,7 @@ export default function HomePage() {
                 tags={['热点分析', '节奏把控', '爽点设计']}
                 gradient="from-[#F59E0B] to-[#F97316]"
                 delay={400}
-                onClick={() => (window.location.href = '/explosive-analyze')}
+                onClick={() => router.push('/explosive-analyze')}
               />
               <BrandCard
                 icon={Database}
@@ -192,7 +194,7 @@ export default function HomePage() {
                 tags={['人物档案', '场景素材', '对话模板']}
                 gradient="from-[#10B981] to-[#059669]"
                 delay={500}
-                onClick={() => (window.location.href = '/materials')}
+                onClick={() => router.push('/materials')}
               />
             </div>
           </section>
