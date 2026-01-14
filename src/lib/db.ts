@@ -48,9 +48,9 @@ export function getPool(): Pool {
       };
     }
 
-    config.max = config.max || 20;
+    config.max = config.max || 10;
     config.idleTimeoutMillis = config.idleTimeoutMillis || 30000;
-    config.connectionTimeoutMillis = config.connectionTimeoutMillis || 2000;
+    config.connectionTimeoutMillis = config.connectionTimeoutMillis || 10000; // 增加到10秒，适应Netlify Functions冷启动
 
     pool = new Pool(config);
 
@@ -71,21 +71,52 @@ export function getPool(): Pool {
 }
 
 /**
+ * 重试函数
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      console.warn(`数据库操作失败 (尝试 ${i + 1}/${maxRetries}):`, error);
+
+      if (i < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, i);
+        console.log(`等待 ${delay}ms 后重试...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError!;
+}
+
+/**
  * 导出数据库实例，方便在API路由中使用
  */
 export const db = {
   query: async (text: string, params?: any[]): Promise<QueryResult> => {
     const pool = getPool();
     const start = Date.now();
-    try {
-      const res = await pool.query(text, params);
-      const duration = Date.now() - start;
-      console.log('Executed query', { text, duration, rows: res.rowCount });
-      return res;
-    } catch (error) {
-      console.error('Query error', { text, params, error });
-      throw error;
-    }
+
+    return retryWithBackoff(async () => {
+      try {
+        const res = await pool.query(text, params);
+        const duration = Date.now() - start;
+        console.log('Executed query', { text, duration, rows: res.rowCount });
+        return res;
+      } catch (error) {
+        console.error('Query error', { text, params, error });
+        throw error;
+      }
+    }, 3, 1000);
   },
 };
 
