@@ -10,6 +10,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getPool } from '@/lib/db';
+import dotenv from 'dotenv';
+
+// 加载环境变量
+dotenv.config({ path: '.env.local' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -82,8 +86,8 @@ async function main() {
 
     // 执行迁移
     console.log('步骤 3: 执行数据库迁移...');
-    const migrationFiles = ['add_missing_fields.sql'];
-    
+    const migrationFiles = ['init_schema.sql', 'add_missing_fields.sql', 'create_content_versions_table.sql'];
+
     for (const file of migrationFiles) {
       await runMigration(file);
       console.log();
