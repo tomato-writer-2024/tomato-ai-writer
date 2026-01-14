@@ -71,34 +71,6 @@ export function getPool(): Pool {
 }
 
 /**
- * 重试函数
- */
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> {
-  let lastError: Error;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      console.warn(`数据库操作失败 (尝试 ${i + 1}/${maxRetries}):`, error);
-
-      if (i < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, i);
-        console.log(`等待 ${delay}ms 后重试...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
-  }
-
-  throw lastError!;
-}
-
-/**
  * 导出数据库实例，方便在API路由中使用
  */
 export const db = {
@@ -106,17 +78,16 @@ export const db = {
     const pool = getPool();
     const start = Date.now();
 
-    return retryWithBackoff(async () => {
-      try {
-        const res = await pool.query(text, params);
-        const duration = Date.now() - start;
-        console.log('Executed query', { text, duration, rows: res.rowCount });
-        return res;
-      } catch (error) {
-        console.error('Query error', { text, params, error });
-        throw error;
-      }
-    }, 3, 1000);
+    // Netlify Functions 免费版限制 10 秒，不使用重试机制
+    try {
+      const res = await pool.query(text, params);
+      const duration = Date.now() - start;
+      console.log('Executed query', { text, duration, rows: res.rowCount });
+      return res;
+    } catch (error) {
+      console.error('Query error', { text, params, error });
+      throw error;
+    }
   },
 };
 
@@ -144,4 +115,11 @@ export async function testConnection(): Promise<boolean> {
     console.error('数据库连接测试测试失败:', error);
     return false;
   }
+}
+
+/**
+ * 获取数据库连接URL（用于调试）
+ */
+export function getDatabaseUrl(): string {
+  return process.env.DATABASE_URL || 'DATABASE_URL 未设置';
 }
