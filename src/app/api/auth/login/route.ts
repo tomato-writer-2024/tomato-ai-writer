@@ -189,7 +189,7 @@ async function handler(request: NextRequest) {
     }
 
     // 检测异常登录行为（仅在非Mock模式下）
-    let abnormalCheck = { isAbnormal: false };
+    let abnormalCheck: { isAbnormal: boolean; reason?: string } = { isAbnormal: false };
     if (!isMockUser) {
       console.log(`[${requestId}] 检测异常登录行为...`);
       abnormalCheck = await authManager.detectAbnormalLogin(user.id, clientIp);
