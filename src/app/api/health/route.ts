@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPool, testConnection, isMockMode } from '@/lib/db';
+import { testConnection, isMockMode, getDatabaseStatus } from '@/lib/db';
 
 /**
  * 健康检查API
@@ -42,25 +42,28 @@ export async function GET(request: Request) {
       })
       .map(([key]) => key);
 
-    // 检查数据库连接（使用原生 pg 连接）
-    let dbStatus = 'ok';
-    let dbError = null;
-    let dbConnectionTime = 0;
+    // 检查数据库连接（使用增强的连接测试）
+    const dbStart = Date.now();
+    const dbTestResult = await testConnection();
+    const dbConnectionTime = Date.now() - dbStart;
 
-    try {
-      const dbStart = Date.now();
-      const isConnected = await testConnection();
-      dbConnectionTime = Date.now() - dbStart;
+    const dbStatus = dbTestResult.success ? 'ok' : 'error';
+    const dbMode = dbTestResult.mode;
 
-      if (isConnected) {
-        console.log(`[${requestId}] 数据库连接成功，响应时间: ${dbConnectionTime}ms`);
-      } else {
-        throw new Error('数据库连接测试失败');
-      }
-    } catch (error) {
-      dbStatus = 'error';
-      dbError = error instanceof Error ? error.message : String(error);
-      console.error(`[${requestId}] 数据库连接失败:`, dbError);
+    // 获取详细的数据库状态
+    const dbStatusInfo = getDatabaseStatus();
+
+    console.log(`[${requestId}] 数据库状态:`, {
+      success: dbTestResult.success,
+      mode: dbMode,
+      responseTime: `${dbConnectionTime}ms`,
+      error: dbTestResult.error,
+    });
+
+    // 在自动降级模式下，添加警告信息
+    if (dbStatusInfo.autoFallback) {
+      console.warn(`[${requestId}] ⚠️  当前使用自动降级模式，真实数据库不可用`);
+      console.warn(`[${requestId}] ⚠️  上次错误: ${dbStatusInfo.lastError}`);
     }
 
     const responseTime = Date.now() - startTime;
@@ -85,10 +88,11 @@ export async function GET(request: Request) {
           database: {
             status: dbStatus,
             message: dbStatus === 'ok'
-              ? (mockMode ? 'Mock模式已启用' : '数据库连接正常')
-              : `数据库连接失败: ${dbError}`,
+              ? (dbMode === 'mock' ? 'Mock模式已启用' : dbMode === 'auto-mock' ? '自动降级模式：真实数据库不可用，使用Mock模式' : '数据库连接正常')
+              : `数据库连接失败: ${dbTestResult.error}`,
             connectionTime: `${dbConnectionTime}ms`,
-            mode: mockMode ? 'mock' : 'real',
+            mode: dbMode,
+            details: dbStatusInfo,
           },
         },
         system: {
