@@ -6,13 +6,9 @@
  * 2. 运行: npx tsx src/scripts/init-super-admin.ts
  */
 
-import dotenv from 'dotenv';
 import { userManager } from '@/storage/database';
 import { hashPassword } from '@/lib/auth';
 import { UserRole, MembershipLevel } from '@/lib/types/user';
-
-// 加载环境变量
-dotenv.config({ path: '.env.local' });
 
 // ============================================================================
 // 超级管理员配置
