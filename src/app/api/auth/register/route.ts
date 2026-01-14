@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userManager, authManager } from '@/storage/database';
+import { userManager, authManager, mockUserManager, mockAuthManager, initMockDb } from '@/storage/database';
 import {
   hashPassword,
   generateAccessToken,
@@ -10,6 +10,7 @@ import { UserRole, MembershipLevel } from '@/lib/types/user';
 import { RATE_LIMIT_CONFIGS } from '@/lib/rateLimiter';
 import { runMiddleware } from '@/lib/apiMiddleware';
 import { randomUUID } from 'crypto';
+import { isMockMode } from '@/lib/db';
 
 /**
  * 用户注册API
@@ -17,6 +18,17 @@ import { randomUUID } from 'crypto';
 async function handler(request: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
   console.log(`[${requestId}] ===== 注册请求开始 =====`);
+
+  // 根据Mock模式选择Manager
+  const isMock = isMockMode();
+  const userManagerInstance = isMock ? mockUserManager : userManager;
+  const authManagerInstance = isMock ? mockAuthManager : authManager;
+
+  // Mock模式下初始化数据库
+  if (isMock) {
+    await initMockDb();
+    console.log(`[${requestId}] Mock模式已启用`);
+  }
 
   try {
     const clientIp = getClientIp(request);
@@ -77,12 +89,12 @@ async function handler(request: NextRequest) {
 
     // 检查邮箱是否已注册（使用userManager的参数化查询）
     console.log(`[${requestId}] 检查邮箱是否已注册: ${email}`);
-    const existingUser = await userManager.getUserByEmail(email);
+    const existingUser = await userManagerInstance.getUserByEmail(email);
 
     if (existingUser) {
       console.log(`[${requestId}] 邮箱已被注册: ${email}`);
 
-      await authManager.logSecurityEvent({
+      await authManagerInstance.logSecurityEvent({
         userId: null,
         action: 'REGISTER',
         details: JSON.stringify({ email, reason: 'Email already registered' }),
@@ -97,7 +109,7 @@ async function handler(request: NextRequest) {
     }
 
     // 检查用户名是否已被使用
-    const existingUsername = await userManager.getUserByUsername(username);
+    const existingUsername = await userManagerInstance.getUserByUsername(username);
     if (existingUsername) {
       console.log(`[${requestId}] 用户名已被使用: ${username}`);
 
@@ -113,7 +125,7 @@ async function handler(request: NextRequest) {
 
     // 创建用户（使用userManager，安全防SQL注入）
     console.log(`[${requestId}] 创建用户...`);
-    const newUser = await userManager.createUser({
+    const newUser = await userManagerInstance.createUser({
       email,
       passwordHash,
       username,

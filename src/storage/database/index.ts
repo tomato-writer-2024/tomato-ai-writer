@@ -11,6 +11,12 @@ export { securityLogManager } from './securityLogManager';
 export { authManager } from './authManager';
 
 // ============================================================================
+// Mock Manager 导出
+// ============================================================================
+export { mockUserManager } from './mock/mockUserManager';
+export { mockAuthManager } from './mock/mockAuthManager';
+
+// ============================================================================
 // Schema 类型导出
 // ============================================================================
 export * from './shared/schema';
@@ -19,3 +25,8 @@ export * from './shared/schema';
 // 数据库连接函数（从 SDK 导入）
 // ============================================================================
 export { getDb } from 'coze-coding-dev-sdk';
+
+// ============================================================================
+// Mock数据库导出
+// ============================================================================
+export { initMockDb } from './mock/mockDb';
