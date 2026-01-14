@@ -68,8 +68,11 @@ export async function GET(request: Request) {
 
     const responseTime = Date.now() - startTime;
 
-    // 判断整体状态（Mock模式下只要环境变量配置正确就是healthy）
-    const status = (missingEnvVars.length === 0 && dbStatus === 'ok') ? 'healthy' : 'unhealthy';
+    // 判断整体状态
+    // - 数据库模式为 mock/auto-mock：只要环境变量正确，系统就是健康的
+    // - 数据库模式为 real：连接成功才算健康
+    const isDbHealthy = dbMode === 'mock' || dbMode === 'auto-mock' || dbTestResult.success;
+    const status = (missingEnvVars.length === 0 && isDbHealthy) ? 'healthy' : 'unhealthy';
 
     return NextResponse.json(
       {
@@ -86,9 +89,13 @@ export async function GET(request: Request) {
             details: envChecks,
           },
           database: {
-            status: dbStatus,
-            message: dbStatus === 'ok'
-              ? (dbMode === 'mock' ? 'Mock模式已启用' : dbMode === 'auto-mock' ? '自动降级模式：真实数据库不可用，使用Mock模式' : '数据库连接正常')
+            status: isDbHealthy ? 'ok' : 'error',
+            message: isDbHealthy
+              ? (dbMode === 'mock'
+                ? 'Mock模式已启用'
+                : dbMode === 'auto-mock'
+                ? `自动降级模式：真实数据库不可用（${dbTestResult.error}），使用Mock模式`
+                : '数据库连接正常')
               : `数据库连接失败: ${dbTestResult.error}`,
             connectionTime: `${dbConnectionTime}ms`,
             mode: dbMode,

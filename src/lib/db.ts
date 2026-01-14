@@ -109,6 +109,9 @@ function buildPoolConfig(): PoolConfig {
   config.idleTimeoutMillis = config.idleTimeoutMillis || 30000;
   config.connectionTimeoutMillis = config.connectionTimeoutMillis || 5000; // 5秒超时，适应 10秒限制
 
+  // 强制使用 IPv4（解决 IPv6 连接失败问题）
+  (config as any).family = 4;
+
   return config;
 }
 
@@ -207,15 +210,9 @@ export async function testConnection(): Promise<{ success: boolean; mode: string
     return { success: true, mode: 'mock' };
   }
 
-  // 自动降级模式
+  // 自动降级模式（之前已经连接失败）
   if (isAutoMockMode) {
     console.log('⚠️  自动降级模式：使用 Mock 模式');
-    return { success: true, mode: 'auto-mock', error: lastConnectionError || 'Connection failed' };
-  }
-
-  // 已经测试过且失败
-  if (connectionTested && isAutoMockMode) {
-    console.log('⚠️  连接已测试失败，使用 Mock 模式');
     return { success: true, mode: 'auto-mock', error: lastConnectionError || 'Connection failed' };
   }
 
@@ -227,15 +224,23 @@ export async function testConnection(): Promise<{ success: boolean; mode: string
     }
 
     console.log('🔍 测试真实数据库连接...');
+    console.log('📡 数据库URL:', getDatabaseUrl());
+
     const client = await pool.connect();
-    await client.query('SELECT NOW()');
+    const result = await client.query('SELECT NOW()');
     client.release();
 
-    console.log('✅ 真实数据库连接成功');
+    console.log('✅ 真实数据库连接成功, 服务器时间:', result.rows[0].now);
     connectionTested = true;
     return { success: true, mode: 'real' };
   } catch (error: any) {
     console.error('❌ 真实数据库连接测试失败:', error.message);
+    console.error('❌ 错误详情:', {
+      code: error.code,
+      message: error.message,
+      hint: error.hint,
+      detail: error.detail,
+    });
     lastConnectionError = error.message;
 
     // 自动降级
@@ -243,6 +248,7 @@ export async function testConnection(): Promise<{ success: boolean; mode: string
     isAutoMockMode = true;
     connectionTested = true;
 
+    // 返回 success: true 表示系统仍然可用（使用Mock模式），但带上错误信息
     return { success: true, mode: 'auto-mock', error: error.message };
   }
 }
