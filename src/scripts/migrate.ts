@@ -21,15 +21,19 @@ async function runMigration(sqlFile: string): Promise<void> {
   const pool = getPool();
   const filePath = path.join(__dirname, '../migrations', sqlFile);
 
+  if (!pool) {
+    throw new Error('数据库连接池未创建，请检查数据库配置');
+  }
+
   if (!fs.existsSync(filePath)) {
     throw new Error(`迁移文件不存在: ${filePath}`);
   }
 
   const sql = fs.readFileSync(filePath, 'utf-8');
-  
+
   console.log(`执行迁移文件: ${sqlFile}`);
   console.log('-'.repeat(80));
-  
+
   try {
     await pool.query(sql);
     console.log(`✅ 迁移文件 ${sqlFile} 执行成功`);
@@ -52,6 +56,11 @@ async function main() {
     // 测试数据库连接
     console.log('步骤 1: 测试数据库连接...');
     const pool = getPool();
+
+    if (!pool) {
+      throw new Error('数据库连接池未创建，请检查数据库配置');
+    }
+
     const client = await pool.connect();
     await client.query('SELECT 1');
     client.release();

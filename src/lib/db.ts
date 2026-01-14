@@ -65,18 +65,10 @@ export function getPool(): Pool | null {
 
     // 优先使用DATABASE_URL
     if (process.env.DATABASE_URL) {
-      // 手动解析 DATABASE_URL 以正确处理查询参数
-      const url = new URL(process.env.DATABASE_URL.replace('postgresql://', 'postgres://'));
       config = {
-        host: url.hostname,
-        port: parseInt(url.port) || 5432,
-        database: url.pathname.slice(1), // 移除开头的 /
-        user: url.username,
-        password: decodeURIComponent(url.password),
-        // 强制使用 IPv4（避免 IPv6 连接失败）
-        family: 4 as any,
+        connectionString: process.env.DATABASE_URL,
       };
-      console.log('使用 DATABASE_URL 连接（手动解析，强制 IPv4）');
+      console.log('使用 DATABASE_URL 连接');
     } else {
       // 回退到单独的环境变量
       config = {
@@ -100,13 +92,7 @@ export function getPool(): Pool | null {
       console.error('数据库连接池错误:', err);
     });
 
-    console.log('数据库连接池已创建:', {
-      host: config.host,
-      port: config.port,
-      database: config.database,
-      user: config.user,
-      family: 4,
-    });
+    console.log('数据库连接池已创建');
   }
 
   return pool;
