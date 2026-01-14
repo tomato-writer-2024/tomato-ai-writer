@@ -27,7 +27,7 @@ export default function SimpleLoginPage() {
     try {
       // 1. 测试登录API
       console.log('[Step 1] 调用登录API...');
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/login-direct', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
