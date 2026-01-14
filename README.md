@@ -52,6 +52,13 @@
 - **样式**: Tailwind CSS 4
 - **AI模型**: 豆包大语言模型（通过 coze-coding-dev-sdk 集成）
 - **后端**: Next.js API Routes
+- **数据库**: PostgreSQL (Neon/Supabase)
+  - 📄 [数据库配置文档](./docs/DATABASE.md)
+  - 📄 [Neon迁移指南](./NEON_MIGRATION_GUIDE.md)
+  - 📄 [Neon快速检查清单](./NEON_MIGRATION_CHECKLIST.md)
+- **部署**: Netlify (免费版)
+  - 📄 [数据库问题诊断](./DATABASE_DIAGNOSIS.md)
+  - 📄 [数据库修复总结](./DATABASE_FIX_SUMMARY.md)
 - **文件处理**:
   - mammoth - Word 文档读取
   - pdf-parse - PDF 文档读取
@@ -73,6 +80,80 @@ src/
 │   ├── register/              # 注册页
 │   ├── pricing/               # 定价页
 │   └── page.tsx               # 首页
+```
+
+## 数据库配置
+
+### 当前状态
+
+项目已配置自动降级机制，确保系统始终可用：
+
+- **真实数据库模式**（推荐）：连接到PostgreSQL数据库（Neon或Supabase）
+- **自动降级模式**：数据库连接失败时自动切换到Mock模式
+- **Mock模式**（开发环境）：强制使用内存数据库，不连接真实数据库
+
+### 环境变量配置
+
+在 `.env.local` 文件中配置：
+
+```bash
+# 数据库连接字符串（推荐使用Neon）
+DATABASE_URL=postgresql://neondb_owner:PASSWORD@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# 数据库模式配置
+DATABASE_MOCK_MODE=false  # true=Mock模式, false=真实数据库模式
+
+# JWT密钥
+JWT_SECRET=your-jwt-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret-key
+```
+
+### 数据库迁移
+
+```bash
+# 创建表结构
+npm run migrate
+
+# 验证数据库连接
+npx tsx scripts/verify-neon-connection.ts
+```
+
+### 迁移到 Neon PostgreSQL
+
+如果当前遇到数据库连接问题（如IPv6不可达），建议迁移到Neon：
+
+📄 **详细步骤**: [NEON_MIGRATION_GUIDE.md](./NEON_MIGRATION_GUIDE.md)
+
+📋 **快速检查清单**: [NEON_MIGRATION_CHECKLIST.md](./NEON_MIGRATION_CHECKLIST.md)
+
+**快速迁移**（5分钟）：
+1. 访问 https://neon.tech/ 创建账号和项目
+2. 复制连接字符串
+3. 更新 `.env.local` 中的 `DATABASE_URL`
+4. 运行 `npm run migrate`
+5. 更新Netlify环境变量
+
+### 健康检查
+
+```bash
+# 本地环境
+curl http://localhost:5000/api/health
+
+# 生产环境
+curl https://tomatowriter.netlify.app/api/health
+```
+
+期望返回：
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "database": {
+      "status": "ok",
+      "mode": "real"
+    }
+  }
+}
 ```
 
 ## 快速开始
