@@ -9,11 +9,6 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[functions]
-  node_bundler = "esbuild"
-  timeout = 30
-  memory = 1024
-
 [dev]
   command = "npm run dev"
   port = 3000
