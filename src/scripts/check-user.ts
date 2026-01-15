@@ -15,6 +15,11 @@ async function checkUser() {
 
   const pool = getPool();
 
+  if (!pool) {
+    console.log('❌ 数据库连接失败（可能处于 Mock 模式）');
+    return;
+  }
+
   try {
     const result = await pool.query(
       'SELECT * FROM users WHERE email = $1',

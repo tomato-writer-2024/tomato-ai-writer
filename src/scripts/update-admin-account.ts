@@ -31,6 +31,12 @@ async function updateAdminAccount() {
 
   const pool = getPool();
 
+  if (!pool) {
+    console.log('❌ 数据库连接失败（可能处于 Mock 模式）');
+    process.exit(1);
+    return;
+  }
+
   try {
     // 检查用户是否存在
     console.log('步骤 1: 检查用户是否存在...');
