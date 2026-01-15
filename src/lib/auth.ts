@@ -13,6 +13,32 @@ const JWT_EXPIRES_IN = '7d'; // 7天过期
 const REFRESH_TOKEN_EXPIRES_IN = '30d'; // 30天过期
 
 /**
+ * 会员权益配置（定义在顶部，避免依赖顺序问题）
+ */
+const MEMBERSHIP_QUOTAS = {
+  [MembershipLevel.FREE]: {
+    daily: 5,
+    monthly: 100,
+    storageLimit: 100 * 1024 * 1024, // 100MB
+  },
+  [MembershipLevel.BASIC]: {
+    daily: 20,
+    monthly: 500,
+    storageLimit: 500 * 1024 * 1024, // 500MB
+  },
+  [MembershipLevel.PREMIUM]: {
+    daily: Infinity,
+    monthly: Infinity,
+    storageLimit: 5 * 1024 * 1024 * 1024, // 5GB
+  },
+  [MembershipLevel.ENTERPRISE]: {
+    daily: Infinity,
+    monthly: Infinity,
+    storageLimit: 50 * 1024 * 1024 * 1024, // 50GB
+  },
+};
+
+/**
  * 密码哈希（bcrypt，cost=12）
  */
 export async function hashPassword(password: string): Promise<string> {
@@ -86,7 +112,7 @@ export function verifyResetToken(token: string): {
 }
 
 /**
- * 验证JWT令牌
+ * 验证JWT令牌（通用方法，包含访问令牌和刷新令牌）
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
@@ -95,11 +121,6 @@ export function verifyToken(token: string): JwtPayload | null {
     return null;
   }
 }
-
-/**
- * 验证访问令牌（别名，用于测试）
- */
-export const verifyAccessToken = verifyToken;
 
 /**
  * 生成随机字符串
@@ -236,32 +257,6 @@ export async function checkUserQuota(userId: string): Promise<{
 
   return { canUse: true };
 }
-
-/**
- * 会员权益配置
- */
-const MEMBERSHIP_QUOTAS = {
-  [MembershipLevel.FREE]: {
-    daily: 5,
-    monthly: 100,
-    storageLimit: 100 * 1024 * 1024, // 100MB
-  },
-  [MembershipLevel.BASIC]: {
-    daily: 20,
-    monthly: 500,
-    storageLimit: 500 * 1024 * 1024, // 500MB
-  },
-  [MembershipLevel.PREMIUM]: {
-    daily: Infinity,
-    monthly: Infinity,
-    storageLimit: 5 * 1024 * 1024 * 1024, // 5GB
-  },
-  [MembershipLevel.ENTERPRISE]: {
-    daily: Infinity,
-    monthly: Infinity,
-    storageLimit: 50 * 1024 * 1024 * 1024, // 50GB
-  },
-};
 
 /**
  * 从请求中提取并验证用户
