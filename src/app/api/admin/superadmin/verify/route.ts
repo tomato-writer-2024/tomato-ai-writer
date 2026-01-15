@@ -3,6 +3,7 @@ import { verifyToken } from '@/lib/jwt';
 import { getDb } from 'coze-coding-dev-sdk';
 import { users } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 
 /**
  * 验证超级管理员身份
@@ -32,13 +33,58 @@ export async function POST(request: NextRequest) {
 		const token = authHeader.substring(7);
 		console.log(`[${requestId}] 提取token长度: ${token.length}`);
 
-		const payload = verifyToken(token);
+		// 尝试解析token（不验证签名，只获取payload）
+		try {
+			const decoded = jwt.decode(token) as any;
+			console.log(`[${requestId}] Token payload（解码）:`, {
+				userId: decoded?.userId,
+				email: decoded?.email,
+				role: decoded?.role,
+				iat: decoded?.iat,
+				exp: decoded?.exp,
+			});
+		} catch (e) {
+			console.log(`[${requestId}] Token解码失败:`, e);
+		}
+
+		// 验证token
+		let payload: ReturnType<typeof verifyToken>;
+		try {
+			payload = verifyToken(token);
+		} catch (error: any) {
+			console.error(`[${requestId}] Token验证异常:`, error);
+		}
+
+		console.log(`[${requestId}] Token验证结果:`, {
+			hasPayload: !!payload,
+			hasUserId: !!(payload?.userId),
+		});
 
 		if (!payload || !payload.userId) {
-			console.log(`[${requestId}] Token验证失败:`, {
-				hasPayload: !!payload,
-				hasUserId: !!(payload?.userId),
-			});
+			// 尝试再次解析以获取详细错误
+			try {
+				jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+			} catch (error: any) {
+				console.error(`[${requestId}] JWT验证详细错误:`, {
+					name: error?.name,
+					message: error?.message,
+				});
+
+				if (error?.name === 'TokenExpiredError') {
+					return NextResponse.json(
+						{ error: 'token已过期，请重新登录' },
+						{ status: 401 }
+					);
+				}
+
+				if (error?.name === 'JsonWebTokenError') {
+					return NextResponse.json(
+						{ error: `无效的token: ${error?.message}` },
+						{ status: 401 }
+					);
+				}
+			}
+
 			return NextResponse.json(
 				{ error: '无效的token' },
 				{ status: 401 }
