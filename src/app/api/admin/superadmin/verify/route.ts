@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
 
 		console.log(`[${requestId}] 请求头信息:`, {
 			hasAuthHeader: !!authHeader,
-			authHeaderPrefix: authHeader?.substring(0, 20),
+			authHeaderValue: authHeader,
+			authHeaderLength: authHeader?.length,
+			authHeaderPrefix: authHeader?.substring(0, Math.min(50, authHeader?.length || 0)),
+			allHeaders: Object.fromEntries(request.headers.entries()),
 		});
 
 		if (!authHeader || !authHeader.startsWith('Bearer ')) {

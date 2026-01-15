@@ -90,12 +90,27 @@ export default function AdminLoginPage() {
 
 			addDebugInfo('登录成功，获取到token');
 
+			// 调试：检查token
+			console.log('[登录调试] 登录API返回数据:', data);
+			console.log('[登录调试] data.token存在:', !!data.token);
+			console.log('[登录调试] data.token类型:', typeof data.token);
+			console.log('[登录调试] data.token长度:', data.token?.length);
+			console.log('[登录调试] data.token前20字符:', data.token?.substring(0, 20));
+
+			addDebugInfo(`Token存在: ${!!data.token}`);
+			addDebugInfo(`Token类型: ${typeof data.token}`);
+			addDebugInfo(`Token长度: ${data.token?.length}`);
+
 			// 验证是否为超级管理员
 			addDebugInfo('验证超级管理员权限: /api/admin/superadmin/verify');
+
+			const authHeader = `Bearer ${data.token}`;
+			console.log('[登录调试] Authorization header:', authHeader.substring(0, 50) + '...');
+
 			const verifyResponse = await fetch('/api/admin/superadmin/verify', {
 				method: 'POST',
 				headers: {
-					'Authorization': `Bearer ${data.token}`,
+					'Authorization': authHeader,
 				},
 				credentials: 'include', // 包含Cookie
 			});
