@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
       let decodedAccess, decodedRefresh;
 
       try {
-        decodedAccess = jwt.decode(accessToken);
-        decodedRefresh = jwt.decode(refreshToken);
+        decodedAccess = jwt.decode(accessToken) as jwt.JwtPayload;
+        decodedRefresh = jwt.decode(refreshToken) as jwt.JwtPayload;
       } catch (e) {
         console.error(`[${requestId}] Token解码失败:`, e);
       }
@@ -50,22 +50,22 @@ export async function POST(request: NextRequest) {
         accessLength: accessToken.length,
         refreshLength: refreshToken.length,
         decodedAccess: {
-          userId: decodedAccess?.userId,
-          email: decodedAccess?.email,
+          userId: (decodedAccess as any)?.userId,
+          email: (decodedAccess as any)?.email,
           iat: decodedAccess?.iat,
           exp: decodedAccess?.exp,
-          expiresInSeconds: decodedAccess?.exp - decodedAccess?.iat,
-          expiresInDays: ((decodedAccess?.exp || 0) - (decodedAccess?.iat || 0)) / 86400,
+          expiresInSeconds: decodedAccess?.exp && decodedAccess.iat ? decodedAccess.exp - decodedAccess.iat : undefined,
+          expiresInDays: decodedAccess?.exp && decodedAccess.iat ? (decodedAccess.exp - decodedAccess.iat) / 86400 : undefined,
           isExpired: (decodedAccess?.exp || 0) < now,
           timeUntilExpire: decodedAccess?.exp ? decodedAccess.exp - now : null,
         },
         decodedRefresh: {
-          userId: decodedRefresh?.userId,
-          email: decodedRefresh?.email,
+          userId: (decodedRefresh as any)?.userId,
+          email: (decodedRefresh as any)?.email,
           iat: decodedRefresh?.iat,
           exp: decodedRefresh?.exp,
-          expiresInSeconds: decodedRefresh?.exp - decodedRefresh?.iat,
-          expiresInDays: ((decodedRefresh?.exp || 0) - (decodedRefresh?.iat || 0)) / 86400,
+          expiresInSeconds: decodedRefresh?.exp && decodedRefresh.iat ? decodedRefresh.exp - decodedRefresh.iat : undefined,
+          expiresInDays: decodedRefresh?.exp && decodedRefresh.iat ? (decodedRefresh.exp - decodedRefresh.iat) / 86400 : undefined,
         },
         currentTime: now,
       });
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
               decoded: decodedAccess,
               iat: decodedAccess?.iat,
               exp: decodedAccess?.exp,
-              expiresIn: decodedAccess?.exp ? decodedAccess.exp - decodedAccess.iat : null,
-              expiresInDays: decodedAccess?.exp ? (decodedAccess.exp - decodedAccess.iat) / 86400 : null,
+              expiresIn: decodedAccess?.exp && decodedAccess.iat ? decodedAccess.exp - decodedAccess.iat : null,
+              expiresInDays: decodedAccess?.exp && decodedAccess.iat ? (decodedAccess.exp - decodedAccess.iat) / 86400 : null,
               isExpired: (decodedAccess?.exp || 0) < now,
               timeUntilExpire: decodedAccess?.exp ? decodedAccess.exp - now : null,
             },
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
               decoded: decodedRefresh,
               iat: decodedRefresh?.iat,
               exp: decodedRefresh?.exp,
-              expiresIn: decodedRefresh?.exp ? decodedRefresh.exp - decodedRefresh.iat : null,
-              expiresInDays: decodedRefresh?.exp ? (decodedRefresh.exp - decodedRefresh.iat) / 86400 : null,
+              expiresIn: decodedRefresh?.exp && decodedRefresh.iat ? decodedRefresh.exp - decodedRefresh.iat : null,
+              expiresInDays: decodedRefresh?.exp && decodedRefresh.iat ? (decodedRefresh.exp - decodedRefresh.iat) / 86400 : null,
             },
             currentTime: now,
             currentDateTime: new Date(now * 1000).toISOString(),
@@ -110,14 +110,14 @@ export async function POST(request: NextRequest) {
     };
 
     const testToken = generateAccessToken(testPayload);
-    const decoded = jwt.decode(testToken);
+    const decoded = jwt.decode(testToken) as jwt.JwtPayload;
 
     return NextResponse.json({
       success: true,
       data: {
         payload: testPayload,
         token: testToken,
-        decoded,
+        decoded: decoded ? { ...decoded } : null,
       },
     });
   } catch (error) {

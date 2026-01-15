@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄小说AI写作工具 - 超级管理员登录（备用）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #581c87 50%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #3b82f6, #9333ea);
+            border-radius: 16px;
+            margin-bottom: 16px;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input::placeholder {
+            color: #9ca3af;
+        }
+
+        .form-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #3b82f6, #9333ea);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-alt {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            margin-top: 12px;
+        }
+
+        .btn-alt:hover {
+            background: linear-gradient(135deg, #d97706, #dc2626);
+        }
+
+        .btn-script {
+            background: linear-gradient(135deg, #10b981, #14b8a6);
+            margin-top: 12px;
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .btn-script:hover {
+            background: linear-gradient(135deg, #059669, #0d9488);
+        }
+
+        .divider {
+            margin: 24px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .links {
+            text-align: center;
+        }
+
+        .links a {
+            display: block;
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 8px 0;
+            transition: color 0.2s;
+        }
+
+        .links a:hover {
+            color: #93c5fd;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #86efac;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            color: #93c5fd;
+            font-size: 12px;
+        }
+
+        .browser-info {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .debug-log {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #86efac;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .debug-log .log-entry {
+            margin: 4px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .debug-log .log-error {
+            color: #fca5a5;
+        }
+
+        .debug-log .log-success {
+            color: #86efac;
+        }
+
+        .debug-log .log-info {
+            color: #93c5fd;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-header h3 {
+            color: white;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 32px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: white;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #86efac;
+            overflow-x: auto;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-footer button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-copy {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #2563eb;
+        }
+
+        .btn-close {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <h1>番茄小说AI写作工具</h1>
+            <p>超级管理员登录（纯原生版本，适用于所有浏览器）</p>
+        </div>
+
+        <div class="card">
+            <div id="alertContainer"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">邮箱</label>
+                    <input type="email" id="email" name="email" placeholder="admin@tomato-ai.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn">登录</button>
+            </form>
+
+            <div class="divider"></div>
+
+            <button id="autoLoginBtn" class="btn btn-alt">🚀 一键登录（自动尝试所有方式）</button>
+
+            <button id="scriptBtn" class="btn btn-script">📝 生成控制台脚本（终极方案）</button>
+
+            <div class="divider"></div>
+
+            <div class="links">
+                <a href="/">← 返回首页</a>
+                <a href="/admin/login" style="color: #a78bfa;">← 返回标准登录页</a>
+            </div>
+        </div>
+
+        <div class="browser-info" id="browserInfo"></div>
+
+        <div id="debugLogContainer" style="display: none;">
+            <button onclick="document.getElementById('debugLog').style.display = document.getElementById('debugLog').style.display === 'none' ? 'block' : 'none'" style="margin-top: 8px; padding: 4px 8px; background: rgba(255,255,255,0.1); border: none; color: #9ca3af; cursor: pointer; font-size: 12px; border-radius: 4px;">
+                切换调试日志
+            </button>
+            <div id="debugLog" class="debug-log"></div>
+        </div>
+    </div>
+
+    <!-- 脚本模态框 -->
+    <div id="scriptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>自动登录脚本</h3>
+                <button class="modal-close" onclick="closeScriptModal()">&times;</button>
+            </div>
+            <div class="code-block" id="scriptCode"></div>
+            <div style="margin-bottom: 16px; font-size: 14px; color: #d1d5db;">
+                <p><strong>使用说明：</strong></p>
+                <p>1. 复制上面的脚本</p>
+                <p>2. 按 <kbd style="padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px;">F12</kbd> 打开浏览器控制台</p>
+                <p>3. 粘贴脚本并按 <kbd style="padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px;">Enter</kbd> 执行</p>
+                <p>4. 自动登录成功后会跳转到管理后台</p>
+                <p style="color: #fbbf24; margin-top: 8px;">提示：此脚本适用于所有浏览器，包括360、QQ、Edge等</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" onclick="closeScriptModal()">关闭</button>
+                <button class="btn-copy" onclick="copyScript()">复制脚本</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 浏览器检测
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            let name = '未知浏览器';
+            let version = '';
+
+            if (/360SE|360EE|360Browser|QIHU/i.test(ua)) {
+                name = '360浏览器';
+                const match = ua.match(/360(?:SE|EE|Browser)[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            } else if (/QQBrowser|QQ/i.test(ua)) {
+                name = 'QQ浏览器';
+                const match = ua.match(/QQBrowser[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            } else if (/Sogou/i.test(ua)) {
+                name = '搜狗浏览器';
+            } else if (/Edg/i.test(ua)) {
+                name = 'Microsoft Edge';
+                const match = ua.match(/Edg[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            } else if (/Chrome/i.test(ua)) {
+                name = 'Chrome';
+                const match = ua.match(/Chrome[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            } else if (/Firefox/i.test(ua)) {
+                name = 'Firefox';
+                const match = ua.match(/Firefox[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            } else if (/Safari/i.test(ua)) {
+                name = 'Safari';
+                const match = ua.match(/Version[\/\s](\d+\.?\d*)/i);
+                version = match ? match[1] : '';
+            }
+
+            return { name, version, ua };
+        }
+
+        // 显示浏览器信息
+        const browserInfo = detectBrowser();
+        document.getElementById('browserInfo').innerHTML = `当前浏览器: ${browserInfo.name} ${browserInfo.version}`;
+
+        // 调试日志
+        const debugLogEntries = [];
+
+        function addDebugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = { timestamp, message, type };
+            debugLogEntries.push(entry);
+
+            const logContainer = document.getElementById('debugLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            console.log(`[登录调试] ${message}`);
+        }
+
+        function showDebugLog() {
+            document.getElementById('debugLogContainer').style.display = 'block';
+            document.getElementById('debugLog').style.display = 'block';
+        }
+
+        // 显示提示
+        function showAlert(message, type = 'error') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.innerHTML = '';
+            container.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // 登录函数
+        async function handleLogin(email, password) {
+            showDebugLog();
+
+            try {
+                addDebugLog('开始登录流程', 'info');
+                addDebugLog(`浏览器: ${browserInfo.name} ${browserInfo.version}`, 'info');
+
+                // 检查localStorage
+                try {
+                    localStorage.setItem('__test__', 'test');
+                    localStorage.removeItem('__test__');
+                    addDebugLog('localStorage可用', 'success');
+                } catch (e) {
+                    addDebugLog('localStorage不可用: ' + e.message, 'error');
+                    throw new Error('浏览器禁用了本地存储，请检查隐私模式或安全设置');
+                }
+
+                // 步骤1: 调用登录API
+                addDebugLog('步骤1: 调用登录API', 'info');
+
+                const loginResp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include'
+                });
+
+                addDebugLog(`登录API状态码: ${loginResp.status}`, loginResp.ok ? 'success' : 'error');
+
+                const loginData = await loginResp.json();
+                addDebugLog(`登录API响应: ${JSON.stringify(loginData)}`, loginResp.ok ? 'success' : 'error');
+
+                if (!loginResp.ok || !loginData.success) {
+                    throw new Error(loginData.error || '登录失败');
+                }
+
+                const token = loginData.data.token;
+                addDebugLog(`✅ Token获取成功，长度: ${token.length}`, 'success');
+
+                // 步骤2: 验证超级管理员权限（尝试多种方式）
+                addDebugLog('步骤2: 验证超级管理员权限', 'info');
+
+                let verifySuccess = false;
+                let verifyData = null;
+                let verifyError = '';
+
+                // 方式1: Authorization header
+                try {
+                    addDebugLog('尝试方式1: Authorization header', 'info');
+                    const resp1 = await fetch('/api/admin/superadmin/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    const data1 = await resp1.json();
+                    addDebugLog(`方式1响应: ${JSON.stringify(data1)}`, resp1.ok && data1.success ? 'success' : 'error');
+                    if (data1.success) {
+                        verifySuccess = true;
+                        verifyData = data1;
+                        addDebugLog('✅ 方式1验证成功', 'success');
+                    } else {
+                        verifyError = data1.error || '未知错误';
+                        addDebugLog(`❌ 方式1失败: ${verifyError}`, 'error');
+                    }
+                } catch (e) {
+                    addDebugLog(`❌ 方式1异常: ${e.message}`, 'error');
+                    verifyError = e.message;
+                }
+
+                // 方式2: X-Auth-Token header
+                if (!verifySuccess) {
+                    try {
+                        addDebugLog('尝试方式2: X-Auth-Token header', 'info');
+                        const resp2 = await fetch('/api/admin/superadmin/verify', {
+                            method: 'POST',
+                            headers: {
+                                'X-Auth-Token': token,
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include'
+                        });
+                        const data2 = await resp2.json();
+                        addDebugLog(`方式2响应: ${JSON.stringify(data2)}`, resp2.ok && data2.success ? 'success' : 'error');
+                        if (data2.success) {
+                            verifySuccess = true;
+                            verifyData = data2;
+                            addDebugLog('✅ 方式2验证成功', 'success');
+                        } else {
+                            verifyError = data2.error || '未知错误';
+                            addDebugLog(`❌ 方式2失败: ${verifyError}`, 'error');
+                        }
+                    } catch (e) {
+                        addDebugLog(`❌ 方式2异常: ${e.message}`, 'error');
+                        verifyError = e.message;
+                    }
+                }
+
+                // 方式3: body参数
+                if (!verifySuccess) {
+                    try {
+                        addDebugLog('尝试方式3: body参数', 'info');
+                        const resp3 = await fetch('/api/admin/superadmin/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include',
+                            body: JSON.stringify({ token })
+                        });
+                        const data3 = await resp3.json();
+                        addDebugLog(`方式3响应: ${JSON.stringify(data3)}`, resp3.ok && data3.success ? 'success' : 'error');
+                        if (data3.success) {
+                            verifySuccess = true;
+                            verifyData = data3;
+                            addDebugLog('✅ 方式3验证成功', 'success');
+                        } else {
+                            verifyError = data3.error || '未知错误';
+                            addDebugLog(`❌ 方式3失败: ${verifyError}`, 'error');
+                        }
+                    } catch (e) {
+                        addDebugLog(`❌ 方式3异常: ${e.message}`, 'error');
+                        verifyError = e.message;
+                    }
+                }
+
+                if (!verifySuccess) {
+                    throw new Error('所有验证方式均失败: ' + verifyError);
+                }
+
+                addDebugLog('✅ 超级管理员验证通过', 'success');
+
+                // 步骤3: 保存token
+                addDebugLog('步骤3: 保存token到本地存储', 'info');
+
+                try {
+                    localStorage.setItem('admin_token', token);
+                    localStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+                    addDebugLog('✅ Token已保存到localStorage', 'success');
+                } catch (e) {
+                    addDebugLog(`⚠️ 保存到localStorage失败: ${e.message}`, 'error');
+                }
+
+                try {
+                    sessionStorage.setItem('admin_token', token);
+                    sessionStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+                    addDebugLog('✅ Token已保存到sessionStorage', 'success');
+                } catch (e) {
+                    addDebugLog(`⚠️ 保存到sessionStorage失败: ${e.message}`, 'error');
+                }
+
+                // 步骤4: 跳转
+                addDebugLog('步骤4: 跳转到管理后台', 'info');
+                showAlert('登录成功！正在跳转...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '/admin/dashboard';
+                }, 500);
+
+            } catch (error) {
+                addDebugLog(`❌ 登录失败: ${error.message}`, 'error');
+                showAlert(error.message || '登录失败，请重试', 'error');
+                throw error;
+            }
+        }
+
+        // 表单提交
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>登录中...';
+
+            try {
+                await handleLogin(email, password);
+            } catch (error) {
+                // Error already handled
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '登录';
+            }
+        });
+
+        // 一键登录按钮
+        document.getElementById('autoLoginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showAlert('请先输入邮箱和密码', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('autoLoginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>登录中...';
+
+            try {
+                await handleLogin(email, password);
+            } catch (error) {
+                // Error already handled
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 一键登录（自动尝试所有方式）';
+            }
+        });
+
+        // 生成脚本按钮
+        document.getElementById('scriptBtn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showAlert('请先输入邮箱和密码', 'error');
+                return;
+            }
+
+            const script = generateLoginScript(email, password);
+            document.getElementById('scriptCode').textContent = script;
+            document.getElementById('scriptModal').classList.add('active');
+        });
+
+        // 关闭模态框
+        function closeScriptModal() {
+            document.getElementById('scriptModal').classList.remove('active');
+        }
+
+        // 复制脚本
+        function copyScript() {
+            const script = document.getElementById('scriptCode').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                alert('脚本已复制到剪贴板！');
+            }).catch(err => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = script;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('脚本已复制到剪贴板！');
+            });
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('scriptModal').addEventListener('click', (e) => {
+            if (e.target.id === 'scriptModal') {
+                closeScriptModal();
+            }
+        });
+
+        // 生成登录脚本
+        function generateLoginScript(email, password) {
+            return `(async function() {
+    console.log('=== 开始自动登录 ===');
+    console.log('邮箱:', '${email}');
+
+    try {
+        // 步骤1: 调用登录API
+        console.log('步骤1: 调用登录API...');
+        const loginResp = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: '${email}',
+                password: '${password}'
+            }),
+            credentials: 'include'
+        });
+
+        const loginData = await loginResp.json();
+        console.log('登录API响应:', loginData);
+
+        if (!loginData.success) {
+            throw new Error('登录失败: ' + (loginData.error || '未知错误'));
+        }
+
+        const token = loginData.data.token;
+        console.log('✅ Token获取成功，长度:', token.length);
+
+        // 步骤2: 验证超级管理员权限（尝试多种方式）
+        console.log('步骤2: 验证超级管理员权限...');
+
+        let verifySuccess = false;
+        let verifyData = null;
+        let verifyError = '';
+
+        // 方式1: Authorization header
+        try {
+            console.log('尝试方式1: Authorization header');
+            const resp1 = await fetch('/api/admin/superadmin/verify', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            const data1 = await resp1.json();
+            console.log('方式1响应:', data1);
+            if (data1.success) {
+                verifySuccess = true;
+                verifyData = data1;
+                console.log('✅ 方式1验证成功');
+            } else {
+                verifyError = data1.error || '未知错误';
+                console.log('❌ 方式1失败:', verifyError);
+            }
+        } catch (e) {
+            console.log('❌ 方式1异常:', e.message);
+            verifyError = e.message;
+        }
+
+        // 方式2: X-Auth-Token header
+        if (!verifySuccess) {
+            try {
+                console.log('尝试方式2: X-Auth-Token header');
+                const resp2 = await fetch('/api/admin/superadmin/verify', {
+                    method: 'POST',
+                    headers: {
+                        'X-Auth-Token': token,
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                const data2 = await resp2.json();
+                console.log('方式2响应:', data2);
+                if (data2.success) {
+                    verifySuccess = true;
+                    verifyData = data2;
+                    console.log('✅ 方式2验证成功');
+                } else {
+                    verifyError = data2.error || '未知错误';
+                    console.log('❌ 方式2失败:', verifyError);
+                }
+            } catch (e) {
+                console.log('❌ 方式2异常:', e.message);
+                verifyError = e.message;
+            }
+        }
+
+        // 方式3: body参数
+        if (!verifySuccess) {
+            try {
+                console.log('尝试方式3: body参数');
+                const resp3 = await fetch('/api/admin/superadmin/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ token })
+                });
+                const data3 = await resp3.json();
+                console.log('方式3响应:', data3);
+                if (data3.success) {
+                    verifySuccess = true;
+                    verifyData = data3;
+                    console.log('✅ 方式3验证成功');
+                } else {
+                    verifyError = data3.error || '未知错误';
+                    console.log('❌ 方式3失败:', verifyError);
+                }
+            } catch (e) {
+                console.log('❌ 方式3异常:', e.message);
+                verifyError = e.message;
+            }
+        }
+
+        if (!verifySuccess) {
+            throw new Error('所有验证方式均失败: ' + verifyError);
+        }
+
+        console.log('✅ 超级管理员验证通过');
+
+        // 步骤3: 保存token
+        console.log('步骤3: 保存token...');
+        try {
+            localStorage.setItem('admin_token', token);
+            localStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+            console.log('✅ Token已保存到localStorage');
+        } catch (e) {
+            console.warn('保存到localStorage失败:', e.message);
+        }
+
+        try {
+            sessionStorage.setItem('admin_token', token);
+            sessionStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+            console.log('✅ Token已保存到sessionStorage');
+        } catch (e) {
+            console.warn('保存到sessionStorage失败:', e.message);
+        }
+
+        // 步骤4: 跳转
+        console.log('步骤4: 跳转到管理后台...');
+        setTimeout(() => {
+            window.location.href = '/admin/dashboard';
+        }, 500);
+
+    } catch (e) {
+        console.error('❌ 自动登录失败:', e);
+        alert('登录失败: ' + e.message + '\\n\\n请查看控制台了解详细信息');
+    }
+})();`;
+        }
+    </script>
+</body>
+</html>

@@ -14,27 +14,58 @@ export async function POST(request: NextRequest) {
 	console.log(`[${requestId}] ===== 验证超级管理员请求开始 =====`);
 
 	try {
-		// 获取token
-		const authHeader = request.headers.get('authorization');
+		// 增强Token提取：支持多种方式
+		let token: string | null = null;
+		let tokenSource = '';
 
-		console.log(`[${requestId}] 请求头信息:`, {
-			hasAuthHeader: !!authHeader,
-			authHeaderValue: authHeader,
-			authHeaderLength: authHeader?.length,
-			authHeaderPrefix: authHeader?.substring(0, Math.min(50, authHeader?.length || 0)),
+		// 方式1: Authorization header (Bearer token)
+		const authHeader = request.headers.get('authorization');
+		if (authHeader && authHeader.startsWith('Bearer ')) {
+			token = authHeader.substring(7);
+			tokenSource = 'Authorization header (Bearer)';
+			console.log(`[${requestId}] 从Authorization header获取token`);
+		}
+
+		// 方式2: X-Auth-Token header
+		if (!token) {
+			const xAuthToken = request.headers.get('x-auth-token');
+			if (xAuthToken) {
+				token = xAuthToken;
+				tokenSource = 'X-Auth-Token header';
+				console.log(`[${requestId}] 从X-Auth-Token header获取token`);
+			}
+		}
+
+		// 方式3: body参数
+		if (!token) {
+			try {
+				const body = await request.json();
+				if (body.token) {
+					token = body.token;
+					tokenSource = 'body参数';
+					console.log(`[${requestId}] 从body参数获取token`);
+				}
+			} catch (e) {
+				// body解析失败，继续
+			}
+		}
+
+		console.log(`[${requestId}] Token提取结果:`, {
+			tokenSource,
+			hasToken: !!token,
+			tokenLength: token?.length,
 			allHeaders: Object.fromEntries(request.headers.entries()),
 		});
 
-		if (!authHeader || !authHeader.startsWith('Bearer ')) {
-			console.log(`[${requestId}] 未提供认证token或格式错误`);
+		if (!token) {
+			console.log(`[${requestId}] 所有Token获取方式均失败`);
 			return NextResponse.json(
 				{ error: '未提供认证token' },
 				{ status: 401 }
 			);
 		}
 
-		const token = authHeader.substring(7);
-		console.log(`[${requestId}] 提取token长度: ${token.length}`);
+		console.log(`[${requestId}] Token长度: ${token.length}`);
 
 		// 尝试解析token（不验证签名，只获取payload）
 		try {
@@ -51,38 +82,35 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 验证token
-		let payload: ReturnType<typeof verifyToken>;
+		let payload: any = null;
 		try {
 			payload = verifyToken(token);
+			console.log(`[${requestId}] Token验证结果:`, {
+				hasPayload: !!payload,
+				hasUserId: !!(payload?.userId),
+			});
 		} catch (error: any) {
 			console.error(`[${requestId}] Token验证异常:`, error);
-		}
 
-		console.log(`[${requestId}] Token验证结果:`, {
-			hasPayload: !!payload,
-			hasUserId: !!(payload?.userId),
-		});
-
-		if (!payload || !payload.userId) {
 			// 尝试再次解析以获取详细错误
 			try {
 				jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
-			} catch (error: any) {
+			} catch (e: any) {
 				console.error(`[${requestId}] JWT验证详细错误:`, {
-					name: error?.name,
-					message: error?.message,
+					name: e?.name,
+					message: e?.message,
 				});
 
-				if (error?.name === 'TokenExpiredError') {
+				if (e?.name === 'TokenExpiredError') {
 					return NextResponse.json(
 						{ error: 'token已过期，请重新登录' },
 						{ status: 401 }
 					);
 				}
 
-				if (error?.name === 'JsonWebTokenError') {
+				if (e?.name === 'JsonWebTokenError') {
 					return NextResponse.json(
-						{ error: `无效的token: ${error?.message}` },
+						{ error: `无效的token: ${e?.message}` },
 						{ status: 401 }
 					);
 				}
@@ -90,6 +118,13 @@ export async function POST(request: NextRequest) {
 
 			return NextResponse.json(
 				{ error: '无效的token' },
+				{ status: 401 }
+			);
+		}
+
+		if (!payload || !payload.userId) {
+			return NextResponse.json(
+				{ error: '无效的token：缺少用户信息' },
 				{ status: 401 }
 			);
 		}

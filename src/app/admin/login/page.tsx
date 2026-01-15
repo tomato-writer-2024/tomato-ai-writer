@@ -59,7 +59,10 @@ export default function AdminLoginPage() {
 		setDebugInfo([]);
 
 		try {
-			addDebugInfo('开始登录流程');
+			// 动态导入增强登录模块
+			const { enhancedLogin } = await import('@/lib/enhanced-login');
+
+			addDebugInfo('使用增强登录流程');
 			addDebugInfo(`浏览器: ${browserInfo?.name} ${browserInfo?.version}`);
 
 			// 检查localStorage
@@ -68,85 +71,20 @@ export default function AdminLoginPage() {
 			}
 			addDebugInfo('localStorage可用');
 
-			// 调用登录API
-			addDebugInfo('调用登录API: /api/auth/login');
-			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(formData),
-				credentials: 'include', // 包含Cookie
+			// 使用增强登录（支持多重Token传输）
+			const result = await enhancedLogin({
+				email: formData.email,
+				password: formData.password,
+				useMultiToken: true,
+				maxRetries: 3,
+				onDebug: addDebugInfo,
 			});
 
-			addDebugInfo(`登录API响应状态: ${response.status}`);
-
-			const data = await response.json();
-			addDebugInfo(`登录API响应数据: ${JSON.stringify(data)}`);
-
-			if (!response.ok) {
-				throw new Error(data.error || '登录失败');
+			if (!result.success) {
+				throw new Error(result.error || '登录失败');
 			}
 
-			addDebugInfo('登录成功，获取到token');
-
-			// 调试：检查token
-			console.log('[登录调试] 登录API返回数据:', data);
-			console.log('[登录调试] data.token存在:', !!data.token);
-			console.log('[登录调试] data.token类型:', typeof data.token);
-			console.log('[登录调试] data.token长度:', data.token?.length);
-			console.log('[登录调试] data.token前20字符:', data.token?.substring(0, 20));
-
-			addDebugInfo(`Token存在: ${!!data.token}`);
-			addDebugInfo(`Token类型: ${typeof data.token}`);
-			addDebugInfo(`Token长度: ${data.token?.length}`);
-
-			// 验证是否为超级管理员
-			addDebugInfo('验证超级管理员权限: /api/admin/superadmin/verify');
-
-			const authHeader = `Bearer ${data.token}`;
-			console.log('[登录调试] Authorization header:', authHeader.substring(0, 50) + '...');
-
-			const verifyResponse = await fetch('/api/admin/superadmin/verify', {
-				method: 'POST',
-				headers: {
-					'Authorization': authHeader,
-				},
-				credentials: 'include', // 包含Cookie
-			});
-
-			addDebugInfo(`验证API响应状态: ${verifyResponse.status}`);
-
-			const verifyData = await verifyResponse.json();
-			addDebugInfo(`验证API响应数据: ${JSON.stringify(verifyData)}`);
-
-			if (!verifyResponse.ok || !verifyData.success) {
-				throw new Error('您没有权限访问后台管理系统');
-			}
-
-			addDebugInfo('超级管理员验证通过');
-
-			// 保存token到localStorage
-			try {
-				const savedToken = safeLocalStorageSet('admin_token', data.token);
-				const savedInfo = safeLocalStorageSet('admin_info', JSON.stringify(verifyData.admin));
-
-				if (!savedToken || !savedInfo) {
-					throw new Error('无法保存登录信息到本地存储');
-				}
-
-				addDebugInfo('Token已保存到localStorage');
-
-				// 验证保存成功
-				const verifyToken = safeLocalStorageGet('admin_token');
-				if (!verifyToken) {
-					throw new Error('保存后无法读取token');
-				}
-				addDebugInfo('Token保存验证成功');
-			} catch (storageError) {
-				addDebugInfo(`保存到localStorage失败: ${storageError}`);
-				throw new Error('无法保存登录信息，请检查浏览器设置或关闭隐私模式');
-			}
+			addDebugInfo('✅ 登录成功');
 
 			// 跳转到管理后台
 			addDebugInfo('准备跳转到管理后台');
@@ -272,6 +210,223 @@ export default function AdminLoginPage() {
 							{loading ? '登录中...' : '登录'}
 						</button>
 					</form>
+
+					{/* 自动登录脚本区域 */}
+					<div className="mt-6 pt-6 border-t border-white/10">
+						{/* 一键登录按钮（推荐360浏览器使用） */}
+						<button
+							onClick={async () => {
+								if (!formData.email || !formData.password) {
+									alert('请先输入邮箱和密码');
+									return;
+								}
+
+								try {
+									// 直接执行原生登录逻辑，不依赖模块导入
+									console.log('=== 开始一键登录 ===');
+									console.log('邮箱:', formData.email);
+
+									// 1. 调用登录API
+									console.log('步骤1: 调用登录API...');
+									const loginResp = await fetch('/api/auth/login', {
+										method: 'POST',
+										headers: { 'Content-Type': 'application/json' },
+										body: JSON.stringify({
+											email: formData.email,
+											password: formData.password
+										}),
+										credentials: 'include'
+									});
+
+									const loginData = await loginResp.json();
+									console.log('登录API响应:', loginData);
+
+									if (!loginData.success) {
+										throw new Error('登录失败: ' + (loginData.error || '未知错误'));
+									}
+
+									const token = loginData.data.token;
+									console.log('✅ Token获取成功，长度:', token.length);
+
+									// 2. 验证超级管理员权限（尝试多种方式）
+									console.log('步骤2: 验证超级管理员权限...');
+
+									let verifySuccess = false;
+									let verifyData: any = null;
+									let verifyError: string = '';
+
+									// 方式1: Authorization header
+									try {
+										console.log('尝试方式1: Authorization header');
+										const resp1 = await fetch('/api/admin/superadmin/verify', {
+											method: 'POST',
+											headers: {
+												'Authorization': 'Bearer ' + token,
+												'Content-Type': 'application/json'
+											},
+											credentials: 'include'
+										});
+										const data1 = await resp1.json();
+										console.log('方式1响应:', data1);
+										if (data1.success) {
+											verifySuccess = true;
+											verifyData = data1;
+											console.log('✅ 方式1验证成功');
+										} else {
+											verifyError = data1.error || '未知错误';
+											console.log('❌ 方式1失败:', verifyError);
+										}
+									} catch (e: any) {
+										console.log('❌ 方式1异常:', e.message);
+										verifyError = e.message;
+									}
+
+									// 方式2: X-Auth-Token header
+									if (!verifySuccess) {
+										try {
+											console.log('尝试方式2: X-Auth-Token header');
+											const resp2 = await fetch('/api/admin/superadmin/verify', {
+												method: 'POST',
+												headers: {
+													'X-Auth-Token': token,
+													'Content-Type': 'application/json'
+												},
+												credentials: 'include'
+											});
+											const data2 = await resp2.json();
+											console.log('方式2响应:', data2);
+											if (data2.success) {
+												verifySuccess = true;
+												verifyData = data2;
+												console.log('✅ 方式2验证成功');
+											} else {
+												verifyError = data2.error || '未知错误';
+												console.log('❌ 方式2失败:', verifyError);
+											}
+										} catch (e: any) {
+											console.log('❌ 方式2异常:', e.message);
+											verifyError = e.message;
+										}
+									}
+
+									// 方式3: body参数
+									if (!verifySuccess) {
+										try {
+											console.log('尝试方式3: body参数');
+											const resp3 = await fetch('/api/admin/superadmin/verify', {
+												method: 'POST',
+												headers: {
+													'Content-Type': 'application/json'
+												},
+												credentials: 'include',
+												body: JSON.stringify({ token })
+											});
+											const data3 = await resp3.json();
+											console.log('方式3响应:', data3);
+											if (data3.success) {
+												verifySuccess = true;
+												verifyData = data3;
+												console.log('✅ 方式3验证成功');
+											} else {
+												verifyError = data3.error || '未知错误';
+												console.log('❌ 方式3失败:', verifyError);
+											}
+										} catch (e: any) {
+											console.log('❌ 方式3异常:', e.message);
+											verifyError = e.message;
+										}
+									}
+
+									if (!verifySuccess) {
+										throw new Error('所有验证方式均失败: ' + verifyError);
+									}
+
+									console.log('✅ 超级管理员验证通过');
+
+									// 3. 保存token
+									console.log('步骤3: 保存token...');
+									try {
+										localStorage.setItem('admin_token', token);
+										localStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+										sessionStorage.setItem('admin_token', token);
+										sessionStorage.setItem('admin_info', JSON.stringify(verifyData.admin));
+										console.log('✅ Token已保存到本地存储');
+									} catch (e: any) {
+										console.warn('保存到本地存储失败:', e.message);
+									}
+
+									// 4. 跳转
+									console.log('步骤4: 跳转到管理后台...');
+									setTimeout(() => {
+										router.push('/admin/dashboard');
+									}, 500);
+
+								} catch (e: any) {
+									console.error('❌ 一键登录失败:', e);
+									alert('登录失败: ' + e.message + '\n\n请查看控制台了解详细信息');
+								}
+							}}
+							disabled={loading}
+							className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all mb-3"
+						>
+							🚀 一键登录（360浏览器专用）
+						</button>
+
+						<button
+							onClick={() => {
+								if (!formData.email || !formData.password) {
+									alert('请先输入邮箱和密码');
+									return;
+								}
+								try {
+									const { generateAutoLoginScript } = require('@/lib/enhanced-login');
+									const script = generateAutoLoginScript(formData.email, formData.password);
+									// 创建一个模态框显示脚本
+									const modal = document.createElement('div');
+									modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+									modal.innerHTML = `
+										<div class="bg-slate-900 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-auto border border-white/20">
+											<div class="flex justify-between items-center mb-4">
+												<h3 class="text-xl font-bold text-white">自动登录脚本</h3>
+												<button id="closeModal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+											</div>
+											<div class="bg-black/50 rounded-lg p-4 mb-4 text-xs text-green-400 font-mono overflow-auto max-h-[300px]">
+												${script.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+											</div>
+											<div class="space-y-2 text-sm text-gray-300">
+												<p><strong>使用说明：</strong></p>
+												<p>1. 复制上面的脚本</p>
+												<p>2. 按 <kbd class="bg-white/20 px-2 py-1 rounded">F12</kbd> 打开浏览器控制台</p>
+												<p>3. 粘贴脚本并按 <kbd class="bg-white/20 px-2 py-1 rounded">Enter</kbd> 执行</p>
+												<p>4. 自动登录成功后会跳转到管理后台</p>
+												<p class="text-yellow-400 mt-2">提示：此脚本适用于所有浏览器，包括360、QQ等</p>
+											</div>
+											<button id="copyScript" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">
+												复制脚本
+											</button>
+										</div>
+									`;
+									document.body.appendChild(modal);
+
+									modal.querySelector('#closeModal')?.addEventListener('click', () => {
+										modal.remove();
+									});
+									modal.addEventListener('click', (e) => {
+										if (e.target === modal) modal.remove();
+									});
+									modal.querySelector('#copyScript')?.addEventListener('click', () => {
+										navigator.clipboard.writeText(script);
+										alert('脚本已复制到剪贴板！');
+									});
+								} catch (e) {
+									alert('生成脚本失败：' + e);
+								}
+							}}
+							className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-2 rounded-lg font-medium hover:from-green-600 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all text-sm"
+						>
+							📝 生成自动登录脚本（适用于所有浏览器）
+						</button>
+					</div>
 
 					<div className="mt-6 pt-6 border-t border-white/10">
 						<div className="text-center text-sm text-gray-400 space-y-2">

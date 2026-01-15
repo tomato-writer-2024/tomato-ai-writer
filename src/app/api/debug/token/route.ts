@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// 解码 token（不验证签名）
-		const decoded = jwt.decode(token);
+		const decoded = jwt.decode(token) as jwt.JwtPayload | null;
 		const now = Math.floor(Date.now() / 1000);
 
 		// 验证 token
@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
 				length: token.length,
 				parts: token.split('.').length,
 			},
-			decoded: {
+			decoded: decoded ? {
 				...decoded,
-				remainingTime: decoded?.exp ? decoded.exp - now : null,
-				isExpired: decoded?.exp ? decoded.exp < now : null,
-			},
+				remainingTime: decoded.exp ? decoded.exp - now : null,
+				isExpired: decoded.exp ? decoded.exp < now : null,
+			} : null,
 			verifyResult,
 			verifyError,
 			ourVerifyResult,

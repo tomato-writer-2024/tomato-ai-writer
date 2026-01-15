@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄AI - 连接诊断</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        h1 { color: #1e293b; margin-bottom: 8px; }
+        .subtitle { color: #64748b; margin-bottom: 24px; }
+        .section {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .section h3 { color: #1e293b; margin-bottom: 12px; font-size: 16px; }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-item:last-child { border-bottom: none; }
+        .label { color: #64748b; font-size: 14px; }
+        .value { color: #1e293b; font-weight: 500; font-size: 14px; }
+        .value.success { color: #16a34a; }
+        .value.error { color: #dc2626; }
+        .value.warning { color: #ea580c; }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #2563eb; }
+        .btn.primary { background: #8b5cf6; }
+        .btn.primary:hover { background: #7c3aed; }
+        .url-box {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        .code {
+            background: #1e293b;
+            color: #86efac;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔍 连接诊断</h1>
+            <p class="subtitle">检查您的网络连接和访问方式</p>
+
+            <div class="section">
+                <h3>当前连接信息</h3>
+                <div class="info-item">
+                    <span class="label">当前页面URL</span>
+                    <span class="value" id="currentUrl">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">协议</span>
+                    <span class="value" id="protocol">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">主机名</span>
+                    <span class="value" id="hostname">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">端口</span>
+                    <span class="value" id="port">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">浏览器</span>
+                    <span class="value" id="browser">-</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📱 可用的登录方式</h3>
+
+                <div style="margin-bottom: 20px;">
+                    <p class="label" style="margin-bottom: 8px;">方式1: 纯原生登录页面（推荐）</p>
+                    <div class="url-box" id="standaloneUrl">-</div>
+                    <a href="/standalone-login.html" class="btn primary" onclick="testUrl(event, '/standalone-login.html')">🚀 立即访问</a>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p class="label" style="margin-bottom: 8px;">方式2: 标准登录页面</p>
+                    <div class="url-box" id="adminLoginUrl">-</div>
+                    <a href="/admin/login" class="btn" onclick="testUrl(event, '/admin/login')">📝 访问</a>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <p class="label" style="margin-bottom: 8px;">方式3: 首页</p>
+                    <div class="url-box" id="homeUrl">-</div>
+                    <a href="/" class="btn" onclick="testUrl(event, '/')">🏠 访问</a>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>⚠️ 常见问题</h3>
+
+                <div style="margin-bottom: 16px;">
+                    <p class="label" style="margin-bottom: 4px;">问题: 访问时显示404错误</p>
+                    <p style="font-size: 13px; color: #64748b;">解决: 确保使用正确的URL，区分HTTP和HTTPS</p>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <p class="label" style="margin-bottom: 4px;">问题: 无法连接服务器</p>
+                    <p style="font-size: 13px; color: #64748b;">解决: 检查网络连接，确保服务器正在运行（端口5000）</p>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <p class="label" style="margin-bottom: 4px;">问题: 页面显示空白</p>
+                    <p style="font-size: 13px; color: #64748b;">解决: 清除浏览器缓存，或使用无痕模式重试</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🔧 手动诊断</h3>
+                <p class="label" style="margin-bottom: 8px;">在浏览器控制台中运行以下命令：</p>
+                <div class="code">
+// 检查当前URL
+console.log('当前URL:', window.location.href);
+
+// 测试API连接
+fetch('/api/auth/health', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+})
+.then(r => r.json())
+.then(data => console.log('API响应:', data))
+.catch(e => console.error('API错误:', e));
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取当前URL信息
+        const url = new URL(window.location.href);
+        document.getElementById('currentUrl').textContent = url.href;
+        document.getElementById('protocol').textContent = url.protocol;
+        document.getElementById('hostname').textContent = url.hostname;
+        document.getElementById('port').textContent = url.port || (url.protocol === 'https:' ? '443' : '80');
+
+        // 检测浏览器
+        const ua = navigator.userAgent;
+        let browser = '未知浏览器';
+        if (/Edg/i.test(ua)) browser = 'Microsoft Edge';
+        else if (/Chrome/i.test(ua) && !/Edg|OPR/i.test(ua)) browser = 'Chrome';
+        else if (/Firefox/i.test(ua)) browser = 'Firefox';
+        else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+        else if (/360SE|360EE/i.test(ua)) browser = '360浏览器';
+        else if (/QQBrowser/i.test(ua)) browser = 'QQ浏览器';
+        document.getElementById('browser').textContent = browser;
+
+        // 生成URL
+        const baseUrl = url.origin;
+        document.getElementById('standaloneUrl').textContent = baseUrl + '/standalone-login.html';
+        document.getElementById('adminLoginUrl').textContent = baseUrl + '/admin/login';
+        document.getElementById('homeUrl').textContent = baseUrl + '/';
+
+        // 测试URL
+        async function testUrl(event, path) {
+            event.preventDefault();
+            const url = window.location.origin + path;
+            console.log('测试访问:', url);
+
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                console.log('响应状态:', response.status);
+
+                if (response.ok) {
+                    alert(`✅ ${path} 可正常访问，即将跳转...`);
+                    window.location.href = url;
+                } else {
+                    alert(`❌ ${path} 返回错误: ${response.status} ${response.statusText}\n\n请检查URL是否正确`);
+                }
+            } catch (error) {
+                alert(`❌ 无法连接到 ${path}\n\n错误: ${error.message}\n\n请检查网络连接`);
+            }
+        }
+    </script>
+</body>
+</html>
