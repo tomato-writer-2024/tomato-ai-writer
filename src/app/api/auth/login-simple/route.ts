@@ -96,17 +96,58 @@ async function handler(request: NextRequest) {
 
       // 生成token
       console.log(`[${requestId}] 正在生成token...`);
-      const accessToken = generateAccessToken({
+
+      const tokenPayload = {
         userId: user.id,
         email: user.email,
         role: user.role,
         membershipLevel: user.membership_level,
-      });
+      };
+
+      console.log(`[${requestId}] Token payload:`, tokenPayload);
+
+      const accessToken = generateAccessToken(tokenPayload);
 
       const refreshToken = generateRefreshToken({
         userId: user.id,
         email: user.email,
       });
+
+      // 解码token并检查有效期
+      try {
+        const jwt = require('jsonwebtoken');
+        const decodedAccess = jwt.decode(accessToken);
+        const decodedRefresh = jwt.decode(refreshToken);
+
+        console.log(`[${requestId}] Access Token解码结果:`, {
+          userId: decodedAccess?.userId,
+          email: decodedAccess?.email,
+          role: decodedAccess?.role,
+          iat: decodedAccess?.iat,
+          exp: decodedAccess?.exp,
+          expiresIn: decodedAccess?.exp ? decodedAccess.exp - decodedAccess.iat : 'undefined',
+        });
+
+        if (decodedAccess?.iat && decodedAccess?.exp) {
+          const expiresIn = decodedAccess.exp - decodedAccess.iat;
+          if (expiresIn === 0) {
+            console.error(`[${requestId}] ❌ 错误：Access token立即过期（iat=exp=`, decodedAccess.iat, `）`);
+          } else if (expiresIn === 604800) {
+            console.log(`[${requestId}] ✅ Access token有效期正确：7天（`, expiresIn, `秒）`);
+          } else {
+            console.warn(`[${requestId}] ⚠️ Access token有效期异常：`, expiresIn, `秒`);
+          }
+        }
+
+        console.log(`[${requestId}] Refresh Token解码结果:`, {
+          userId: decodedRefresh?.userId,
+          iat: decodedRefresh?.iat,
+          exp: decodedRefresh?.exp,
+          expiresIn: decodedRefresh?.exp ? decodedRefresh.exp - decodedRefresh.iat : 'undefined',
+        });
+      } catch (e) {
+        console.error(`[${requestId}] Token解码失败:`, e);
+      }
 
       console.log(`[${requestId}] Token生成成功`);
 
