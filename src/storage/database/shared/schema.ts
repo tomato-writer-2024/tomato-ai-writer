@@ -1035,3 +1035,76 @@ export const insertNotificationSchema = z.object({
 
 export const updateNotificationSchema = insertNotificationSchema.partial();
 
+// ============================================================================
+// 私信对话表
+// ============================================================================
+
+export const privateMessageConversations = pgTable("private_message_conversations", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	user1Id: varchar("user1_id", { length: 36 }).notNull(), // 用户1的ID
+	user2Id: varchar("user2_id", { length: 36 }).notNull(), // 用户2的ID
+	lastMessageId: varchar("last_message_id", { length: 36 }), // 最后一条消息的ID
+	lastMessageAt: timestamp("last_message_at", { withTimezone: true, mode: 'string' }), // 最后一条消息的时间
+	user1UnreadCount: integer("user1_unread_count").default(0).notNull(), // 用户1的未读消息数
+	user2UnreadCount: integer("user2_unread_count").default(0).notNull(), // 用户2的未读消息数
+	user1Deleted: boolean("user1_deleted").default(false).notNull(), // 用户1是否删除对话
+	user2Deleted: boolean("user2_deleted").default(false).notNull(), // 用户2是否删除对话
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("pm_conversations_user1_id_idx").using("btree", table.user1Id.asc().nullsLast().op("text_ops")),
+	index("pm_conversations_user2_id_idx").using("btree", table.user2Id.asc().nullsLast().op("text_ops")),
+	index("pm_conversations_last_message_at_idx").using("btree", table.lastMessageAt.desc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 私信消息表
+// ============================================================================
+
+export const privateMessages = pgTable("private_messages", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	conversationId: varchar("conversation_id", { length: 36 }).notNull(), // 对话ID
+	senderId: varchar("sender_id", { length: 36 }).notNull(), // 发送者ID
+	receiverId: varchar("receiver_id", { length: 36 }).notNull(), // 接收者ID
+	content: text("content").notNull(), // 消息内容
+	isRead: boolean("is_read").default(false).notNull(), // 是否已读
+	readAt: timestamp("read_at", { withTimezone: true, mode: 'string' }), // 阅读时间
+	senderDeleted: boolean("sender_deleted").default(false).notNull(), // 发送者是否删除
+	receiverDeleted: boolean("receiver_deleted").default(false).notNull(), // 接收者是否删除
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("private_messages_conversation_id_idx").using("btree", table.conversationId.asc().nullsLast().op("text_ops")),
+	index("private_messages_sender_id_idx").using("btree", table.senderId.asc().nullsLast().op("text_ops")),
+	index("private_messages_receiver_id_idx").using("btree", table.receiverId.asc().nullsLast().op("text_ops")),
+	index("private_messages_is_read_idx").using("btree", table.isRead.asc().nullsLast().op("bool_ops")),
+	index("private_messages_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 私信消息Schema Types
+// ============================================================================
+
+export type PrivateMessageConversation = typeof privateMessageConversations.$inferSelect;
+export type InsertPrivateMessageConversation = typeof privateMessageConversations.$inferInsert;
+export type UpdatePrivateMessageConversation = Partial<InsertPrivateMessageConversation>;
+
+export const insertPrivateMessageConversationSchema = z.object({
+	user1Id: z.string(),
+	user2Id: z.string(),
+});
+
+export const updatePrivateMessageConversationSchema = insertPrivateMessageConversationSchema.partial();
+
+export type PrivateMessage = typeof privateMessages.$inferSelect;
+export type InsertPrivateMessage = typeof privateMessages.$inferInsert;
+export type UpdatePrivateMessage = Partial<InsertPrivateMessage>;
+
+export const insertPrivateMessageSchema = z.object({
+	conversationId: z.string(),
+	senderId: z.string(),
+	receiverId: z.string(),
+	content: z.string(),
+});
+
+export const updatePrivateMessageSchema = insertPrivateMessageSchema.partial();
+

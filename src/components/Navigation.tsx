@@ -17,6 +17,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: '工作台', href: '/workspace', icon: <LayoutGrid size={20} /> },
   { label: '我的作品', href: '/works', icon: <FileText size={20} /> },
+  { label: '社区', href: '/community', icon: <LayoutGrid size={20} /> },
   { label: '数据统计', href: '/stats', icon: <BarChart3 size={20} /> },
   { label: '个人中心', href: '/profile', icon: <User size={20} /> },
 ];

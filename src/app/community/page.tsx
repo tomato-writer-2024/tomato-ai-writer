@@ -19,6 +19,7 @@ import {
 	Clock,
 	Users,
 	BookOpen,
+	Mail,
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 
@@ -130,14 +131,24 @@ export default function CommunityPage() {
 							<MessageCircle className="h-8 w-8 text-[#FF4757]" />
 							<h1 className="text-2xl font-bold text-gray-900 dark:text-white">创作社区</h1>
 						</div>
-						{user && (
-							<Link href="/community/new">
-								<Button className="bg-[#FF4757] hover:bg-[#FF6B81]">
-									<Plus className="h-4 w-4 mr-2" />
-									发布帖子
-								</Button>
-							</Link>
-						)}
+						<div className="flex items-center gap-3">
+							{user && (
+								<>
+									<Link href="/community/messages">
+										<Button variant="secondary">
+											<Mail className="h-4 w-4 mr-2" />
+											私信
+										</Button>
+									</Link>
+									<Link href="/community/new">
+										<Button className="bg-[#FF4757] hover:bg-[#FF6B81]">
+											<Plus className="h-4 w-4 mr-2" />
+											发布帖子
+										</Button>
+									</Link>
+								</>
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
