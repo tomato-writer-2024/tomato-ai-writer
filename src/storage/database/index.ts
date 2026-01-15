@@ -9,6 +9,8 @@ export { membershipOrderManager } from './membershipOrderManager';
 export { usageLogManager } from './usageLogManager';
 export { securityLogManager } from './securityLogManager';
 export { authManager } from './authManager';
+export { notificationManager } from './notificationManager';
+export { communityManager } from './communityManager';
 
 // ============================================================================
 // Mock Manager 导出

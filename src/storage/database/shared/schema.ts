@@ -428,6 +428,91 @@ export const satisfactionAnalysis = pgTable("satisfaction_analysis", {
 // 风格分析表
 // ============================================================================
 
+// ============================================================================
+// 帖子表
+// ============================================================================
+
+export const posts = pgTable("posts", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	title: varchar("title", { length: 255 }).notNull(),
+	content: text("content").notNull(),
+	category: varchar("category", { length: 50 }).notNull(), // 经验分享, 创作讨论, 求助问答, 资源分享
+	tags: jsonb("tags").default([]).notNull(), // 标签列表
+	viewCount: integer("view_count").default(0).notNull(), // 浏览量
+	likeCount: integer("like_count").default(0).notNull(), // 点赞数
+	commentCount: integer("comment_count").default(0).notNull(), // 评论数
+	isPinned: boolean("is_pinned").default(false).notNull(), // 是否置顶
+	isLocked: boolean("is_locked").default(false).notNull(), // 是否锁定
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isDeleted: boolean("is_deleted").default(false).notNull(),
+}, (table) => [
+	index("posts_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("posts_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
+	index("posts_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 帖子点赞表
+// ============================================================================
+
+export const postLikes = pgTable("post_likes", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	postId: varchar("post_id", { length: 36 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("post_likes_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("post_likes_post_id_idx").using("btree", table.postId.asc().nullsLast().op("text_ops")),
+	unique("post_likes_user_post_unique").on(table.userId, table.postId),
+]);
+
+// ============================================================================
+// 帖子评论表
+// ============================================================================
+
+export const postComments = pgTable("post_comments", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	postId: varchar("post_id", { length: 36 }).notNull(),
+	parentId: varchar("parent_id", { length: 36 }), // 父评论ID（用于回复）
+	content: text("content").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	isDeleted: boolean("is_deleted").default(false).notNull(),
+}, (table) => [
+	index("post_comments_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("post_comments_post_id_idx").using("btree", table.postId.asc().nullsLast().op("text_ops")),
+	index("post_comments_parent_id_idx").using("btree", table.parentId.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 通知表
+// ============================================================================
+
+export const notifications = pgTable("notifications", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	type: varchar("type", { length: 50 }).notNull(), // order, membership, system, community
+	title: varchar("title", { length: 255 }).notNull(),
+	content: text("content").notNull(),
+	link: varchar("link", { length: 500 }),
+	isRead: boolean("is_read").default(false).notNull(),
+	metadata: jsonb("metadata"), // 额外数据（如订单ID、操作类型等）
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	readAt: timestamp("read_at", { withTimezone: true, mode: 'string' }),
+}, (table) => [
+	index("notifications_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("notifications_type_idx").using("btree", table.type.asc().nullsLast().op("text_ops")),
+	index("notifications_is_read_idx").using("btree", table.isRead.asc().nullsLast().op("bool_ops")),
+	index("notifications_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+]);
+
+// ============================================================================
+// 风格分析表
+// ============================================================================
+
 export const styleAnalysis = pgTable("style_analysis", {
 	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
 	userId: varchar("user_id", { length: 36 }).notNull(),
@@ -780,4 +865,58 @@ export type InsertUsageLog = z.infer<typeof insertUsageLogSchema>;
 
 export type SecurityLog = typeof securityLogs.$inferSelect;
 export type InsertSecurityLog = z.infer<typeof insertSecurityLogSchema>;
+
+// ============================================================================
+// Posts Schema Types
+// ============================================================================
+
+export type Post = typeof posts.$inferSelect;
+export type InsertPost = typeof posts.$inferInsert;
+export type UpdatePost = Partial<InsertPost>;
+
+export const insertPostSchema = z.object({
+	userId: z.string(),
+	title: z.string(),
+	content: z.string(),
+	category: z.string(),
+	tags: z.array(z.any()).default([]),
+});
+
+export const updatePostSchema = insertPostSchema.partial();
+export const insertPostLikesSchema = z.object({
+	userId: z.string(),
+	postId: z.string(),
+});
+
+export const insertPostCommentsSchema = z.object({
+	userId: z.string(),
+	postId: z.string(),
+	parentId: z.string().optional(),
+	content: z.string(),
+});
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type InsertPostLike = typeof postLikes.$inferInsert;
+
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = typeof postComments.$inferInsert;
+
+// ============================================================================
+// Notifications Schema Types
+// ============================================================================
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+export type UpdateNotification = Partial<InsertNotification>;
+
+export const insertNotificationSchema = z.object({
+	userId: z.string(),
+	type: z.string(),
+	title: z.string(),
+	content: z.string(),
+	link: z.string().optional(),
+	metadata: z.any().optional(),
+});
+
+export const updateNotificationSchema = insertNotificationSchema.partial();
 
