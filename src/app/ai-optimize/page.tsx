@@ -36,6 +36,14 @@ interface QualityResult {
 	suggestions: string[];
 	estimatedCompletionRate: number;
 	shuangdianCount: number;
+	// 5维度评分
+	dimensionScores: {
+		lengthScore: number;
+		repetitionScore: number;
+		coherenceScore: number;
+		styleScore: number;
+		safetyScore: number;
+	};
 }
 
 interface Template {
@@ -74,6 +82,11 @@ export default function AIOptimizePage() {
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 	const [templateParams, setTemplateParams] = useState<Record<string, any>>({});
+
+	// 自定义模板相关
+	const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+	const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+	const [newTemplate, setNewTemplate] = useState<Partial<Template>>({});
 
 	useEffect(() => {
 		fetchUser();
@@ -228,6 +241,86 @@ export default function AIOptimizePage() {
 			alert('生成失败，请重试');
 		} finally {
 			setIsGenerating(false);
+		}
+	};
+
+	const handleCreateTemplate = async () => {
+		if (!newTemplate.name || !newTemplate.prompt) {
+			alert('请填写模板名称和提示词');
+			return;
+		}
+
+		try {
+			const response = await fetch('/api/community/templates', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(newTemplate),
+			});
+
+			const data = await response.json();
+			if (data.success) {
+				alert('模板创建成功');
+				setShowCreateTemplate(false);
+				setNewTemplate({});
+				fetchTemplates();
+			} else {
+				alert(data.error || '创建失败');
+			}
+		} catch (error) {
+			console.error('创建模板失败:', error);
+			alert('创建模板失败');
+		}
+	};
+
+	const handleUpdateTemplate = async () => {
+		if (!editingTemplate || !editingTemplate.name || !editingTemplate.prompt) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/community/templates/${editingTemplate.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(editingTemplate),
+			});
+
+			const data = await response.json();
+			if (data.success) {
+				alert('模板更新成功');
+				setEditingTemplate(null);
+				fetchTemplates();
+			} else {
+				alert(data.error || '更新失败');
+			}
+		} catch (error) {
+			console.error('更新模板失败:', error);
+			alert('更新模板失败');
+		}
+	};
+
+	const handleDeleteTemplate = async (templateId: string) => {
+		if (!confirm('确定删除这个模板吗？')) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/community/templates/${templateId}`, {
+				method: 'DELETE',
+			});
+
+			const data = await response.json();
+			if (data.success) {
+				alert('模板删除成功');
+				if (selectedTemplate?.id === templateId) {
+					setSelectedTemplate(null);
+				}
+				fetchTemplates();
+			} else {
+				alert(data.error || '删除失败');
+			}
+		} catch (error) {
+			console.error('删除模板失败:', error);
+			alert('删除模板失败');
 		}
 	};
 
@@ -432,25 +525,25 @@ export default function AIOptimizePage() {
 							</Card>
 
 							{qualityResult && (
-								<div className="grid gap-6 md:grid-cols-2">
-									{/* 质量评分 */}
+								<div className="space-y-6">
+									{/* 综合质量评分 */}
 									<Card>
 										<CardHeader>
 											<CardTitle className="flex items-center gap-2">
 												<Target className="h-5 w-5 text-[#FF4757]" />
-												质量评分
+												综合质量评分
 											</CardTitle>
 										</CardHeader>
 										<CardBody>
-											<div className="text-center">
+											<div className="text-center mb-6">
 												<div className="text-6xl font-bold text-[#FF4757] mb-2">
 													{qualityResult.score}
 												</div>
 												<div className="text-gray-600 dark:text-gray-300">
-													质量评分
+													{qualityResult.score >= 90 ? '优秀' : qualityResult.score >= 80 ? '良好' : qualityResult.score >= 70 ? '一般' : '需要改进'}
 												</div>
 											</div>
-											<div className="grid grid-cols-2 gap-4 mt-6">
+											<div className="grid grid-cols-2 gap-4">
 												<div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
 													<div className="text-2xl font-bold text-[#FF4757]">
 														{qualityResult.estimatedCompletionRate}%
@@ -470,6 +563,106 @@ export default function AIOptimizePage() {
 											</div>
 										</CardBody>
 									</Card>
+
+									{/* 5维度评分 */}
+									{qualityResult.dimensionScores && (
+										<Card>
+											<CardHeader>
+												<CardTitle className="flex items-center gap-2">
+													<TrendingUp className="h-5 w-5 text-[#FF4757]" />
+													5维度详细评分
+												</CardTitle>
+											</CardHeader>
+											<CardBody>
+												<div className="grid gap-4">
+													{/* 长度评分 */}
+													<div>
+														<div className="flex items-center justify-between mb-2">
+															<span className="font-medium">长度适中</span>
+															<span className="text-[#FF4757] font-bold">{qualityResult.dimensionScores.lengthScore}/100</span>
+														</div>
+														<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-gradient-to-r from-[#FF4757] to-[#FF6B81] transition-all"
+																style={{ width: `${qualityResult.dimensionScores.lengthScore}%` }}
+															/>
+														</div>
+														<p className="text-xs text-gray-500 mt-1">
+															内容长度是否适合当前章节，建议500-2000字
+														</p>
+													</div>
+
+													{/* 重复度评分 */}
+													<div>
+														<div className="flex items-center justify-between mb-2">
+															<span className="font-medium">内容原创性</span>
+															<span className="text-[#FF4757] font-bold">{qualityResult.dimensionScores.repetitionScore}/100</span>
+														</div>
+														<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] transition-all"
+																style={{ width: `${qualityResult.dimensionScores.repetitionScore}%` }}
+															/>
+														</div>
+														<p className="text-xs text-gray-500 mt-1">
+															检测重复内容，确保原创性
+														</p>
+													</div>
+
+													{/* 连贯性评分 */}
+													<div>
+														<div className="flex items-center justify-between mb-2">
+															<span className="font-medium">段落连贯</span>
+															<span className="text-[#FF4757] font-bold">{qualityResult.dimensionScores.coherenceScore}/100</span>
+														</div>
+														<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-gradient-to-r from-[#06B6D4] to-[#3B82F6] transition-all"
+																style={{ width: `${qualityResult.dimensionScores.coherenceScore}%` }}
+															/>
+														</div>
+														<p className="text-xs text-gray-500 mt-1">
+															段落间的衔接和流畅度
+														</p>
+													</div>
+
+													{/* 风格评分 */}
+													<div>
+														<div className="flex items-center justify-between mb-2">
+															<span className="font-medium">题材匹配</span>
+															<span className="text-[#FF4757] font-bold">{qualityResult.dimensionScores.styleScore}/100</span>
+														</div>
+														<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-gradient-to-r from-[#F59E0B] to-[#F97316] transition-all"
+																style={{ width: `${qualityResult.dimensionScores.styleScore}%` }}
+															/>
+														</div>
+														<p className="text-xs text-gray-500 mt-1">
+															文风与目标题材的匹配度
+														</p>
+													</div>
+
+													{/* 安全性评分 */}
+													<div>
+														<div className="flex items-center justify-between mb-2">
+															<span className="font-medium">内容安全</span>
+															<span className="text-[#FF4757] font-bold">{qualityResult.dimensionScores.safetyScore}/100</span>
+														</div>
+														<div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-gradient-to-r from-[#10B981] to-[#059669] transition-all"
+																style={{ width: `${qualityResult.dimensionScores.safetyScore}%` }}
+															/>
+														</div>
+														<p className="text-xs text-gray-500 mt-1">
+															敏感词检测，确保内容安全合规
+														</p>
+													</div>
+												</div>
+											</CardBody>
+										</Card>
+									)}
 
 									{/* 问题和建议 */}
 									<Card>
@@ -533,116 +726,264 @@ export default function AIOptimizePage() {
 
 					{/* 模板管理 */}
 					<TabsContent value="templates" className="mt-6">
-						<div className="grid gap-6 md:grid-cols-3">
-							{/* 模板列表 */}
-							<Card className="md:col-span-1">
+						{showCreateTemplate || editingTemplate ? (
+							/* 创建/编辑模板 */
+							<Card>
 								<CardHeader>
-									<CardTitle>写作模板</CardTitle>
+									<CardTitle>{editingTemplate ? '编辑模板' : '创建自定义模板'}</CardTitle>
 								</CardHeader>
-								<CardBody className="space-y-2 max-h-[600px] overflow-y-auto">
-									{templates.map((template) => (
+								<CardBody className="space-y-4">
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											模板名称 <span className="text-red-500">*</span>
+										</label>
+										<Input
+											value={editingTemplate?.name || newTemplate.name || ''}
+											onChange={(e) =>
+												editingTemplate
+													? setEditingTemplate({ ...editingTemplate, name: e.target.value })
+													: setNewTemplate({ ...newTemplate, name: e.target.value })
+											}
+											placeholder="例如：我的章节开篇模板"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											分类 <span className="text-red-500">*</span>
+										</label>
+										<Input
+											value={editingTemplate?.category || newTemplate.category || ''}
+											onChange={(e) =>
+												editingTemplate
+													? setEditingTemplate({ ...editingTemplate, category: e.target.value })
+													: setNewTemplate({ ...newTemplate, category: e.target.value })
+											}
+											placeholder="例如：章节开篇"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-2">题材</label>
+										<Input
+											value={editingTemplate?.genre || newTemplate.genre || ''}
+											onChange={(e) =>
+												editingTemplate
+													? setEditingTemplate({ ...editingTemplate, genre: e.target.value })
+													: setNewTemplate({ ...newTemplate, genre: e.target.value })
+											}
+											placeholder="例如：都市、玄幻、通用"
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-2">
+											提示词 <span className="text-red-500">*</span>
+										</label>
+										<Textarea
+											value={editingTemplate?.prompt || newTemplate.prompt || ''}
+											onChange={(e) =>
+												editingTemplate
+													? setEditingTemplate({ ...editingTemplate, prompt: e.target.value })
+													: setNewTemplate({ ...newTemplate, prompt: e.target.value })
+											}
+											placeholder="请输入模板提示词，可以使用 {参数名} 作为占位符"
+											rows={6}
+										/>
+									</div>
+									<div>
+										<label className="block text-sm font-medium mb-2">标签（用逗号分隔）</label>
+										<Input
+											value={editingTemplate?.tags?.join(', ') || newTemplate.tags?.join(', ') || ''}
+											onChange={(e) =>
+												editingTemplate
+													? setEditingTemplate({
+															...editingTemplate,
+															tags: e.target.value.split(',').map(t => t.trim()),
+														})
+													: setNewTemplate({
+															...newTemplate,
+															tags: e.target.value.split(',').map(t => t.trim()),
+														})
+											}
+											placeholder="例如：开篇, 都市, 轻松"
+										/>
+									</div>
+									<div className="flex gap-2">
 										<Button
-											key={template.id}
-											variant={selectedTemplate?.id === template.id ? 'primary' : 'secondary'}
-											className="w-full justify-start text-left"
-											onClick={() => handleUseTemplate(template)}
+											onClick={() => {
+												setShowCreateTemplate(false);
+												setEditingTemplate(null);
+												setNewTemplate({});
+											}}
+											variant="secondary"
 										>
-											<div className="flex flex-col items-start">
-												<span className="font-medium">{template.name}</span>
-												<span className="text-xs opacity-70">{template.category}</span>
-											</div>
+											取消
 										</Button>
-									))}
+										<Button
+											onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
+											className="bg-[#FF4757] hover:bg-[#FF6B81]"
+										>
+											{editingTemplate ? '更新模板' : '创建模板'}
+										</Button>
+									</div>
 								</CardBody>
 							</Card>
+						) : (
+							/* 模板列表 */
+							<div className="grid gap-6 md:grid-cols-3">
+								{/* 模板列表 */}
+								<Card className="md:col-span-1">
+									<CardHeader>
+										<div className="flex items-center justify-between">
+											<CardTitle>写作模板</CardTitle>
+											<Button
+												size="sm"
+												onClick={() => setShowCreateTemplate(true)}
+												className="bg-[#FF4757] hover:bg-[#FF6B81]"
+											>
+												+
+											</Button>
+										</div>
+									</CardHeader>
+									<CardBody className="space-y-2 max-h-[600px] overflow-y-auto">
+										{templates.map((template) => (
+											<div
+												key={template.id}
+												className="flex items-center gap-2 group"
+											>
+												<Button
+													variant={selectedTemplate?.id === template.id ? 'primary' : 'secondary'}
+													className="flex-1 justify-start text-left"
+													onClick={() => handleUseTemplate(template)}
+												>
+													<div className="flex flex-col items-start">
+														<span className="font-medium">{template.name}</span>
+														<span className="text-xs opacity-70">{template.category}</span>
+													</div>
+												</Button>
+												{template.id.startsWith('custom-') && (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => setEditingTemplate(template)}
+														className="opacity-0 group-hover:opacity-100"
+													>
+														<Settings className="h-4 w-4" />
+													</Button>
+												)}
+												{template.id.startsWith('custom-') && (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() => handleDeleteTemplate(template.id)}
+														className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-600"
+													>
+														<XCircle className="h-4 w-4" />
+													</Button>
+												)}
+											</div>
+										))}
+									</CardBody>
+								</Card>
 
-							{/* 模板详情 */}
-							<Card className="md:col-span-2">
-								<CardHeader>
-									<CardTitle>模板详情</CardTitle>
-								</CardHeader>
-								<CardBody>
-									{selectedTemplate ? (
-										<div className="space-y-4">
-											<div>
-												<h3 className="font-semibold text-lg mb-2">
-													{selectedTemplate.name}
-												</h3>
-												<div className="flex gap-2 mb-3">
-													<Badge variant="secondary">{selectedTemplate.category}</Badge>
-													<Badge variant="secondary">{selectedTemplate.genre}</Badge>
+								{/* 模板详情 */}
+								<Card className="md:col-span-2">
+									<CardHeader>
+										<CardTitle>模板详情</CardTitle>
+									</CardHeader>
+									<CardBody>
+										{selectedTemplate ? (
+											<div className="space-y-4">
+												<div className="flex items-center justify-between">
+													<div>
+														<h3 className="font-semibold text-lg mb-2">
+															{selectedTemplate.name}
+														</h3>
+														<div className="flex gap-2 mb-3">
+															<Badge variant="secondary">{selectedTemplate.category}</Badge>
+															<Badge variant="secondary">{selectedTemplate.genre}</Badge>
+														</div>
+													</div>
+													{selectedTemplate.id.startsWith('custom-') && (
+														<Button
+															size="sm"
+															variant="secondary"
+															onClick={() => setEditingTemplate(selectedTemplate)}
+														>
+															<Settings className="h-4 w-4 mr-1" />
+															编辑
+														</Button>
+													)}
 												</div>
 												<p className="text-gray-600 dark:text-gray-300 mb-4">
 													{selectedTemplate.prompt}
 												</p>
-											</div>
 
-											{selectedTemplate.example && (
-												<div>
-													<h4 className="font-medium mb-2">示例:</h4>
-													<div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-														<p className="text-sm text-gray-700 dark:text-gray-300">
-															{selectedTemplate.example}
-														</p>
+												{selectedTemplate.example && (
+													<div>
+														<h4 className="font-medium mb-2">示例:</h4>
+														<div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+															<p className="text-sm text-gray-700 dark:text-gray-300">
+																{selectedTemplate.example}
+															</p>
+														</div>
 													</div>
-												</div>
-											)}
-
-											{selectedTemplate.parameters.length > 0 && (
-												<div>
-													<h4 className="font-medium mb-2">参数设置:</h4>
-													<div className="space-y-3">
-														{selectedTemplate.parameters.map((param) => (
-															<div key={param.name}>
-																<label className="block text-sm font-medium mb-1">
-																	{param.description}
-																	{param.required && (
-																		<span className="text-red-500">*</span>
-																	)}
-																</label>
-																<Input
-																	value={templateParams[param.name] || ''}
-																	onChange={(e) =>
-																		setTemplateParams({
-																			...templateParams,
-																			[param.name]: e.target.value,
-																		})
-																	}
-																	placeholder={String(param.default)}
-																/>
-															</div>
-														))}
-													</div>
-												</div>
-											)}
-
-											<Button
-												onClick={handleGenerateFromTemplate}
-												disabled={isGenerating}
-												className="w-full bg-[#FF4757] hover:bg-[#FF6B81]"
-											>
-												{isGenerating ? (
-													<>
-														<RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-														生成中...
-													</>
-												) : (
-													<>
-														<Sparkles className="h-4 w-4 mr-2" />
-														使用模板生成
-													</>
 												)}
-											</Button>
-										</div>
-									) : (
-										<div className="text-center py-12 text-gray-500">
-											<BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-											<p>请选择一个模板</p>
-										</div>
-									)}
-								</CardBody>
-							</Card>
-						</div>
+
+												{selectedTemplate.parameters.length > 0 && (
+													<div>
+														<h4 className="font-medium mb-2">参数设置:</h4>
+														<div className="space-y-3">
+															{selectedTemplate.parameters.map((param) => (
+																<div key={param.name}>
+																	<label className="block text-sm font-medium mb-1">
+																		{param.description}
+																		{param.required && (
+																			<span className="text-red-500">*</span>
+																		)}
+																	</label>
+																	<Input
+																		value={templateParams[param.name] || ''}
+																		onChange={(e) =>
+																			setTemplateParams({
+																				...templateParams,
+																				[param.name]: e.target.value,
+																			})
+																		}
+																		placeholder={String(param.default)}
+																	/>
+																</div>
+															))}
+														</div>
+													</div>
+												)}
+
+												<Button
+													onClick={handleGenerateFromTemplate}
+													disabled={isGenerating}
+													className="w-full bg-[#FF4757] hover:bg-[#FF6B81]"
+												>
+													{isGenerating ? (
+														<>
+															<RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+															生成中...
+														</>
+													) : (
+														<>
+															<Sparkles className="h-4 w-4 mr-2" />
+															使用模板生成
+														</>
+													)}
+												</Button>
+											</div>
+										) : (
+											<div className="text-center py-12 text-gray-500">
+												<BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+												<p>请选择一个模板</p>
+											</div>
+										)}
+									</CardBody>
+								</Card>
+							</div>
+						)}
 					</TabsContent>
 				</Tabs>
 			</div>

@@ -134,6 +134,12 @@ export default function CommunityPage() {
 						<div className="flex items-center gap-3">
 							{user && (
 								<>
+									<Link href="/community/feed">
+										<Button variant="secondary">
+											<TrendingUp className="h-4 w-4 mr-2" />
+											动态流
+										</Button>
+									</Link>
 									<Link href="/community/messages">
 										<Button variant="secondary">
 											<Mail className="h-4 w-4 mr-2" />

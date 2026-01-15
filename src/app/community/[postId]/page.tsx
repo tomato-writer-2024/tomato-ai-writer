@@ -18,6 +18,7 @@ import {
 	Clock,
 	ThumbsUp,
 	Trash2,
+	Pencil,
 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 
@@ -197,6 +198,27 @@ export default function PostDetailPage() {
 		}
 	};
 
+	const handleDeletePost = async () => {
+		if (!confirm('确定删除这条帖子吗？删除后无法恢复。')) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/community/posts/${postId}`, {
+				method: 'DELETE',
+			});
+
+			const data = await response.json();
+			if (data.success) {
+				alert('帖子已删除');
+				router.push('/community');
+			}
+		} catch (error) {
+			console.error('删除帖子失败:', error);
+			alert('删除失败，请重试');
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
@@ -219,10 +241,32 @@ export default function PostDetailPage() {
 			<div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-700">
 				<div className="max-w-4xl mx-auto px-4 py-4">
 					<div className="flex items-center justify-between">
-						<Button variant="ghost" onClick={() => router.back()}>
-							<ArrowLeft className="h-4 w-4 mr-2" />
-							返回
-						</Button>
+						<div className="flex items-center gap-2">
+							<Button variant="ghost" onClick={() => router.back()}>
+								<ArrowLeft className="h-4 w-4 mr-2" />
+								返回
+							</Button>
+							{(user?.id === post?.author.id || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+								<>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => router.push(`/community/${postId}/edit`)}
+									>
+										编辑
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={handleDeletePost}
+										className="text-red-500 hover:text-red-600"
+									>
+										<Trash2 className="h-4 w-4" />
+										删除
+									</Button>
+								</>
+							)}
+						</div>
 						<Button variant="secondary" onClick={handleShare}>
 							<Share2 className="h-4 w-4 mr-2" />
 							分享

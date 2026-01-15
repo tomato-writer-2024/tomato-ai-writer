@@ -1108,3 +1108,27 @@ export const insertPrivateMessageSchema = z.object({
 
 export const updatePrivateMessageSchema = insertPrivateMessageSchema.partial();
 
+// ============================================================================
+// 用户关注表
+// ============================================================================
+
+export const follows = pgTable("follows", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	followerId: varchar("follower_id", { length: 36 }).notNull(), // 关注者ID
+	followingId: varchar("following_id", { length: 36 }).notNull(), // 被关注者ID
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("follows_follower_id_idx").using("btree", table.followerId.asc().nullsLast().op("text_ops")),
+	index("follows_following_id_idx").using("btree", table.followingId.asc().nullsLast().op("text_ops")),
+	index("follows_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+	unique("follows_follower_following_unique").on(table.followerId, table.followingId),
+]);
+
+export type Follow = typeof follows.$inferSelect;
+export type InsertFollow = typeof follows.$inferInsert;
+
+export const insertFollowSchema = z.object({
+	followerId: z.string(),
+	followingId: z.string(),
+});
+

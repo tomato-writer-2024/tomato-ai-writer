@@ -18,6 +18,13 @@ export interface QualityResult {
 	suggestions: string[];
 	estimatedCompletionRate: number; // 预估完读率
 	shuangdianCount: number; // 爽点数量
+	dimensionScores?: {
+		lengthScore: number;
+		repetitionScore: number;
+		coherenceScore: number;
+		styleScore: number;
+		safetyScore: number;
+	};
 }
 
 /**
@@ -266,7 +273,9 @@ export class AIOptimizer {
 
 		// 1. 长度检测
 		const wordCount = content.length;
+		let lengthScore = 100;
 		if (wordCount < 300) {
+			lengthScore = Math.round((wordCount / 300) * 100);
 			issues.push({
 				type: 'length',
 				severity: 'medium',
@@ -274,17 +283,26 @@ export class AIOptimizer {
 			});
 			suggestions.push('增加情节细节描写');
 		} else if (wordCount > 5000) {
+			lengthScore = 70;
 			issues.push({
 				type: 'length',
 				severity: 'low',
 				message: '内容较长，建议适当分段',
 			});
+		} else if (wordCount >= 500 && wordCount <= 2000) {
+			lengthScore = 100;
+		} else if (wordCount >= 300 && wordCount < 500) {
+			lengthScore = 80;
+		} else {
+			lengthScore = 90;
 		}
 
 		// 2. 重复检测
 		const paragraphs = content.split('\n').filter(p => p.trim());
 		const duplicateCount = this.detectRepetitions(paragraphs);
+		let repetitionScore = 100;
 		if (duplicateCount > 3) {
+			repetitionScore = Math.max(0, 100 - duplicateCount * 15);
 			issues.push({
 				type: 'repetition',
 				severity: 'high',
@@ -294,8 +312,8 @@ export class AIOptimizer {
 		}
 
 		// 3. 连贯性检测（简化版）
-		const coherenceScore = this.detectCoherence(content);
-		if (coherenceScore < 0.6) {
+		const coherenceScore = Math.round(this.detectCoherence(content) * 100);
+		if (coherenceScore < 60) {
 			issues.push({
 				type: 'coherence',
 				severity: 'medium',
@@ -305,8 +323,8 @@ export class AIOptimizer {
 		}
 
 		// 4. 风格检测
-		const styleScore = this.detectStyle(content, genre);
-		if (styleScore < 0.5) {
+		const styleScore = Math.round(this.detectStyle(content, genre) * 100);
+		if (styleScore < 50) {
 			issues.push({
 				type: 'style',
 				severity: 'low',
@@ -317,7 +335,9 @@ export class AIOptimizer {
 
 		// 5. 敏感词检测（简化版）
 		const sensitiveWords = this.detectSensitiveWords(content);
+		let safetyScore = 100;
 		if (sensitiveWords.length > 0) {
+			safetyScore = Math.max(0, 100 - sensitiveWords.length * 20);
 			issues.push({
 				type: 'sensitive',
 				severity: 'high',
@@ -326,14 +346,21 @@ export class AIOptimizer {
 			suggestions.push('修改或删除敏感内容');
 		}
 
-		// 计算质量分数
-		const baseScore = 100;
-		const penalty = issues.reduce((sum, issue) => {
-			const severityMap = { low: 2, medium: 5, high: 10 };
-			return sum + severityMap[issue.severity];
-		}, 0);
-
-		const score = Math.max(0, baseScore - penalty);
+		// 计算综合质量分数
+		const dimensionScores = {
+			lengthScore,
+			repetitionScore,
+			coherenceScore,
+			styleScore,
+			safetyScore,
+		};
+		const score = Math.round(
+			(dimensionScores.lengthScore * 0.2 +
+				dimensionScores.repetitionScore * 0.2 +
+				dimensionScores.coherenceScore * 0.25 +
+				dimensionScores.styleScore * 0.15 +
+				dimensionScores.safetyScore * 0.2)
+		);
 
 		// 估算爽点数量（简化）
 		const shuangdianCount = this.estimateShuangdian(content);
@@ -347,6 +374,7 @@ export class AIOptimizer {
 			suggestions,
 			estimatedCompletionRate: Math.round(estimatedCompletionRate),
 			shuangdianCount,
+			dimensionScores,
 		};
 	}
 
