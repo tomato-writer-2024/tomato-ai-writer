@@ -138,7 +138,7 @@ export default function AdminAuditPage() {
             <div className="flex items-center gap-3">
               {testReport && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   icon={<Download size={18} />}
                   onClick={exportReport}
                 >

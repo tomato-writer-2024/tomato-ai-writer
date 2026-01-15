@@ -218,7 +218,7 @@ export default function PaymentConfirmPage({ params }: { params: Promise<{ id: s
 						)}
 						{order.paymentStatus === 'FAILED' && (
 							<div className="flex justify-center gap-3">
-								<Button variant="outline" onClick={() => router.back()}>
+								<Button variant="secondary" onClick={() => router.back()}>
 									返回订单列表
 								</Button>
 								<Button onClick={() => router.push(`/payment/${order.id}/upload`)}>

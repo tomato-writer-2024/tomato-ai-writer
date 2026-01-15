@@ -274,7 +274,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 						</button>
 						<div className="flex gap-3">
 							<Button
-								variant="outline"
+								variant="secondary"
 								icon={<RefreshCw size={18} />}
 								onClick={loadOrderDetail}
 							>
@@ -357,7 +357,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 									<div className="flex items-start justify-between mb-6">
 										<h2 className="text-xl font-bold text-gray-900">支付凭证</h2>
 										<Button
-											variant="outline"
+											variant="secondary"
 											size="sm"
 											icon={<Eye size={16} />}
 											onClick={() => setShowProofModal(true)}
@@ -549,7 +549,7 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
 									</div>
 
 									<Button
-										variant="outline"
+										variant="secondary"
 										className="w-full"
 										icon={<RefreshCw size={18} />}
 										onClick={() => handleOrderAction('refund')}

@@ -464,7 +464,7 @@ export default function ContinuePage() {
                   <Button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isImporting}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     icon={<Upload size={16} />}
                   >
@@ -824,7 +824,7 @@ export default function ContinuePage() {
                 onClick={() => handleContinue('chapter')}
                 isLoading={isContinuing}
                 disabled={!originalContent || !selectedNovelId}
-                variant="outline"
+                variant="secondary"
                 icon={<Book size={18} />}
               >
                 单章节续写
@@ -833,7 +833,7 @@ export default function ContinuePage() {
                 onClick={() => handleContinue('batch')}
                 isLoading={isContinuing}
                 disabled={!originalContent || !selectedNovelId}
-                variant="outline"
+                variant="secondary"
                 icon={<Zap size={18} />}
               >
                 批量续写
@@ -875,7 +875,7 @@ export default function ContinuePage() {
                 </GradientButton>
                 <Button
                   onClick={() => setShowNewProjectModal(false)}
-                  variant="outline"
+                  variant="secondary"
                   fullWidth
                 >
                   取消

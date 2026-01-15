@@ -127,14 +127,14 @@ export default function AdminOrdersPage() {
 
             <div className="flex gap-3">
               <Button
-                variant="outline"
+                variant="secondary"
                 icon={<RefreshCw size={18} />}
                 onClick={loadOrders}
               >
                 刷新
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 icon={<Download size={18} />}
                 onClick={exportOrders}
               >
@@ -231,7 +231,7 @@ export default function AdminOrdersPage() {
         {orders.length > 0 && (
           <div className="mt-6 flex items-center justify-center gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
@@ -239,7 +239,7 @@ export default function AdminOrdersPage() {
             </Button>
             <span className="text-sm text-gray-600">第 {currentPage} 页</span>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => setCurrentPage(p => p + 1)}
               disabled={orders.length < 20}
             >

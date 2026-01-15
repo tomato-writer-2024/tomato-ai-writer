@@ -278,7 +278,7 @@ export default function WorldBuildingPage() {
                         </h3>
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             icon={<Copy size={16} />}
                             onClick={() => handleCopy(JSON.stringify(worldSetting, null, 2))}
@@ -286,7 +286,7 @@ export default function WorldBuildingPage() {
                             复制
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             icon={<Download size={16} />}
                             onClick={handleExport}
@@ -299,7 +299,7 @@ export default function WorldBuildingPage() {
 
                       <div className="border-t pt-4">
                         <h4 className="font-semibold text-gray-900 mb-2">世界类型</h4>
-                        <Badge variant="outline" className="text-sm">
+                        <Badge variant="secondary" className="text-sm">
                           {worldTypes.find(t => t.value === worldSetting.type)?.label}
                         </Badge>
                       </div>

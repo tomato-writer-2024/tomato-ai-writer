@@ -36,3 +36,69 @@ export function removeToken(): void {
 export function isAuthenticated(): boolean {
   return getToken() !== null;
 }
+
+// ============================================================================
+// authClient - 统一的客户端认证接口
+// ============================================================================
+
+interface User {
+	id: string;
+	email: string;
+	username?: string;
+	role: string;
+	membershipLevel: string;
+}
+
+const authClient = {
+	/**
+	 * 获取当前登录用户
+	 */
+	async getCurrentUser(): Promise<User | null> {
+		const token = getToken();
+		if (!token) {
+			return null;
+		}
+
+		try {
+			const response = await fetch('/api/auth/me', {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+
+			if (!response.ok) {
+				return null;
+			}
+
+			const data = await response.json();
+			return data.user || null;
+		} catch (error) {
+			console.error('获取用户信息失败:', error);
+			return null;
+		}
+	},
+
+	/**
+	 * 登出
+	 */
+	async logout(): Promise<void> {
+		removeToken();
+		window.location.href = '/login';
+	},
+
+	/**
+	 * 检查是否已登录
+	 */
+	isAuthenticated(): boolean {
+		return isAuthenticated();
+	},
+
+	/**
+	 * 获取Token
+	 */
+	getToken(): string | null {
+		return getToken();
+	},
+};
+
+export { authClient };

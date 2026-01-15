@@ -595,7 +595,7 @@ export default function ChapterEditorPage() {
 
             <div className="relative" ref={exportMenuRef}>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="sm"
                 icon={<Download size={16} />}
                 onClick={() => setShowExportMenu(!showExportMenu)}
@@ -621,7 +621,7 @@ export default function ChapterEditorPage() {
             </div>
 
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               icon={<Copy size={16} />}
               onClick={handleCopy}
@@ -630,7 +630,7 @@ export default function ChapterEditorPage() {
             </Button>
 
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               icon={<Save size={16} />}
               onClick={() => handleSave()}
@@ -640,7 +640,7 @@ export default function ChapterEditorPage() {
             </Button>
 
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               icon={<Trash2 size={16} />}
               onClick={handleDelete}
@@ -890,7 +890,7 @@ export default function ChapterEditorPage() {
                 </h3>
                 <div className="space-y-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     fullWidth
                     onClick={() => handleSave()}
@@ -898,7 +898,7 @@ export default function ChapterEditorPage() {
                     手动保存
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     fullWidth
                     onClick={() => setIsPublished(!isPublished)}
@@ -906,7 +906,7 @@ export default function ChapterEditorPage() {
                     {isPublished ? '设为草稿' : '发布章节'}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     fullWidth
                     onClick={handleCopy}

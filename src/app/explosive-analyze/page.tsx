@@ -439,11 +439,11 @@ ${'='.repeat(80)}
                     <p className="mt-1 text-gray-600">综合评分报告</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                    <Button variant="secondary" size="sm" onClick={handleCopy}>
                       <Copy className="w-4 h-4 mr-2" />
                       复制
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setAnalysisResult(null)}>
+                    <Button variant="secondary" size="sm" onClick={() => setAnalysisResult(null)}>
                       <RefreshCw className="w-4 h-4 mr-2" />
                       重新分析
                     </Button>
@@ -740,7 +740,7 @@ ${'='.repeat(80)}
                           <div key={index} className="p-4 bg-gray-50 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium text-gray-900">{char.name}</span>
-                              <Badge variant="outline">{char.role}</Badge>
+                              <Badge variant="secondary">{char.role}</Badge>
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {char.traits.map((trait, idx) => (
@@ -787,7 +787,7 @@ ${'='.repeat(80)}
             {/* 导出按钮 */}
             <div className="flex justify-center gap-4">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleExport('word')}
                 disabled={isExporting}
               >
@@ -804,7 +804,7 @@ ${'='.repeat(80)}
                 )}
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleExport('txt')}
                 disabled={isExporting}
               >

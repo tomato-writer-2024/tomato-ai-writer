@@ -456,11 +456,11 @@ ${'='.repeat(80)}
                     <p className="mt-1 text-gray-600">双视角审稿报告</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                    <Button variant="secondary" size="sm" onClick={handleCopy}>
                       <Copy className="w-4 h-4 mr-2" />
                       复制
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setReviewResult(null)}>
+                    <Button variant="secondary" size="sm" onClick={() => setReviewResult(null)}>
                       <RefreshCw className="w-4 h-4 mr-2" />
                       重新审稿
                     </Button>
@@ -475,7 +475,7 @@ ${'='.repeat(80)}
                         <User className="w-5 h-5 text-cyan-600" />
                         <span className="font-semibold text-gray-900">编辑视角（40%）</span>
                       </div>
-                      <Badge variant="outline">专业审稿</Badge>
+                      <Badge variant="secondary">专业审稿</Badge>
                     </div>
                     <div className="text-5xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2">
                       {reviewResult.overallScore.editorScore}
@@ -499,7 +499,7 @@ ${'='.repeat(80)}
                         <Star className="w-5 h-5 text-purple-600" />
                         <span className="font-semibold text-gray-900">读者视角（60%）</span>
                       </div>
-                      <Badge variant="outline">用户体验</Badge>
+                      <Badge variant="secondary">用户体验</Badge>
                     </div>
                     <div className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                       {reviewResult.overallScore.readerScore}
@@ -781,7 +781,7 @@ ${'='.repeat(80)}
             {/* 导出按钮 */}
             <div className="flex justify-center gap-4">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleExport('word')}
                 disabled={isExporting}
               >
@@ -798,7 +798,7 @@ ${'='.repeat(80)}
                 )}
               </Button>
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => handleExport('txt')}
                 disabled={isExporting}
               >

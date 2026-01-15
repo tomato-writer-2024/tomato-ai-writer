@@ -266,7 +266,7 @@ export default function PlotTwistPage() {
                       </h3>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(result.twistedPlot)}
@@ -274,7 +274,7 @@ export default function PlotTwistPage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={() => handleExport(result.twistedPlot)}
@@ -286,7 +286,7 @@ export default function PlotTwistPage() {
                     </div>
 
                     <div className="mb-4">
-                      <Badge variant="outline" className="mb-2">{twistTypes.find(t => t.value === result.twistType)?.label}</Badge>
+                      <Badge variant="secondary" className="mb-2">{twistTypes.find(t => t.value === result.twistType)?.label}</Badge>
                       <p className="text-gray-700">{result.twistDescription}</p>
                     </div>
 

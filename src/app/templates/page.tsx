@@ -91,7 +91,7 @@ export default function TemplatesPage() {
 
                 <div className="flex flex-wrap gap-1 mb-4">
                   {template.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
+                    <Badge key={tag} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
@@ -104,7 +104,7 @@ export default function TemplatesPage() {
                 <div className="mt-4 flex gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     className="flex-1"
                     onClick={() => handleUseTemplate(template)}
                   >
@@ -160,7 +160,7 @@ export default function TemplatesPage() {
                 <div className="mb-6">
                   <div className="flex flex-wrap gap-1">
                     {selectedTemplate.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
+                      <Badge key={tag} variant="secondary">
                         {tag}
                       </Badge>
                     ))}
@@ -187,7 +187,7 @@ export default function TemplatesPage() {
                     {copied ? '已复制' : '复制提示词'}
                   </GradientButton>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => setSelectedTemplate(null)}
                   >
                     关闭

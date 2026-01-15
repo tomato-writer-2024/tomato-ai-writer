@@ -253,7 +253,7 @@ export default function TitleGeneratorPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-2 ml-2">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {getOverallScore(suggestion)}分
                               </Badge>
                               <Button

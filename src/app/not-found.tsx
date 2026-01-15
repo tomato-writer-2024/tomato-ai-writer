@@ -70,7 +70,7 @@ export default function NotFound() {
             返回首页
           </GradientButton>
           <Button
-            variant="outline"
+            variant="secondary"
             size="lg"
             icon={<ArrowLeft size={20} />}
             onClick={() => window.history.back()}

@@ -284,7 +284,7 @@ export default function EndingGeneratorPage() {
                       </h4>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(result.endingContent)}
@@ -292,7 +292,7 @@ export default function EndingGeneratorPage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={() => handleExport(result.endingContent)}

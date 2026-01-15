@@ -294,7 +294,7 @@ export default function CoverGeneratorPage() {
                       </h3>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(description.aiPrompt)}
@@ -302,7 +302,7 @@ export default function CoverGeneratorPage() {
                           复制提示词
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={handleExport}
@@ -328,7 +328,7 @@ export default function CoverGeneratorPage() {
                           {description.title}
                         </div>
                         <div className="flex items-center gap-2 mb-3">
-                          <Badge variant="outline">
+                          <Badge variant="secondary">
                             {coverStyles.find(s => s.value === description.style)?.label}
                           </Badge>
                           <Badge variant="secondary">{description.mood}</Badge>
@@ -361,7 +361,7 @@ export default function CoverGeneratorPage() {
                                   </div>
                                   <div className="text-xs text-gray-600">{element.description}</div>
                                 </div>
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="secondary" className="text-xs">
                                   {element.position}
                                 </Badge>
                               </div>

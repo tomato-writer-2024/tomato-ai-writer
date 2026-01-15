@@ -231,7 +231,7 @@ export default function PricingPage() {
                 </ul>
 
                 {plan.level === 'FREE' ? (
-                  <Button variant="outline" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => router.push('/workspace')}>
+                  <Button variant="secondary" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => router.push('/workspace')}>
                     {plan.cta}
                   </Button>
                 ) : plan.popular ? (
@@ -239,7 +239,7 @@ export default function PricingPage() {
                     {plan.cta}
                   </GradientButton>
                 ) : (
-                  <Button variant="outline" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => handleSubscribe(plan.level, billingCycle)}>
+                  <Button variant="secondary" icon={<BrandIcons.Zap size={18} />} fullWidth onClick={() => handleSubscribe(plan.level, billingCycle)}>
                     {plan.cta}
                   </Button>
                 )}

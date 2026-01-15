@@ -183,14 +183,14 @@ export default function AdminOrderStatsPage() {
 						</button>
 						<div className="flex gap-3">
 							<Button
-								variant="outline"
+								variant="secondary"
 								icon={<RefreshCw size={18} />}
 								onClick={handleRefresh}
 							>
 								刷新
 							</Button>
 							<Button
-								variant="outline"
+								variant="secondary"
 								icon={<Download size={18} />}
 								onClick={exportStats}
 							>

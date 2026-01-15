@@ -288,7 +288,7 @@ export default function SatisfactionEnginePage() {
                       </h4>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(analysis.optimizedContent)}
@@ -296,7 +296,7 @@ export default function SatisfactionEnginePage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={() => handleExport(analysis.optimizedContent)}
@@ -326,7 +326,7 @@ export default function SatisfactionEnginePage() {
                         <div key={index} className="p-3 rounded-lg border border-gray-200">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {point.type}
                               </Badge>
                               <span className="text-sm text-gray-600">{point.location}</span>

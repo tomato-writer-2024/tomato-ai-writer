@@ -421,7 +421,7 @@ export default function GoldenStartPage() {
                         生成结果（{generatedVersions.length}个版本）
                       </h3>
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         onClick={() => setGeneratedVersions([])}
                       >
@@ -459,7 +459,7 @@ export default function GoldenStartPage() {
                           </h3>
                           <div className="flex gap-2">
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               onClick={() => handleCopy(generatedVersions[selectedVersion].content)}
                             >
@@ -467,7 +467,7 @@ export default function GoldenStartPage() {
                               复制
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               onClick={() => handleExport(generatedVersions[selectedVersion].content)}
                               disabled={isExporting}
@@ -584,7 +584,7 @@ export default function GoldenStartPage() {
                                   <CheckCircle2 className="w-4 h-4 text-cyan-600" />
                                 )}
                               </div>
-                              <Badge variant="outline" size="sm">
+                              <Badge variant="secondary" size="sm">
                                 {version.analysis.hookType}
                               </Badge>
                             </div>

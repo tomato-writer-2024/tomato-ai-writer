@@ -245,7 +245,7 @@ export default function TestReportPage() {
                     {/* 汇总卡片 */}
                     <div className="flex justify-end mb-4">
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         icon={<Download className="w-4 h-4 mr-2" />}
                         onClick={exportTestResult}
@@ -466,7 +466,7 @@ export default function TestReportPage() {
                     {/* 导出按钮 */}
                     <div className="flex justify-end mb-4">
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         icon={<Download className="w-4 h-4 mr-2" />}
                         onClick={exportABResult}
@@ -605,7 +605,7 @@ export default function TestReportPage() {
                     {/* 导出按钮 */}
                     <div className="flex justify-end mb-4">
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         icon={<Download className="w-4 h-4 mr-2" />}
                         onClick={exportPerfResult}

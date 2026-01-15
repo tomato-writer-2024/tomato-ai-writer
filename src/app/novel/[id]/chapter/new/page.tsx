@@ -367,7 +367,7 @@ export default function NewChapterPage() {
                       </GradientButton>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => router.back()}
                       >
                         取消
@@ -464,7 +464,7 @@ export default function NewChapterPage() {
                   <h3 className="mb-4 font-bold text-gray-900">快捷操作</h3>
                   <div className="space-y-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       fullWidth
                       onClick={() => router.push(`/novel/${novelId}`)}
@@ -472,7 +472,7 @@ export default function NewChapterPage() {
                       返回作品详情
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       fullWidth
                       onClick={() => router.push('/workspace')}

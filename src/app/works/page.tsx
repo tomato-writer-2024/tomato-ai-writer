@@ -377,7 +377,7 @@ export default function WorksPage() {
                       </Button>
                     </Link>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       icon={<Trash2 size={16} />}
                       onClick={() => handleDeleteNovel(novel.id)}
@@ -589,7 +589,7 @@ export default function WorksPage() {
           <div className="flex justify-end gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 if (!isCreating) {
                   setShowCreateModal(false);

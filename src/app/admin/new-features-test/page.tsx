@@ -229,7 +229,7 @@ export default function NewFeaturesTestReportPage() {
               <Button
                 onClick={exportReport}
                 icon={<Download size={18} />}
-                variant="outline"
+                variant="secondary"
               >
                 导出报告
               </Button>
@@ -351,7 +351,7 @@ export default function NewFeaturesTestReportPage() {
 
                     <div className="flex items-center gap-2">
                       {report.issues.length > 0 && (
-                        <Badge variant="outline" className="flex items-center gap-1">
+                        <Badge variant="secondary" className="flex items-center gap-1">
                           <AlertTriangle size={14} />
                           {report.issues.length} 个问题
                         </Badge>

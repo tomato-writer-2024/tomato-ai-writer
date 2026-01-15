@@ -253,7 +253,7 @@ export default function WriterBlockPage() {
                       </h3>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(JSON.stringify(diagnosis, null, 2))}
@@ -261,7 +261,7 @@ export default function WriterBlockPage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={handleExport}

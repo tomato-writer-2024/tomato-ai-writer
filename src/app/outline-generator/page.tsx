@@ -273,7 +273,7 @@ export default function OutlineGeneratorPage() {
                       <h3 className="text-xl font-bold text-gray-900">{outline.title}</h3>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(JSON.stringify(outline, null, 2))}
@@ -281,7 +281,7 @@ export default function OutlineGeneratorPage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={handleExport}
@@ -294,7 +294,7 @@ export default function OutlineGeneratorPage() {
 
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline">{genres.find(g => g.value === outline.genre)?.label}</Badge>
+                        <Badge variant="secondary">{genres.find(g => g.value === outline.genre)?.label}</Badge>
                         <Badge variant="secondary">{outline.chapters.length} 章</Badge>
                       </div>
 
@@ -338,7 +338,7 @@ export default function OutlineGeneratorPage() {
                                 预计字数: {chapter.wordCount}
                               </div>
                             </div>
-                            <Badge variant="outline" className="ml-2 text-xs">
+                            <Badge variant="secondary" className="ml-2 text-xs">
                               {chapter.keyEvents.length} 个事件
                             </Badge>
                           </div>

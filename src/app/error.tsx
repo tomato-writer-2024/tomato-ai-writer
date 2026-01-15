@@ -62,7 +62,7 @@ export default function Error({
         {/* 操作按钮 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <Button
-            variant="outline"
+            variant="secondary"
             size="lg"
             icon={<RefreshCw size={20} />}
             onClick={reset}

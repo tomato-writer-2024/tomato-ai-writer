@@ -309,7 +309,7 @@ export default function CharactersPage() {
                         </h3>
                         <div className="flex gap-2">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             icon={<Copy size={16} />}
                             onClick={() => handleCopy(JSON.stringify(characterProfile, null, 2))}
@@ -317,7 +317,7 @@ export default function CharactersPage() {
                             复制
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             icon={<Download size={16} />}
                             onClick={handleExport}
@@ -330,7 +330,7 @@ export default function CharactersPage() {
 
                       <div className="border-t pt-4">
                         <h4 className="font-semibold text-gray-900 mb-2">角色定位</h4>
-                        <Badge variant="outline" className="text-sm">
+                        <Badge variant="secondary" className="text-sm">
                           {roles.find(r => r.value === characterProfile.role)?.label}
                         </Badge>
                       </div>
@@ -376,7 +376,7 @@ export default function CharactersPage() {
                         <h4 className="font-semibold text-gray-900 mb-3">性格特质</h4>
                         <div className="flex flex-wrap gap-2">
                           {characterProfile.traits.map((trait, index) => (
-                            <Badge key={index} variant="outline" className="text-sm">
+                            <Badge key={index} variant="secondary" className="text-sm">
                               {trait}
                             </Badge>
                           ))}

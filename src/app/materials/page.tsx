@@ -321,7 +321,7 @@ ${m.content}
           </div>
           <div className="flex gap-3">
             <Button
-              variant="outline"
+              variant="secondary"
               icon={<Download size={18} />}
               onClick={handleExport}
             >
@@ -468,12 +468,12 @@ ${m.content}
                   </p>
                   <div className="mb-4 flex flex-wrap gap-1">
                     {material.tags.slice(0, 3).map((tag, idx) => (
-                      <Badge key={idx} variant="outline" size="sm">
+                      <Badge key={idx} variant="secondary" size="sm">
                         {tag}
                       </Badge>
                     ))}
                     {material.tags.length > 3 && (
-                      <Badge variant="outline" size="sm">
+                      <Badge variant="secondary" size="sm">
                         +{material.tags.length - 3}
                       </Badge>
                     )}
@@ -483,7 +483,7 @@ ${m.content}
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       icon={<Copy size={16} />}
                       onClick={() => handleCopyContent(material.content)}
@@ -492,7 +492,7 @@ ${m.content}
                       复制
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       icon={<Edit2 size={16} />}
                       onClick={() => openEditModal(material)}
@@ -588,7 +588,7 @@ ${m.content}
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => setShowCreateModal(false)}
                   >
                     取消

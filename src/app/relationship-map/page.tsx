@@ -253,7 +253,7 @@ export default function RelationshipMapPage() {
                       </h3>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Copy size={16} />}
                           onClick={() => handleCopy(JSON.stringify(relationshipMap, null, 2))}
@@ -261,7 +261,7 @@ export default function RelationshipMapPage() {
                           复制
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           icon={<Download size={16} />}
                           onClick={handleExport}
@@ -322,7 +322,7 @@ export default function RelationshipMapPage() {
                                   {rel.character1} ↔ {rel.character2}
                                 </span>
                               </div>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="secondary" className="text-xs">
                                 {rel.type}
                               </Badge>
                             </div>
@@ -355,7 +355,7 @@ export default function RelationshipMapPage() {
                             <div className="text-sm text-gray-600 mb-2">{storyline.description}</div>
                             <div className="flex flex-wrap gap-1">
                               {storyline.participants.map((participant, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
+                                <Badge key={i} variant="secondary" className="text-xs">
                                   {participant}
                                 </Badge>
                               ))}

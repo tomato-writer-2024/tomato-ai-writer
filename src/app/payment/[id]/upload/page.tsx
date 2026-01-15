@@ -404,7 +404,7 @@ export default function PaymentUploadPage({ params }: { params: Promise<{ id: st
 								{/* 上传按钮 */}
 								<div className="flex justify-end gap-3">
 									<Button
-										variant="outline"
+										variant="secondary"
 										onClick={() => router.back()}
 										disabled={isUploading}
 									>

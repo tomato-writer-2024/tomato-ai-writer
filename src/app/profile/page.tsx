@@ -341,7 +341,7 @@ export default function ProfilePage() {
                       </div>
                       {!isEditing && (
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           icon={<Settings size={18} />}
                           onClick={() => setIsEditing(true)}
                         >
@@ -386,7 +386,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex justify-end gap-3">
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             onClick={() => setIsEditing(false)}
                             disabled={isSaving}
                           >
@@ -611,7 +611,7 @@ export default function ProfilePage() {
                       </ul>
 
                       {user && plan.level === user.membership ? (
-                        <Button variant="outline" fullWidth disabled>
+                        <Button variant="secondary" fullWidth disabled>
                           当前套餐
                         </Button>
                       ) : (
@@ -642,7 +642,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="space-y-4">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Lock size={18} />}
                       onClick={() => window.location.href = '/forgot-password'}
@@ -650,14 +650,14 @@ export default function ProfilePage() {
                       修改密码
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Shield size={18} />}
                     >
                       两步验证
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Phone size={18} />}
                     >
@@ -708,21 +708,21 @@ export default function ProfilePage() {
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Download size={18} />}
                     >
                       导出作品数据
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Download size={18} />}
                     >
                       导出账户信息
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       fullWidth
                       icon={<Download size={18} />}
                     >
