@@ -13,6 +13,7 @@ interface User {
 	isBanned: boolean;
 	createdAt: string;
 	lastLoginAt: string | null;
+	isSuperAdmin?: boolean;
 }
 
 export default function UsersPage() {
@@ -23,6 +24,11 @@ export default function UsersPage() {
 	const [page, setPage] = useState(1);
 	const [total, setTotal] = useState(0);
 	const pageSize = 50;
+
+	// 批量选择相关状态
+	const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+	const [isAllSelected, setIsAllSelected] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 
 	useEffect(() => {
 		const token = localStorage.getItem('admin_token');
@@ -60,6 +66,8 @@ export default function UsersPage() {
 		const token = localStorage.getItem('admin_token');
 		if (token) {
 			setPage(1);
+			setSelectedUserIds(new Set());
+			setIsAllSelected(false);
 			fetchUsers(token, 0, pageSize, searchQuery);
 		}
 	};
@@ -68,7 +76,79 @@ export default function UsersPage() {
 		setPage(newPage);
 		const token = localStorage.getItem('admin_token');
 		if (token) {
+			setSelectedUserIds(new Set());
+			setIsAllSelected(false);
 			fetchUsers(token, (newPage - 1) * pageSize, pageSize, searchQuery);
+		}
+	};
+
+	// 全选/取消全选
+	const handleSelectAll = (checked: boolean) => {
+		setIsAllSelected(checked);
+		if (checked) {
+			// 选择所有非超级管理员的用户
+			const selectableUserIds = new Set(
+				users.filter(user => !user.isSuperAdmin).map(user => user.id)
+			);
+			setSelectedUserIds(selectableUserIds);
+		} else {
+			setSelectedUserIds(new Set());
+		}
+	};
+
+	// 单个用户选择
+	const handleSelectUser = (userId: string, checked: boolean) => {
+		const newSelectedUserIds = new Set(selectedUserIds);
+		if (checked) {
+			newSelectedUserIds.add(userId);
+		} else {
+			newSelectedUserIds.delete(userId);
+		}
+		setSelectedUserIds(newSelectedUserIds);
+		setIsAllSelected(newSelectedUserIds.size === users.filter(u => !u.isSuperAdmin).length);
+	};
+
+	// 批量删除用户
+	const handleBatchDelete = async () => {
+		if (selectedUserIds.size === 0) {
+			alert('请选择要删除的用户');
+			return;
+		}
+
+		if (!confirm(`确定要删除选中的 ${selectedUserIds.size} 个用户吗？`)) {
+			return;
+		}
+
+		setIsDeleting(true);
+
+		try {
+			const token = localStorage.getItem('admin_token');
+			const response = await fetch('/api/admin/users/batch-delete', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`,
+				},
+				body: JSON.stringify({ userIds: Array.from(selectedUserIds) }),
+			});
+
+			const data = await response.json();
+
+			if (data.success) {
+				alert(`成功删除 ${data.data.deletedCount} 个用户`);
+				setSelectedUserIds(new Set());
+				setIsAllSelected(false);
+				const token = localStorage.getItem('admin_token');
+				if (token) {
+					fetchUsers(token, (page - 1) * pageSize, pageSize, searchQuery);
+				}
+			} else {
+				alert(data.error || '批量删除失败');
+			}
+		} catch (error) {
+			alert('批量删除失败：' + error);
+		} finally {
+			setIsDeleting(false);
 		}
 	};
 
@@ -90,6 +170,11 @@ export default function UsersPage() {
 
 			if (data.success) {
 				alert('用户已删除');
+				setSelectedUserIds(prev => {
+					const newSet = new Set(prev);
+					newSet.delete(userId);
+					return newSet;
+				});
 				const token = localStorage.getItem('admin_token');
 				if (token) {
 					fetchUsers(token, (page - 1) * pageSize, pageSize, searchQuery);
@@ -150,15 +235,50 @@ export default function UsersPage() {
 				{/* 用户列表 */}
 				<div className="bg-white/10 backdrop-blur-lg rounded-xl border border-white/20">
 					<div className="p-6 border-b border-white/10 flex justify-between items-center">
-						<h2 className="text-xl font-bold text-white">用户列表</h2>
-						<span className="text-gray-400 text-sm">
-							共 {total} 个用户
-						</span>
+						<div className="flex items-center gap-4">
+							<h2 className="text-xl font-bold text-white">用户列表</h2>
+							<span className="text-gray-400 text-sm">
+								共 {total} 个用户
+							</span>
+						</div>
+
+						{/* 批量操作按钮 */}
+						{selectedUserIds.size > 0 && (
+							<div className="flex items-center gap-3">
+								<span className="text-gray-400 text-sm">
+								已选择 {selectedUserIds.size} 个用户
+								</span>
+								<button
+									onClick={handleBatchDelete}
+									disabled={isDeleting}
+									className="bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 text-white px-4 py-2 rounded-lg transition-colors"
+								>
+									{isDeleting ? '删除中...' : '批量删除'}
+								</button>
+								<button
+									onClick={() => {
+										setSelectedUserIds(new Set());
+										setIsAllSelected(false);
+									}}
+									className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+								>
+									取消选择
+								</button>
+							</div>
+						)}
 					</div>
 					<div className="overflow-x-auto">
 						<table className="w-full">
 							<thead>
 								<tr className="text-left text-gray-400 text-sm border-b border-white/10">
+									<th className="px-6 py-4 w-12">
+										<input
+											type="checkbox"
+											checked={isAllSelected}
+											onChange={(e) => handleSelectAll(e.target.checked)}
+											className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500 cursor-pointer"
+										/>
+									</th>
 									<th className="px-6 py-4">用户ID</th>
 									<th className="px-6 py-4">用户名</th>
 									<th className="px-6 py-4">邮箱</th>
@@ -172,14 +292,30 @@ export default function UsersPage() {
 							<tbody>
 								{users.length === 0 ? (
 									<tr>
-										<td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+										<td colSpan={9} className="px-6 py-12 text-center text-gray-400">
 											暂无用户
 										</td>
 									</tr>
 								) : (
 									users.map((user) => (
 										<tr key={user.id} className="border-b border-white/10 text-white hover:bg-white/5 transition-colors">
-											<td className="px-6 py-4 font-mono text-sm">{user.id}</td>
+											<td className="px-6 py-4">
+												<input
+													type="checkbox"
+													checked={selectedUserIds.has(user.id)}
+													disabled={user.isSuperAdmin}
+													onChange={(e) => handleSelectUser(user.id, e.target.checked)}
+													className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+												/>
+											</td>
+											<td className="px-6 py-4 font-mono text-sm">
+												{user.id}
+												{user.isSuperAdmin && (
+													<span className="ml-2 text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">
+														超管
+													</span>
+												)}
+											</td>
 											<td className="px-6 py-4">{user.username || '-'}</td>
 											<td className="px-6 py-4">{user.email}</td>
 											<td className="px-6 py-4">
@@ -217,12 +353,16 @@ export default function UsersPage() {
 													: '从未登录'}
 											</td>
 											<td className="px-6 py-4">
-												<button
-													onClick={() => handleDeleteUser(user.id, user.email)}
-													className="bg-red-500/20 text-red-400 px-3 py-1 rounded hover:bg-red-500/30 transition-colors text-sm"
-												>
-													删除
-												</button>
+												{user.isSuperAdmin ? (
+													<span className="text-gray-500 text-sm">不可操作</span>
+												) : (
+													<button
+														onClick={() => handleDeleteUser(user.id, user.email)}
+														className="bg-red-500/20 text-red-400 px-3 py-1 rounded hover:bg-red-500/30 transition-colors text-sm"
+													>
+														删除
+													</button>
+												)}
 											</td>
 										</tr>
 									))
