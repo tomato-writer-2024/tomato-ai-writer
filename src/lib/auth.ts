@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { UserRole, MembershipLevel } from './types/user';
 import { userManager } from '@/storage/database';
+import { getPool } from '@/lib/db';
 import type { JwtPayload } from './types/user';
 
 /**
@@ -259,7 +260,7 @@ export async function checkUserQuota(userId: string): Promise<{
 }
 
 /**
- * 从请求中提取并验证用户
+ * 从请求中提取并验证用户（使用getPool确保数据一致性）
  */
 export async function extractUserFromRequest(request: Request): Promise<{
   user: any;
@@ -278,17 +279,48 @@ export async function extractUserFromRequest(request: Request): Promise<{
     return { user: null, error: '无效的令牌' };
   }
 
-  const user = await userManager.getUserById(payload.userId);
+  // 使用getPool直接查询数据库，确保与注册/登录使用相同的连接池
+  const pool = getPool();
+  if (!pool) {
+    return { user: null, error: '数据库连接失败' };
+  }
 
-  if (!user || !user.isActive) {
+  const result = await pool.query(
+    'SELECT * FROM users WHERE id = $1',
+    [payload.userId]
+  );
+
+  const user = result.rows[0];
+
+  if (!user || !user.is_active) {
     return { user: null, error: '用户不存在或已被禁用' };
   }
 
-  if (user.isBanned) {
-    return { user: null, error: `账号已被封禁：${user.banReason}` };
+  if (user.is_banned) {
+    return { user: null, error: `账号已被封禁：${user.ban_reason || '未知原因'}` };
   }
 
-  return { user };
+  // 转换为统一的用户对象格式
+  const normalizedUser = {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    membershipLevel: user.membership_level,
+    membershipExpireAt: user.membership_expire_at,
+    isActive: user.is_active,
+    isBanned: user.is_banned,
+    isSuperAdmin: user.is_super_admin,
+    banReason: user.ban_reason,
+    dailyUsageCount: user.daily_usage_count,
+    monthlyUsageCount: user.monthly_usage_count,
+    storageUsed: user.storage_used,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+    lastLoginAt: user.last_login_at,
+  };
+
+  return { user: normalizedUser };
 }
 
 /**
