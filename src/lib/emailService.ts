@@ -1,375 +1,463 @@
 import nodemailer from 'nodemailer';
 
 /**
- * 邮件服务配置
- */
-export interface EmailConfig {
-	host: string;
-	port: number;
-	secure: boolean; // true for 465, false for other ports
-	auth: {
-		user: string;
-		pass: string;
-	};
-	from?: string;
-}
-
-/**
  * 邮件模板类型
  */
-export enum EmailTemplate {
-	REGISTRATION_CODE = 'registration_code',
-	FORGOT_PASSWORD = 'forgot_password',
-	MEMBERSHIP_UPGRADE = 'membership_upgrade',
-	SYSTEM_NOTIFICATION = 'system_notification',
-}
-
-/**
- * 邮件模板参数
- */
-export interface EmailTemplateParams {
-	[EmailTemplate.REGISTRATION_CODE]: {
-		code: string;
-		username?: string;
-		expiresIn: number; // 分钟
-	};
-	[EmailTemplate.FORGOT_PASSWORD]: {
-		resetLink: string;
-		username?: string;
-		expiresIn: number; // 分钟
-	};
-	[EmailTemplate.MEMBERSHIP_UPGRADE]: {
-		username?: string;
-		membershipLevel: string;
-		expiresAt?: string;
-	};
-	[EmailTemplate.SYSTEM_NOTIFICATION]: {
-		title: string;
-		content: string;
-		username?: string;
-	};
-}
-
-/**
- * 邮件发送选项
- */
-export interface SendEmailOptions {
-	to: string;
+export interface EmailTemplate {
 	subject: string;
-	html?: string;
+	html: string;
 	text?: string;
 }
 
 /**
- * 邮件服务类
- *
- * 支持多种邮件服务提供商：
- * - SMTP（支持163、QQ、Gmail等）
- * - SendGrid（需配置）
- * - 阿里云邮件推送
- *
- * 默认使用SMTP协议，可配置任意SMTP服务器
+ * 邮件服务
  */
 class EmailService {
 	private transporter: nodemailer.Transporter | null = null;
-	private config: EmailConfig;
-
-	constructor() {
-		// 从环境变量读取配置
-		this.config = {
-			host: process.env.EMAIL_HOST || 'smtp.163.com',
-			port: parseInt(process.env.EMAIL_PORT || '465'),
-			secure: process.env.EMAIL_SECURE === 'true',
-			auth: {
-				user: process.env.EMAIL_USER || '',
-				pass: process.env.EMAIL_PASS || '',
-			},
-			from: process.env.EMAIL_FROM || 'noreply@example.com',
-		};
-
-		this.initializeTransporter();
-	}
+	private isMockMode: boolean = true;
 
 	/**
-	 * 初始化邮件传输器
+	 * 初始化邮件服务
 	 */
-	private initializeTransporter() {
-		if (!this.config.auth.user || !this.config.auth.pass) {
-			console.warn('[邮件服务] 未配置邮箱账号或密码，邮件功能将不可用');
+	private async initTransporter() {
+		if (this.transporter) {
 			return;
 		}
 
-		try {
-			this.transporter = nodemailer.createTransport({
-				host: this.config.host,
-				port: this.config.port,
-				secure: this.config.secure,
-				auth: {
-					user: this.config.auth.user,
-					pass: this.config.auth.pass,
-				},
-			});
+		// 检查是否为Mock模式
+		const isMockMode = process.env.EMAIL_MOCK_MODE === 'true';
+		this.isMockMode = isMockMode;
 
-			// 验证配置
-			this.transporter.verify((error, success) => {
-				if (error) {
-					console.error('[邮件服务] 邮件配置验证失败:', error);
-				} else {
-					console.log('[邮件服务] 邮件服务初始化成功');
-				}
-			});
+		if (isMockMode) {
+			console.log('[EmailService] Running in Mock mode - emails will not be sent');
+			return;
+		}
+
+		// 创建真实的邮件传输器
+		this.transporter = nodemailer.createTransport({
+			host: process.env.EMAIL_HOST,
+			port: parseInt(process.env.EMAIL_PORT || '587'),
+			secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+			auth: {
+				user: process.env.EMAIL_USER,
+				pass: process.env.EMAIL_PASS,
+			},
+		});
+
+		// 验证连接
+		try {
+			await this.transporter.verify();
+			console.log('[EmailService] Email server connection verified');
 		} catch (error) {
-			console.error('[邮件服务] 邮件传输器初始化失败:', error);
+			console.error('[EmailService] Failed to verify email server connection:', error);
+			this.transporter = null;
 		}
 	}
 
 	/**
 	 * 发送邮件
 	 */
-	async sendEmail(options: SendEmailOptions): Promise<{ success: boolean; error?: string }> {
+	async sendEmail(options: {
+		to: string;
+		subject: string;
+		html: string;
+		text?: string;
+	}): Promise<boolean> {
+		await this.initTransporter();
+
+		if (this.isMockMode) {
+			console.log('[EmailService Mock] Email would be sent:', {
+				to: options.to,
+				subject: options.subject,
+				html: options.html.substring(0, 200) + '...',
+			});
+			return true;
+		}
+
 		if (!this.transporter) {
-			const error = '邮件服务未初始化，请检查配置';
-
-			// Mock模式：开发环境下模拟发送成功
-			if (process.env.NODE_ENV === 'development' || !this.config.auth.user) {
-				console.warn('[邮件服务] 进入Mock模式，模拟邮件发送成功');
-				console.log('[邮件服务] 模拟发送邮件:', {
-					to: options.to,
-					subject: options.subject,
-					html: options.html?.substring(0, 100) + '...',
-				});
-				return { success: true };
-			}
-
-			console.error('[邮件服务]', error);
-			return { success: false, error };
+			console.error('[EmailService] Transporter not initialized');
+			return false;
 		}
 
 		try {
 			const info = await this.transporter.sendMail({
-				from: this.config.from,
+				from: process.env.EMAIL_FROM,
 				to: options.to,
 				subject: options.subject,
-				text: options.text,
 				html: options.html,
+				text: options.text,
 			});
 
-			console.log('[邮件服务] 邮件发送成功:', info.messageId);
-			return { success: true };
+			console.log('[EmailService] Email sent successfully:', info.messageId);
+			return true;
 		} catch (error) {
-			console.error('[邮件服务] 邮件发送失败:', error);
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : '邮件发送失败',
-			};
+			console.error('[EmailService] Failed to send email:', error);
+			return false;
 		}
 	}
 
 	/**
 	 * 发送模板邮件
 	 */
-	async sendTemplateEmail<T extends EmailTemplate>(
-		template: T,
-		params: EmailTemplateParams[T],
-		to: string
+	async sendTemplateEmail(
+		email: string,
+		template: EmailTemplate,
+		data?: Record<string, any>
 	): Promise<{ success: boolean; error?: string }> {
-		let subject = '';
-		let html = '';
-		let text = '';
+		// 替换模板中的变量
+		let html = template.html;
+		let subject = template.subject;
+		let text = template.text;
 
-		switch (template) {
-			case EmailTemplate.REGISTRATION_CODE:
-				subject = '【番茄小说AI】注册验证码';
-				html = this.getRegistrationCodeHtml(params as EmailTemplateParams[EmailTemplate.REGISTRATION_CODE]);
-				text = `您的注册验证码是：${(params as EmailTemplateParams[EmailTemplate.REGISTRATION_CODE]).code}，有效期为${(params as EmailTemplateParams[EmailTemplate.REGISTRATION_CODE]).expiresIn}分钟。`;
-				break;
-
-			case EmailTemplate.FORGOT_PASSWORD:
-				subject = '【番茄小说AI】密码重置';
-				html = this.getForgotPasswordHtml(params as EmailTemplateParams[EmailTemplate.FORGOT_PASSWORD]);
-				text = `请点击以下链接重置您的密码：${(params as EmailTemplateParams[EmailTemplate.FORGOT_PASSWORD]).resetLink}`;
-				break;
-
-			case EmailTemplate.MEMBERSHIP_UPGRADE:
-				subject = '【番茄小说AI】会员升级成功';
-				html = this.getMembershipUpgradeHtml(params as EmailTemplateParams[EmailTemplate.MEMBERSHIP_UPGRADE]);
-				text = `恭喜您成功升级为${(params as EmailTemplateParams[EmailTemplate.MEMBERSHIP_UPGRADE]).membershipLevel}会员！`;
-				break;
-
-			case EmailTemplate.SYSTEM_NOTIFICATION:
-				subject = '【番茄小说AI】系统通知';
-				html = this.getSystemNotificationHtml(params as EmailTemplateParams[EmailTemplate.SYSTEM_NOTIFICATION]);
-				text = `${(params as EmailTemplateParams[EmailTemplate.SYSTEM_NOTIFICATION]).title}\n${(params as EmailTemplateParams[EmailTemplate.SYSTEM_NOTIFICATION]).content}`;
-				break;
-
-			default:
-				return { success: false, error: '不支持的邮件模板' };
+		if (data) {
+			Object.entries(data).forEach(([key, value]) => {
+				const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
+				html = html.replace(regex, String(value));
+				subject = subject.replace(regex, String(value));
+				if (text) {
+					text = text.replace(regex, String(value));
+				}
+			});
 		}
 
-		return this.sendEmail({ to, subject, html, text });
+		const success = await this.sendEmail({
+			to: email,
+			subject,
+			html,
+			text,
+		});
+
+		if (success) {
+			return { success: true };
+		} else {
+			return { success: false, error: 'Failed to send email' };
+		}
 	}
 
 	/**
-	 * 生成注册验证码邮件HTML
+	 * 发送订单通知邮件
 	 */
-	private getRegistrationCodeHtml(params: EmailTemplateParams[EmailTemplate.REGISTRATION_CODE]): string {
-		const { code, username, expiresIn } = params;
-		const greeting = username ? `亲爱的 ${username}，` : '您好，';
+	async sendOrderNotificationEmail(
+		email: string,
+		orderNumber: string,
+		status: string,
+		message: string
+	): Promise<boolean> {
+		const statusColors = {
+			PENDING: '#FFA500',
+			PENDING_REVIEW: '#1E90FF',
+			PAID: '#32CD32',
+			REFUNDING: '#FF4500',
+			REFUNDED: '#808080',
+			CANCELLED: '#DC143C',
+			FAILED: '#FF0000',
+		};
 
-		return `
+		const color = statusColors[status as keyof typeof statusColors] || '#000000';
+
+		const html = `
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
+	<meta charset="UTF-8">
+	<title>订单状态更新通知</title>
 	<style>
-		body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-		.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-		.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-		.code-box { background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 5px; margin: 20px 0; border-radius: 5px; }
-		.content { background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; }
-		.footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-radius: 0 0 10px 10px; }
+		body {
+			font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+			background-color: #f5f5f5;
+			margin: 0;
+			padding: 20px;
+		}
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+			background-color: #ffffff;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+		.header {
+			background: linear-gradient(135deg, #FF4757 0%, #FF6B81 100%);
+			color: white;
+			padding: 30px;
+			text-align: center;
+		}
+		.header h1 {
+			margin: 0;
+			font-size: 24px;
+		}
+		.content {
+			padding: 30px;
+		}
+		.order-number {
+			background-color: #FFF5F5;
+			border-left: 4px solid #FF4757;
+			padding: 15px;
+			margin-bottom: 20px;
+		}
+		.order-number strong {
+			color: #FF4757;
+			font-size: 18px;
+		}
+		.status-badge {
+			display: inline-block;
+			background-color: ${color};
+			color: white;
+			padding: 6px 16px;
+			border-radius: 12px;
+			font-size: 14px;
+			margin-bottom: 20px;
+		}
+		.message {
+			background-color: #F8F9FA;
+			padding: 15px;
+			border-radius: 4px;
+			line-height: 1.6;
+			color: #333;
+		}
+		.button {
+			display: inline-block;
+			background: linear-gradient(135deg, #FF4757 0%, #FF6B81 100%);
+			color: white;
+			padding: 12px 30px;
+			text-decoration: none;
+			border-radius: 6px;
+			margin-top: 20px;
+			font-weight: bold;
+		}
+		.footer {
+			background-color: #F8F9FA;
+			padding: 20px;
+			text-align: center;
+			color: #999;
+			font-size: 12px;
+		}
 	</style>
 </head>
 <body>
 	<div class="container">
 		<div class="header">
-			<h1>🍅 番茄小说AI</h1>
+			<h1>📦 订单状态更新</h1>
 		</div>
 		<div class="content">
-			<p>${greeting}</p>
-			<p>感谢您注册番茄小说AI写作工具！</p>
-			<p>您的注册验证码是：</p>
-			<div class="code-box">${code}</div>
-			<p>验证码有效期为 <strong>${expiresIn} 分钟</strong>，请尽快完成验证。</p>
-			<p>如果这不是您本人的操作，请忽略此邮件。</p>
+			<div class="order-number">
+				订单号：<strong>${orderNumber}</strong>
+			</div>
+			<div class="status-badge">当前状态：${this.getStatusText(status)}</div>
+			<div class="message">
+				${message}
+			</div>
+			<a href="${process.env.NEXT_PUBLIC_BASE_URL}/orders" class="button">查看订单详情</a>
 		</div>
 		<div class="footer">
 			<p>此邮件由系统自动发送，请勿直接回复</p>
-			<p>© 2024 番茄小说AI · 让创作更简单</p>
+			<p>© ${new Date().getFullYear()} 番茄小说AI写作助手</p>
 		</div>
 	</div>
 </body>
 </html>
 `;
+
+		return this.sendEmail({
+			to: email,
+			subject: `订单状态更新 - ${orderNumber}`,
+			html,
+		});
 	}
 
 	/**
-	 * 生成忘记密码邮件HTML
+	 * 发送会员升级通知邮件
 	 */
-	private getForgotPasswordHtml(params: EmailTemplateParams[EmailTemplate.FORGOT_PASSWORD]): string {
-		const { resetLink, username, expiresIn } = params;
-		const greeting = username ? `亲爱的 ${username}，` : '您好，';
+	async sendMembershipUpgradeEmail(
+		email: string,
+		level: string,
+		expireDate: string
+	): Promise<boolean> {
+		const levelNames = {
+			BASIC: '基础会员',
+			PREMIUM: '高级会员',
+			ENTERPRISE: '企业会员',
+		};
 
-		return `
+		const html = `
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
+	<meta charset="UTF-8">
+	<title>会员升级成功</title>
 	<style>
-		body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-		.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-		.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-		.button { display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-size: 16px; }
-		.content { background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; }
-		.footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-radius: 0 0 10px 10px; }
+		body {
+			font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+			background-color: #f5f5f5;
+			margin: 0;
+			padding: 20px;
+		}
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+			background-color: #ffffff;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+		.header {
+			background: linear-gradient(135deg, #32CD32 0%, #228B22 100%);
+			color: white;
+			padding: 30px;
+			text-align: center;
+		}
+		.header h1 {
+			margin: 0;
+			font-size: 24px;
+		}
+		.content {
+			padding: 30px;
+		}
+		.level-badge {
+			background: linear-gradient(135deg, #FF4757 0%, #FF6B81 100%);
+			color: white;
+			padding: 12px 24px;
+			border-radius: 8px;
+			font-size: 20px;
+			font-weight: bold;
+			text-align: center;
+			margin: 20px 0;
+		}
+		.expire-date {
+			background-color: #FFF5F5;
+			border-left: 4px solid #32CD32;
+			padding: 15px;
+			margin-bottom: 20px;
+		}
+		.button {
+			display: inline-block;
+			background: linear-gradient(135deg, #FF4757 0%, #FF6B81 100%);
+			color: white;
+			padding: 12px 30px;
+			text-decoration: none;
+			border-radius: 6px;
+			margin-top: 20px;
+			font-weight: bold;
+		}
+		.footer {
+			background-color: #F8F9FA;
+			padding: 20px;
+			text-align: center;
+			color: #999;
+			font-size: 12px;
+		}
 	</style>
 </head>
 <body>
 	<div class="container">
 		<div class="header">
-			<h1>🍅 番茄小说AI</h1>
+			<h1>🎉 恭喜！会员升级成功</h1>
 		</div>
 		<div class="content">
-			<p>${greeting}</p>
-			<p>我们收到了您的密码重置请求。</p>
-			<p>请点击下方按钮重置您的密码：</p>
-			<div style="text-align: center;">
-				<a href="${resetLink}" class="button">重置密码</a>
+			<p>您的会员已成功升级！</p>
+			<div class="level-badge">${levelNames[level as keyof typeof levelNames] || level}</div>
+			<div class="expire-date">
+				<strong>会员到期时间：</strong>${new Date(expireDate).toLocaleDateString('zh-CN')}
 			</div>
-			<p>或者复制以下链接到浏览器中打开：</p>
-			<p style="word-break: break-all; color: #666;">${resetLink}</p>
-			<p>重置链接有效期为 <strong>${expiresIn} 分钟</strong>。</p>
-			<p>如果这不是您本人的操作，请忽略此邮件。</p>
-		</div>
-		<div class="footer">
-			<p>此邮件由系统自动发送，请勿直接回复</p>
-			<p>© 2024 番茄小说AI · 让创作更简单</p>
-		</div>
-	</div>
-</body>
-</html>
-`;
-	}
-
-	/**
-	 * 生成会员升级邮件HTML
-	 */
-	private getMembershipUpgradeHtml(params: EmailTemplateParams[EmailTemplate.MEMBERSHIP_UPGRADE]): string {
-		const { username, membershipLevel, expiresAt } = params;
-		const greeting = username ? `亲爱的 ${username}，` : '您好，';
-
-		return `
-<!DOCTYPE html>
-<html>
-<head>
-	<meta charset="utf-8">
-	<style>
-		body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-		.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-		.header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-		.content { background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; }
-		.membership-badge { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 10px 20px; display: inline-block; border-radius: 20px; margin: 10px 0; }
-		.footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-radius: 0 0 10px 10px; }
-	</style>
-</head>
-<body>
-	<div class="container">
-		<div class="header">
-			<h1>🎉 恭喜升级！</h1>
-		</div>
-		<div class="content">
-			<p>${greeting}</p>
-			<p>恭喜您成功升级为：</p>
-			<div style="text-align: center;">
-				<div class="membership-badge">${membershipLevel}</div>
-			</div>
-			${expiresAt ? `<p>会员有效期至：<strong>${new Date(expiresAt).toLocaleDateString()}</strong></p>` : ''}
-			<p>现在您可以享受更多高级功能：</p>
+			<p>现在您可以享受更多高级功能，包括：</p>
 			<ul>
-				<li>✨ 无限次AI创作</li>
-				<li>📚 海量素材库访问</li>
-				<li>🚀 更快的生成速度</li>
-				<li>💎 专属客服支持</li>
+				<li>✓ 无限次AI生成</li>
+				<li>✓ 高级写作工具</li>
+				<li>✓ 优先技术支持</li>
+				<li>✓ 更多专属功能</li>
 			</ul>
+			<a href="${process.env.NEXT_PUBLIC_BASE_URL}/workspace" class="button">立即开始写作</a>
 		</div>
 		<div class="footer">
-			<p>感谢您的支持！</p>
-			<p>© 2024 番茄小说AI · 让创作更简单</p>
+			<p>此邮件由系统自动发送，请勿直接回复</p>
+			<p>© ${new Date().getFullYear()} 番茄小说AI写作助手</p>
 		</div>
 	</div>
 </body>
 </html>
 `;
+
+		return this.sendEmail({
+			to: email,
+			subject: '会员升级成功',
+			html,
+		});
 	}
 
 	/**
-	 * 生成系统通知邮件HTML
+	 * 发送系统通知邮件
 	 */
-	private getSystemNotificationHtml(params: EmailTemplateParams[EmailTemplate.SYSTEM_NOTIFICATION]): string {
-		const { title, content, username } = params;
-		const greeting = username ? `亲爱的 ${username}，` : '您好，';
-
-		return `
+	async sendSystemNotificationEmail(
+		email: string,
+		title: string,
+		content: string,
+		link?: string
+	): Promise<boolean> {
+		const html = `
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
+	<meta charset="UTF-8">
+	<title>系统通知</title>
 	<style>
-		body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-		.container { max-width: 600px; margin: 0 auto; padding: 20px; }
-		.header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-		.content { background: white; padding: 30px; border: 1px solid #e0e0e0; border-top: none; }
-		.footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 12px; color: #999; border-radius: 0 0 10px 10px; }
+		body {
+			font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+			background-color: #f5f5f5;
+			margin: 0;
+			padding: 20px;
+		}
+		.container {
+			max-width: 600px;
+			margin: 0 auto;
+			background-color: #ffffff;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+		}
+		.header {
+			background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+			color: white;
+			padding: 30px;
+			text-align: center;
+		}
+		.header h1 {
+			margin: 0;
+			font-size: 24px;
+		}
+		.content {
+			padding: 30px;
+		}
+		.title {
+			font-size: 18px;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 15px;
+		}
+		.message {
+			background-color: #F8F9FA;
+			padding: 15px;
+			border-radius: 4px;
+			line-height: 1.6;
+			color: #333;
+			white-space: pre-wrap;
+		}
+		.button {
+			display: inline-block;
+			background: linear-gradient(135deg, #FF4757 0%, #FF6B81 100%);
+			color: white;
+			padding: 12px 30px;
+			text-decoration: none;
+			border-radius: 6px;
+			margin-top: 20px;
+			font-weight: bold;
+		}
+		.footer {
+			background-color: #F8F9FA;
+			padding: 20px;
+			text-align: center;
+			color: #999;
+			font-size: 12px;
+		}
 	</style>
 </head>
 <body>
@@ -378,22 +466,42 @@ class EmailService {
 			<h1>📢 系统通知</h1>
 		</div>
 		<div class="content">
-			<p>${greeting}</p>
-			<h2 style="color: #4facfe;">${title}</h2>
-			<div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #4facfe; margin: 15px 0;">
-				${content}
-			</div>
+			<div class="title">${title}</div>
+			<div class="message">${content}</div>
+			${link ? `<a href="${link}" class="button">查看详情</a>` : ''}
 		</div>
 		<div class="footer">
 			<p>此邮件由系统自动发送，请勿直接回复</p>
-			<p>© 2024 番茄小说AI · 让创作更简单</p>
+			<p>© ${new Date().getFullYear()} 番茄小说AI写作助手</p>
 		</div>
 	</div>
 </body>
 </html>
 `;
+
+		return this.sendEmail({
+			to: email,
+			subject: title,
+			html,
+		});
+	}
+
+	/**
+	 * 获取状态文本
+	 */
+	private getStatusText(status: string): string {
+		const statusMap = {
+			PENDING: '待支付',
+			PENDING_REVIEW: '待审核',
+			PAID: '已支付',
+			REFUNDING: '退款中',
+			REFUNDED: '已退款',
+			CANCELLED: '已取消',
+			FAILED: '支付失败',
+		};
+		return statusMap[status as keyof typeof statusMap] || status;
 	}
 }
 
-// 导出单例
+// 导出单例实例
 export const emailService = new EmailService();

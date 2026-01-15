@@ -98,14 +98,14 @@ export async function POST(request: NextRequest) {
 		const months = billingCycle === 'yearly' ? 12 : 1;
 		const amount = pricing[billingCycle as keyof typeof pricing];
 
-		// 创建订单
-		const order = await membershipOrderManager.createOrder({
+		// 创建订单（使用enhancedOrderManager自动生成orderNumber）
+		const { enhancedOrderManager } = await import('@/storage/database');
+		const order = await enhancedOrderManager.createOrder({
 			userId: user.id,
 			level,
 			months,
 			amount,
 			paymentMethod,
-			paymentStatus: 'PENDING',
 		});
 
 		// 返回订单信息和支付链接

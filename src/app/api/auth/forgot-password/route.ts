@@ -65,13 +65,24 @@ export async function POST(request: NextRequest) {
     // 非Mock模式：发送真实邮件
     if (!isMockMode) {
       const emailResult = await emailService.sendTemplateEmail(
-        EmailTemplate.FORGOT_PASSWORD,
+        user.email,
+        {
+          subject: '重置您的密码',
+          html: `
+            <h1>重置密码</h1>
+            <p>您好，${user.username || '用户'}！</p>
+            <p>我们收到了您的密码重置请求。</p>
+            <p>请点击以下链接重置您的密码：</p>
+            <p><a href="${resetUrl}">重置密码</a></p>
+            <p>此链接将在30分钟后失效。</p>
+            <p>如果您没有请求重置密码，请忽略此邮件。</p>
+          `,
+        },
         {
           resetLink: resetUrl,
           username: user.username || undefined,
           expiresIn: 30,
-        },
-        user.email
+        }
       );
 
       if (!emailResult.success) {

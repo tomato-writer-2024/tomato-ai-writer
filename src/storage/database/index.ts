@@ -13,6 +13,13 @@ export { notificationManager } from './notificationManager';
 export { communityManager } from './communityManager';
 
 // ============================================================================
+// 增强的 Manager 实例导出
+// ============================================================================
+export { enhancedOrderManager } from './enhancedOrderManager';
+export { enhancedCommunityManager } from './enhancedCommunityManager';
+export { enhancedNotificationManager } from './enhancedNotificationManager';
+
+// ============================================================================
 // Mock Manager 导出
 // ============================================================================
 export { mockUserManager } from './mock/mockUserManager';

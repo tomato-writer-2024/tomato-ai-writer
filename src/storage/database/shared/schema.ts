@@ -24,20 +24,36 @@ export const apiKeys = pgTable("api_keys", {
 
 export const membershipOrders = pgTable("membership_orders", {
 	id: varchar({ length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	orderNumber: varchar("order_number", { length: 50 }).notNull(), // 订单号
 	userId: varchar("user_id", { length: 36 }).notNull(),
 	level: varchar({ length: 20 }).notNull(),
 	months: integer().notNull(),
 	amount: integer().notNull(),
 	paymentMethod: varchar("payment_method", { length: 50 }).notNull(),
-	paymentStatus: varchar("payment_status", { length: 20 }).default('PENDING').notNull(),
+	paymentStatus: varchar("payment_status", { length: 20 }).default('PENDING').notNull(), // PENDING, PENDING_REVIEW, PAID, REFUNDING, REFUNDED, CANCELLED, FAILED
 	transactionId: varchar("transaction_id", { length: 100 }),
+	proofUrl: varchar("proof_url", { length: 500 }), // 支付凭证URL
+	proofType: varchar("proof_type", { length: 20 }), // image, pdf
+	refundAmount: integer("refund_amount"), // 退款金额
+	refundReason: text("refund_reason"), // 退款原因
+	refundRequestedAt: timestamp("refund_requested_at", { withTimezone: true, mode: 'string' }), // 申请退款时间
+	refundProcessedAt: timestamp("refund_processed_at", { withTimezone: true, mode: 'string' }), // 处理退款时间
+	refundedBy: varchar("refunded_by", { length: 36 }), // 退款处理人ID
+	reviewedBy: varchar("reviewed_by", { length: 36 }), // 审核人ID
+	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }), // 审核时间
+	reviewStatus: varchar("review_status", { length: 20 }), // 审核状态：pending, approved, rejected
+	reviewNotes: text("review_notes"), // 审核备注
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	paidAt: timestamp("paid_at", { withTimezone: true, mode: 'string' }),
+	expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'string' }), // 订单过期时间（30分钟）
 	notes: text("notes"),
+	metadata: jsonb("metadata"), // 元数据
 }, (table) => [
+	index("membership_orders_order_number_idx").using("btree", table.orderNumber.asc().nullsLast().op("text_ops")),
 	index("membership_orders_created_at_idx").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
 	index("membership_orders_payment_status_idx").using("btree", table.paymentStatus.asc().nullsLast().op("text_ops")),
 	index("membership_orders_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("membership_orders_review_status_idx").using("btree", table.reviewStatus.asc().nullsLast().op("text_ops")),
 ]);
 
 export const securityLogs = pgTable("security_logs", {
@@ -442,8 +458,15 @@ export const posts = pgTable("posts", {
 	viewCount: integer("view_count").default(0).notNull(), // 浏览量
 	likeCount: integer("like_count").default(0).notNull(), // 点赞数
 	commentCount: integer("comment_count").default(0).notNull(), // 评论数
+	favoriteCount: integer("favorite_count").default(0).notNull(), // 收藏数
 	isPinned: boolean("is_pinned").default(false).notNull(), // 是否置顶
 	isLocked: boolean("is_locked").default(false).notNull(), // 是否锁定
+	isApproved: boolean("is_approved").default(true).notNull(), // 是否审核通过
+	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }), // 审核时间
+	reviewedBy: varchar("reviewed_by", { length: 36 }), // 审核人ID
+	reviewNotes: text("review_notes"), // 审核备注
+	reportCount: integer("report_count").default(0).notNull(), // 举报数
+	isHidden: boolean("is_hidden").default(false).notNull(), // 是否隐藏（被举报后）
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	isDeleted: boolean("is_deleted").default(false).notNull(),
@@ -451,6 +474,8 @@ export const posts = pgTable("posts", {
 	index("posts_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	index("posts_category_idx").using("btree", table.category.asc().nullsLast().op("text_ops")),
 	index("posts_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
+	index("posts_is_approved_idx").using("btree", table.isApproved.asc().nullsLast().op("bool_ops")),
+	index("posts_is_hidden_idx").using("btree", table.isHidden.asc().nullsLast().op("bool_ops")),
 ]);
 
 // ============================================================================
@@ -485,6 +510,44 @@ export const postComments = pgTable("post_comments", {
 	index("post_comments_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	index("post_comments_post_id_idx").using("btree", table.postId.asc().nullsLast().op("text_ops")),
 	index("post_comments_parent_id_idx").using("btree", table.parentId.asc().nullsLast().op("text_ops")),
+]);
+
+// ============================================================================
+// 帖子收藏表
+// ============================================================================
+
+export const postFavorites = pgTable("post_favorites", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	postId: varchar("post_id", { length: 36 }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("post_favorites_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("post_favorites_post_id_idx").using("btree", table.postId.asc().nullsLast().op("text_ops")),
+	unique("post_favorites_user_post_unique").on(table.userId, table.postId),
+]);
+
+// ============================================================================
+// 帖子举报表
+// ============================================================================
+
+export const postReports = pgTable("post_reports", {
+	id: varchar("id", { length: 36 }).default(sql`gen_random_uuid()`).primaryKey().notNull(),
+	userId: varchar("user_id", { length: 36 }).notNull(),
+	postId: varchar("post_id", { length: 36 }).notNull(),
+	reason: varchar("reason", { length: 100 }).notNull(), // spam, inappropriate, harassment, other
+	description: text("description"), // 举报描述
+	status: varchar("status", { length: 20 }).default('pending').notNull(), // pending, reviewed, resolved, dismissed
+	reviewedBy: varchar("reviewed_by", { length: 36 }), // 审核人ID
+	reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'string' }), // 审核时间
+	action: varchar("action", { length: 50 }), // 采取的措施：none, warning, hidden, deleted, banned
+	notes: text("notes"), // 审核备注
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	index("post_reports_user_id_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
+	index("post_reports_post_id_idx").using("btree", table.postId.asc().nullsLast().op("text_ops")),
+	index("post_reports_status_idx").using("btree", table.status.asc().nullsLast().op("text_ops")),
+	index("post_reports_created_at_idx").using("btree", table.createdAt.desc().nullsLast().op("timestamptz_ops")),
 ]);
 
 // ============================================================================
@@ -795,6 +858,7 @@ export const updateMaterialSchema = createCoercedInsertSchema(materials)
 
 // Membership Orders
 export const insertMembershipOrderSchema = createCoercedInsertSchema(membershipOrders).pick({
+	orderNumber: true,
 	userId: true,
 	level: true,
 	months: true,
@@ -802,14 +866,41 @@ export const insertMembershipOrderSchema = createCoercedInsertSchema(membershipO
 	paymentMethod: true,
 	paymentStatus: true,
 	transactionId: true,
+	proofUrl: true,
+	proofType: true,
+	refundAmount: true,
+	refundReason: true,
+	refundRequestedAt: true,
+	refundProcessedAt: true,
+	refundedBy: true,
+	reviewedBy: true,
+	reviewedAt: true,
+	reviewStatus: true,
+	reviewNotes: true,
 	paidAt: true,
+	expiresAt: true,
+	metadata: true,
+	notes: true,
 });
 
 export const updateMembershipOrderSchema = createCoercedInsertSchema(membershipOrders)
 	.pick({
 		paymentStatus: true,
 		transactionId: true,
+		proofUrl: true,
+		proofType: true,
+		refundAmount: true,
+		refundReason: true,
+		refundRequestedAt: true,
+		refundProcessedAt: true,
+		refundedBy: true,
+		reviewedBy: true,
+		reviewedAt: true,
+		reviewStatus: true,
+		reviewNotes: true,
 		paidAt: true,
+		expiresAt: true,
+		metadata: true,
 		notes: true,
 	})
 	.partial();
@@ -883,7 +974,13 @@ export const insertPostSchema = z.object({
 });
 
 export const updatePostSchema = insertPostSchema.partial();
+
 export const insertPostLikesSchema = z.object({
+	userId: z.string(),
+	postId: z.string(),
+});
+
+export const insertPostFavoritesSchema = z.object({
 	userId: z.string(),
 	postId: z.string(),
 });
@@ -895,11 +992,29 @@ export const insertPostCommentsSchema = z.object({
 	content: z.string(),
 });
 
+export const insertPostReportsSchema = z.object({
+	userId: z.string(),
+	postId: z.string(),
+	reason: z.string(),
+	description: z.string().optional(),
+	status: z.string().optional(),
+	reviewedBy: z.string().optional(),
+	reviewedAt: z.string().optional(),
+	action: z.string().optional(),
+	notes: z.string().optional(),
+});
+
 export type PostLike = typeof postLikes.$inferSelect;
 export type InsertPostLike = typeof postLikes.$inferInsert;
 
+export type PostFavorite = typeof postFavorites.$inferSelect;
+export type InsertPostFavorite = typeof postFavorites.$inferInsert;
+
 export type PostComment = typeof postComments.$inferSelect;
 export type InsertPostComment = typeof postComments.$inferInsert;
+
+export type PostReport = typeof postReports.$inferSelect;
+export type InsertPostReport = typeof postReports.$inferInsert;
 
 // ============================================================================
 // Notifications Schema Types

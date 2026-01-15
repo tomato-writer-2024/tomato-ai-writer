@@ -32,11 +32,12 @@ export async function POST(request: NextRequest) {
 
 		// 使用模板邮件
 		if (type && params) {
-			result = await emailService.sendTemplateEmail(type, params, to);
+			result = await emailService.sendTemplateEmail(to, { subject: '', html: '' }, params);
 		}
 		// 使用自定义邮件
 		else if (subject) {
-			result = await emailService.sendEmail({ to, subject, html, text });
+			const success = await emailService.sendEmail({ to, subject, html, text });
+			result = success ? { success: true } : { success: false, error: '邮件发送失败' };
 		}
 		// 参数不完整
 		else {
@@ -79,15 +80,28 @@ export async function GET() {
 	return NextResponse.json({
 		success: true,
 		data: {
-			templates: Object.values(EmailTemplate).map((value) => ({
-				value,
-				name: {
-					REGISTRATION_CODE: '注册验证码',
-					FORGOT_PASSWORD: '密码重置',
-					MEMBERSHIP_UPGRADE: '会员升级通知',
-					SYSTEM_NOTIFICATION: '系统通知',
-				}[value as string],
-			})),
+			templates: [
+				{
+					value: 'custom',
+					name: '自定义邮件',
+				},
+				{
+					value: 'registration_code',
+					name: '注册验证码',
+				},
+				{
+					value: 'forgot_password',
+					name: '密码重置',
+				},
+				{
+					value: 'membership_upgrade',
+					name: '会员升级通知',
+				},
+				{
+					value: 'system_notification',
+					name: '系统通知',
+				},
+			],
 		},
 	});
 }

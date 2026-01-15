@@ -223,6 +223,37 @@ export class UserManager {
 	}
 
 	/**
+	 * 激活会员（计算到期时间）
+	 */
+	async activateMembership(userId: string, level: string, months: number): Promise<User | null> {
+		const user = await this.getUserById(userId);
+
+		if (!user) {
+			return null;
+		}
+
+		// 计算新的到期时间
+		const baseDate = user.membershipExpireAt && new Date(user.membershipExpireAt) > new Date()
+			? new Date(user.membershipExpireAt)
+			: new Date();
+
+		const expireDate = new Date(baseDate);
+		expireDate.setMonth(expireDate.getMonth() + months);
+
+		return this.upgradeMembership(userId, level, expireDate);
+	}
+
+	/**
+	 * 取消会员（降级为免费）
+	 */
+	async cancelMembership(userId: string): Promise<User | null> {
+		return this.updateUser(userId, {
+			membershipLevel: 'FREE',
+			membershipExpireAt: null,
+		});
+	}
+
+	/**
 	 * 更新最后登录时间
 	 */
 	async updateLastLogin(userId: string): Promise<void> {
