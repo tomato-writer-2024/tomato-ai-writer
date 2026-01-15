@@ -159,9 +159,16 @@ export default function AdminDashboardPage() {
 	};
 
 	const handleLogout = () => {
-		if (confirm('确定要退出登录吗？')) {
-			localStorage.removeItem('admin_token');
-			localStorage.removeItem('admin_info');
+		if (confirm('确定要退出登录吗？\n\n注意：选择"确定"将清除登录信息；\n选择"取消"或直接关闭浏览器，下次可直接登录。')) {
+			// 询问是否清除数据
+			const shouldClear = confirm('是否清除保存的登录信息？\n\n- 选择"确定"：完全退出，下次需重新登录\n- 选择"取消"：仅跳转，下次可直接登录');
+
+			if (shouldClear) {
+				localStorage.removeItem('admin_token');
+				localStorage.removeItem('admin_info');
+				sessionStorage.removeItem('admin_token');
+				sessionStorage.removeItem('admin_info');
+			}
 			router.push('/admin/login');
 		}
 	};
