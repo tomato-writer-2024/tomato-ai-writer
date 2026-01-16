@@ -1,9 +1,23 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import PerformanceMonitor from "@/components/PerformanceMonitor";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "番茄AI写作助手 - 智能创作爆款爽文",
-  description: "专为番茄小说平台打造的AI辅助写作工具，帮助小说创作者快速生成符合番茄平台风格的爆款爽文内容。支持章节撰写、精修润色、智能续写等功能，完读率90%%+，质量评分9.8+。",
+  description: "专为番茄小说平台打造的AI辅助写作工具，帮助小说创作者快速生成符合番茄平台风格的爆款爽文内容。支持章节撰写、精修润色、智能续写等功能，完读率90%+，质量评分9.8+。",
   keywords: "番茄小说,AI写作,网文创作,章节生成,爽文创作,小说辅助,自动写作,内容生成,续写,润色",
   authors: [{ name: "番茄AI写作助手团队" }],
   creator: "番茄AI写作助手",
@@ -33,17 +47,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="zh-CN">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
+      >
         {children}
+        <PerformanceMonitor />
       </body>
     </html>
   );
