@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-01-16T00:41:03.164Z",
+  "totalSteps": 5,
+  "successCount": 5,
+  "failedCount": 0,
+  "results": [
+    {
+      "step": "数据库连接",
+      "success": true,
+      "message": "数据库连接正常"
+    },
+    {
+      "step": "is_super_admin 字段",
+      "success": true,
+      "message": "is_super_admin 字段存在"
+    },
+    {
+      "step": "超级管理员用户",
+      "success": true,
+      "message": "找到 4 个超级管理员账户",
+      "data": {
+        "users": [
+          {
+            "email": "test.admin@example.com",
+            "username": "测试管理员",
+            "isSuperAdmin": false,
+            "role": "ADMIN",
+            "isActive": true
+          },
+          {
+            "email": "testadmin@tomato.ai",
+            "username": "测试管理员",
+            "isSuperAdmin": true,
+            "role": "ADMIN",
+            "isActive": true
+          },
+          {
+            "email": "208343256@qq.com",
+            "username": "测试用户",
+            "isSuperAdmin": true,
+            "role": "DEVELOPER",
+            "isActive": true
+          },
+          {
+            "email": "admin@tomato-ai.com",
+            "username": "超级管理员",
+            "isSuperAdmin": true,
+            "role": "ADMIN",
+            "isActive": true
+          }
+        ]
+      }
+    },
+    {
+      "step": "重置密码",
+      "success": true,
+      "message": "已重置密码: admin@tomato-ai.com",
+      "data": {
+        "email": "admin@tomato-ai.com",
+        "username": "超级管理员",
+        "isSuperAdmin": true,
+        "role": "ADMIN",
+        "isActive": true
+      }
+    },
+    {
+      "step": "验证数据库状态",
+      "success": true,
+      "message": "超级管理员状态正常",
+      "data": {
+        "email": "admin@tomato-ai.com",
+        "username": "超级管理员",
+        "isSuperAdmin": true,
+        "role": "ADMIN",
+        "membershipLevel": "PREMIUM",
+        "isActive": true,
+        "isBanned": false
+      }
+    }
+  ]
+}
